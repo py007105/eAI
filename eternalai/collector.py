@@ -25,6 +25,8 @@ Q = {
     "up": 'up{{job="app",instance_name="{s}"}}',
     "dep_fail_rate": 'sum(rate(dependency_calls_total{{service="{s}",outcome="error"}}[10s]))',
     "error_log_rate": 'rate(error_logs_total{{service="{s}"}}[10s])',
+    "restarts_3m": 'changes(app_start_time_seconds{{service="{s}"}}[3m])',
+    "deploys_3m": 'changes(app_release_seq{{service="{s}"}}[3m])',
     "scratch_bytes": 'app_scratch_disk_bytes{{service="{s}"}}',
 }
 
@@ -51,13 +53,18 @@ class Prom:
         end = end or time.time()
         start = end - seconds
         cols = {k: self.range(q.format(s=service), start, end) for k, q in Q.items()}
+        # failures of this service's calls to each other service (evidence for blaming the callee)
+        for tgt in config.TOPOLOGY.get(service, []):
+            cols[f"depfail_{tgt}"] = self.range(
+                f'sum(rate(dependency_calls_total{{service="{service}",target="{tgt}",outcome="error"}}[10s]))',
+                start, end)
         grid = np.arange(int(start) // config.STEP_S * config.STEP_S, int(end), config.STEP_S, dtype=float)
         df = pd.DataFrame({k: v.reindex(grid, method="nearest", tolerance=config.STEP_S) if len(v) else np.nan
                            for k, v in cols.items()}, index=grid)
         # a service that returns no rate series because it received no traffic has an observed rate of 0 only
         # if it was up; if it was not scraped (up NaN/0) the rate stays NaN.
         up = df["up"].fillna(0) > 0
-        for c in ("req_rate", "err_rate", "dep_fail_rate", "error_log_rate"):
+        for c in ["req_rate", "err_rate", "dep_fail_rate", "error_log_rate"] + [c for c in df if c.startswith("depfail_")]:
             df[c] = df[c].where(~(df[c].isna() & up), 0.0)
         return df
 
@@ -93,7 +100,7 @@ class DockerView:
         for svc, c in self.containers().items():
             c.reload()
             s = c.attrs["State"]
-            tag = (c.image.tags or ["?:?"])[0].split(":")[-1]
+            tag = c.attrs["Config"]["Image"].split(":")[-1]  # reference it was created from
             seq = int(c.image.labels.get("eai.release_seq", 0))
             started = pd.Timestamp(s["StartedAt"]).timestamp() if s.get("StartedAt") else float("nan")
             out[svc] = ContainerState(svc, bool(s["Running"]), s["Status"], s.get("ExitCode"),
