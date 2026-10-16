@@ -1,0 +1,97 @@
+"""Shared rolling-window features for ONE service.
+
+The same function is used to build training rows from recorded evaluator runs and to
+score live traffic, so train and serve cannot drift apart. Input is a DataFrame
+indexed by time (seconds) with raw signals (any may be missing or NaN):
+
+    req_rate, err_rate (errors per second), p95_s, mem_bytes, mem_limit_bytes,
+    cpu_cores, up (1/0), dep_fail_rate, error_log_rate, deploy_age_s, restarts
+
+`baseline` is a dict of healthy-period medians fitted on TRAINING data only
+(see `fit_baseline`). Missing signals stay NaN: they are never zero-filled. Features
+that cannot be computed come back NaN, plus an explicit `<name>_obs` mask column.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+from scipy.stats import theilslopes
+
+SIGNALS = ["req_rate", "err_rate", "p95_s", "mem_bytes", "mem_limit_bytes", "cpu_cores", "up",
+           "dep_fail_rate", "error_log_rate", "deploy_age_s", "restarts"]
+BASE_KEYS = ["req_rate", "p95_s", "cpu_cores", "mem_bytes", "error_ratio"]
+EPS = 1e-9
+
+
+def _ratio(num, den):
+    return num / den if den and np.isfinite(den) and den > EPS else np.nan
+
+
+def _slope_per_min(s: pd.Series) -> float:
+    s = s.dropna()
+    if len(s) < 5 or s.index[-1] - s.index[0] < 10:
+        return np.nan
+    return float(theilslopes(s.values, s.index.values.astype(float))[0] * 60.0)
+
+
+def fit_baseline(healthy: pd.DataFrame) -> dict:
+    """Median and MAD of each base signal over healthy rows (fit on training folds only)."""
+    d = healthy.copy()
+    d["error_ratio"] = d["err_rate"] / d["req_rate"].where(d["req_rate"] > EPS)
+    out = {}
+    for k in BASE_KEYS:
+        v = d[k].dropna() if k in d else pd.Series(dtype=float)
+        if len(v):
+            med = float(v.median())
+            mad = float((v - med).abs().median()) * 1.4826
+            out[k] = (med, max(mad, 1e-6))
+    return out
+
+
+def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) -> dict:
+    """Features for the last `window_s` seconds of `df`. Returns a flat dict of floats."""
+    w = df[df.index > df.index.max() - window_s]
+    f: dict[str, float] = {}
+
+    def mean(c):
+        return float(w[c].mean()) if c in w and w[c].notna().any() else np.nan
+
+    rps, err = mean("req_rate"), mean("err_rate")
+    p95 = float(w["p95_s"].max()) if "p95_s" in w and w["p95_s"].notna().any() else np.nan
+    cpu, mem = mean("cpu_cores"), mean("mem_bytes")
+    err_ratio = _ratio(err, rps) if np.isfinite(err) else np.nan
+
+    def rel(key, value):
+        b = baseline.get(key)
+        if b is None or not np.isfinite(value):
+            return np.nan, np.nan
+        med, mad = b
+        return _ratio(value, med), (value - med) / mad
+
+    f["rps_ratio"], f["rps_z"] = rel("req_rate", rps)
+    f["lat_ratio"], f["lat_z"] = rel("p95_s", p95)
+    f["cpu_ratio"], f["cpu_z"] = rel("cpu_cores", cpu)
+    f["mem_ratio"], f["mem_z"] = rel("mem_bytes", mem)
+    f["error_ratio"] = err_ratio
+    f["error_ratio_z"] = rel("error_ratio", err_ratio)[1]
+    f["error_ratio_delta"] = (err_ratio - baseline["error_ratio"][0]) if "error_ratio" in baseline and np.isfinite(err_ratio) else np.nan
+
+    limit = mean("mem_limit_bytes")
+    f["mem_share"] = _ratio(mem, limit) if np.isfinite(limit) and limit > 0 else np.nan
+    mem_s = df["mem_bytes"].tail(int(max(window_s * 4, 120) / 2)) if "mem_bytes" in df else pd.Series(dtype=float)
+    slope = _slope_per_min(mem_s)
+    f["mem_slope_share_per_min"] = _ratio(slope, limit) if np.isfinite(slope) and np.isfinite(limit) and limit > 0 else np.nan
+    f["up_frac"] = mean("up")
+    f["dep_fail_rate"] = mean("dep_fail_rate")
+    f["error_log_rate"] = mean("error_log_rate")
+    # last known deploy age at the end of the window (seconds); NaN when never reported
+    f["deploy_age_s"] = float(w["deploy_age_s"].iloc[-1]) if "deploy_age_s" in w and w["deploy_age_s"].notna().any() else np.nan
+    f["restarts_in_window"] = (float(w["restarts"].max() - w["restarts"].min())
+                               if "restarts" in w and w["restarts"].notna().any() else np.nan)
+    for k in list(f):
+        f[f"{k}_obs"] = float(np.isfinite(f[k]))
+    return f
+
+
+FEATURE_NAMES = sorted(window_features(
+    pd.DataFrame({c: [np.nan] * 6 for c in SIGNALS}, index=np.arange(6) * 2.0), {}).keys())
