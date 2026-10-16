@@ -37,6 +37,32 @@ services:
     depends_on: [orders, inventory]
     labels: {eai.managed: "true", eai.role: app}
 
+  # Release images used by the evaluator for deploy scenarios. Built with
+  # `docker compose --profile releases build`; never started by `up`.
+  web-v2: {build: {context: ./app, args: {SERVICE: web, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/web:v2-good", profiles: [releases]}
+  orders-v2: {build: {context: ./app, args: {SERVICE: orders, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/orders:v2-good", profiles: [releases]}
+  payments-v2: {build: {context: ./app, args: {SERVICE: payments, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/payments:v2-good", profiles: [releases]}
+  inventory-v2: {build: {context: ./app, args: {SERVICE: inventory, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/inventory:v2-good", profiles: [releases]}
+  web-v3: {build: {context: ./app, args: {SERVICE: web, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/web:v3-bad", profiles: [releases]}
+  orders-v3: {build: {context: ./app, args: {SERVICE: orders, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/orders:v3-bad", profiles: [releases]}
+  payments-v3: {build: {context: ./app, args: {SERVICE: payments, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/payments:v3-bad", profiles: [releases]}
+  inventory-v3: {build: {context: ./app, args: {SERVICE: inventory, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/inventory:v3-bad", profiles: [releases]}
+
+  # Independent fault injector and scorer. Only this service mounts the truth volume;
+  # EternalAI cannot read what was injected until scoring.
+  evaluator:
+    build: ./evaluator
+    image: eai/evaluator:v1
+    networks: [eai]
+    ports: ["8200:8200"]
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "truth:/truth"]
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      EAI_URL: ${EAI_URL:-http://host.docker.internal:8000}
+      CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on: [web]
+
   loadgen:
     build: ./loadgen
     image: eai/loadgen:v1
@@ -66,3 +92,4 @@ volumes:
   inventory-data: {}
   payments-data: {}
   orders-data: {}
+  truth: {}
