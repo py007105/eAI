@@ -18,4 +18,6 @@ CALLERS = {s: [c for c, cs in TOPOLOGY.items() if s in cs] for s in SERVICES}
 COOLDOWN_S = 90            # min seconds between actions on the same service
 MAX_ACTIONS_PER_SERVICE = 2  # then circuit breaker opens and we escalate
 APPROVED_TEMP_PATH = "/tmp/eai-scratch"
-OBSERVATION_S = 20         # how long checkout must stay healthy before "recovered"
+SCRATCH_LIMIT_BYTES = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  # mirrors the app's disk-full threshold
+PREDICT_HORIZON_S = 90     # act on a forecast when earliest exhaustion is closer than this
+OBSERVATION_S = 20        # how long checkout must stay healthy before "recovered"
