@@ -34,7 +34,14 @@ DISK_USED = Gauge("app_scratch_disk_bytes", "Bytes in the scratch directory", ["
 START = Gauge("app_start_time_seconds", "Process start time", ["service"])
 INFO = Gauge("app_build_info", "Build info", ["service", "version", "release"])
 
-chaos = {"latency_ms": 0, "error_rate": 0.0, "leak": []}
+SCRATCH_LIMIT = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  # "disk full" threshold
+
+chaos = {"latency_ms": 0, "error_rate": 0.0, "leak": [], "cpu_burn": False}
+
+
+def _burn():
+    while chaos["cpu_burn"]:
+        sum(i * i for i in range(20000))
 
 
 class JsonFormatter(logging.Formatter):
@@ -106,6 +113,10 @@ def setup(app: FastAPI) -> logging.Logger:
             if chaos["latency_ms"]:
                 import asyncio
                 await asyncio.sleep(chaos["latency_ms"] / 1000)
+            if _scratch_bytes() > SCRATCH_LIMIT:  # disk full: writes and reads of local state fail
+                log.error("OSError: [Errno 28] No space left on device")
+                status = 500
+                return Response('{"detail":"no space left on device"}', 500, media_type="application/json")
             bad_release = RELEASE == "bad" and route != "/"
             if random.random() < max(chaos["error_rate"], 0.7 if bad_release else 0.0):
                 log.error(f"injected failure on {route}")
@@ -143,8 +154,13 @@ def setup(app: FastAPI) -> logging.Logger:
         elif kind == "disk":  # write `val` MB into the scratch dir
             with open(SCRATCH / f"fill-{time.time_ns()}.bin", "wb") as f:
                 f.write(os.urandom(1024 * 1024) * int(val))
+        elif kind == "cpu":  # busy-loop threads (GIL-bound, so one core at most)
+            import threading
+            chaos["cpu_burn"] = True
+            for _ in range(int(val) or 1):
+                threading.Thread(target=_burn, daemon=True).start()
         elif kind == "reset":
-            chaos.update(latency_ms=0, error_rate=0.0, leak=[])
+            chaos.update(latency_ms=0, error_rate=0.0, leak=[], cpu_burn=False)
         else:
             raise HTTPException(400, "unknown kind")
         return {"ok": True, "kind": kind}
