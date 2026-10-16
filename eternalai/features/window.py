@@ -5,7 +5,8 @@ score live traffic, so train and serve cannot drift apart. Input is a DataFrame
 indexed by time (seconds) with raw signals (any may be missing or NaN):
 
     req_rate, err_rate (errors per second), p95_s, mem_bytes, mem_limit_bytes,
-    cpu_cores, up (1/0), dep_fail_rate, error_log_rate, deploy_age_s, restarts
+    cpu_cores, up (1/0), dep_fail_rate, error_log_rate, deploys_3m (release changes in
+    the last 3 min), restarts_3m (process restarts in the last 3 min)
 
 `baseline` is a dict of healthy-period medians fitted on TRAINING data only
 (see `fit_baseline`). Missing signals stay NaN: they are never zero-filled. Features
@@ -18,8 +19,8 @@ import pandas as pd
 from scipy.stats import theilslopes
 
 SIGNALS = ["req_rate", "err_rate", "p95_s", "mem_bytes", "mem_limit_bytes", "cpu_cores", "up",
-           "dep_fail_rate", "error_log_rate", "deploy_age_s", "restarts"]
-BASE_KEYS = ["req_rate", "p95_s", "cpu_cores", "mem_bytes", "error_ratio"]
+           "dep_fail_rate", "error_log_rate", "deploys_3m", "restarts_3m"]
+BASE_KEYS = ["req_rate", "p95_s", "cpu_cores", "mem_bytes", "error_ratio", "cpu_per_req"]
 EPS = 1e-9
 
 
@@ -38,6 +39,7 @@ def fit_baseline(healthy: pd.DataFrame) -> dict:
     """Median and MAD of each base signal over healthy rows (fit on training folds only)."""
     d = healthy.copy()
     d["error_ratio"] = d["err_rate"] / d["req_rate"].where(d["req_rate"] > EPS)
+    d["cpu_per_req"] = d["cpu_cores"] / d["req_rate"].where(d["req_rate"] > 0.5)  # traffic-normalised CPU
     out = {}
     for k in BASE_KEYS:
         v = d[k].dropna() if k in d else pd.Series(dtype=float)
@@ -72,6 +74,8 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
     f["lat_ratio"], f["lat_z"] = rel("p95_s", p95)
     f["cpu_ratio"], f["cpu_z"] = rel("cpu_cores", cpu)
     f["mem_ratio"], f["mem_z"] = rel("mem_bytes", mem)
+    cpr = cpu / rps if np.isfinite(cpu) and np.isfinite(rps) and rps > 0.5 else np.nan
+    f["cpu_per_req_ratio"], f["cpu_per_req_z"] = rel("cpu_per_req", cpr)
     f["error_ratio"] = err_ratio
     f["error_ratio_z"] = rel("error_ratio", err_ratio)[1]
     f["error_ratio_delta"] = (err_ratio - baseline["error_ratio"][0]) if "error_ratio" in baseline and np.isfinite(err_ratio) else np.nan
@@ -84,10 +88,9 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
     f["up_frac"] = mean("up")
     f["dep_fail_rate"] = mean("dep_fail_rate")
     f["error_log_rate"] = mean("error_log_rate")
-    # last known deploy age at the end of the window (seconds); NaN when never reported
-    f["deploy_age_s"] = float(w["deploy_age_s"].iloc[-1]) if "deploy_age_s" in w and w["deploy_age_s"].notna().any() else np.nan
-    f["restarts_in_window"] = (float(w["restarts"].max() - w["restarts"].min())
-                               if "restarts" in w and w["restarts"].notna().any() else np.nan)
+    f["deploys_3m"] = float(w["deploys_3m"].dropna().iloc[-1]) if "deploys_3m" in w and w["deploys_3m"].notna().any() else np.nan
+    r = w["restarts_3m"].dropna() if "restarts_3m" in w else pd.Series(dtype=float)
+    f["restarts_in_window"] = float(max(r.iloc[-1] - r.iloc[0], 0)) if len(r) else np.nan  # restarts seen inside the window
     for k in list(f):
         f[f"{k}_obs"] = float(np.isfinite(f[k]))
     return f
