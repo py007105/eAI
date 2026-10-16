@@ -1,4 +1,4 @@
-﻿"""Shared observability and fault hooks for the four services.
+"""Shared observability and fault hooks for the four services.
 
 Provides: JSON logs, Prometheus metrics, optional OpenTelemetry traces, a
 /healthz and /metrics endpoint, and a token-protected /_chaos endpoint that the
@@ -33,6 +33,7 @@ MEM_LIMIT = Gauge("app_memory_limit_bytes", "Container memory limit (0 = none)",
 DISK_USED = Gauge("app_scratch_disk_bytes", "Bytes in the scratch directory", ["service"])
 START = Gauge("app_start_time_seconds", "Process start time", ["service"])
 INFO = Gauge("app_build_info", "Build info", ["service", "version", "release"])
+RELEASE_SEQ = Gauge("app_release_seq", "Release sequence number of the running image", ["service"])
 
 SCRATCH_LIMIT = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  # "disk full" threshold
 
@@ -85,6 +86,7 @@ def setup(app: FastAPI) -> logging.Logger:
     SCRATCH.mkdir(parents=True, exist_ok=True)
     START.labels(SERVICE).set(time.time())
     INFO.labels(SERVICE, VERSION, RELEASE).set(1)
+    RELEASE_SEQ.labels(SERVICE).set(int(os.getenv("RELEASE_SEQ", "0")))
     MEM_LIMIT.labels(SERVICE).set(_mem_limit())
 
     if os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
