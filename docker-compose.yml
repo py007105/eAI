@@ -1,0 +1,68 @@
+name: eai
+
+x-app: &app
+  restart: "no"            # recovery is EternalAI's job, not Docker's
+  mem_limit: 256m
+  networks: [eai]
+  environment: &appenv
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    OTEL_SDK_DISABLED: "false"
+    CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
+
+services:
+  inventory:
+    <<: *app
+    build: {context: ./app, args: {SERVICE: inventory, VERSION: v1, RELEASE_SEQ: "1"}}
+    image: eai/inventory:v1
+    volumes: [inventory-data:/data]
+    labels: {eai.managed: "true", eai.role: app}
+  payments:
+    <<: *app
+    build: {context: ./app, args: {SERVICE: payments, VERSION: v1, RELEASE_SEQ: "1"}}
+    image: eai/payments:v1
+    volumes: [payments-data:/data]
+    labels: {eai.managed: "true", eai.role: app}
+  orders:
+    <<: *app
+    build: {context: ./app, args: {SERVICE: orders, VERSION: v1, RELEASE_SEQ: "1"}}
+    image: eai/orders:v1
+    volumes: [orders-data:/data]
+    depends_on: [inventory, payments]
+    labels: {eai.managed: "true", eai.role: app}
+  web:
+    <<: *app
+    build: {context: ./app, args: {SERVICE: web, VERSION: v1, RELEASE_SEQ: "1"}}
+    image: eai/web:v1
+    ports: ["8080:8000"]
+    depends_on: [orders, inventory]
+    labels: {eai.managed: "true", eai.role: app}
+
+  loadgen:
+    build: ./loadgen
+    image: eai/loadgen:v1
+    networks: [eai]
+    environment:
+      TARGET_URL: http://web:8000
+      BASE_RPS: ${BASE_RPS:-6}
+      SURGE_EVERY_S: ${SURGE_EVERY_S:-0}
+    depends_on: [web]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    networks: [eai]
+    ports: ["9090:9090"]
+    volumes: [./telemetry/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=2h"]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.64.0
+    networks: [eai]
+    ports: ["16686:16686"]
+    environment: {COLLECTOR_OTLP_ENABLED: "true"}
+
+networks:
+  eai: {}
+volumes:
+  inventory-data: {}
+  payments-data: {}
+  orders-data: {}
