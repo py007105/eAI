@@ -30,6 +30,7 @@ RESULTS = TRUTH / "results.jsonl"
 app = FastAPI(title="eai-evaluator")
 inj = Injector(os.getenv("CHAOS_TOKEN", "evaluator-only"))
 runs: dict[str, dict] = {}
+_state = {"after_deploy": False}  # the previous run left a release change behind
 _lock = threading.Lock()
 
 
@@ -82,9 +83,11 @@ def _execute(run_id: str, req: RunRequest):
     scen, target = st["_scenario"], st["_target"]
     expected, supported, _ = SCENARIOS[scen]
     try:
-        inj.restore(set())
+        changed = inj.restore(set())
         _wait_quiet()
-        time.sleep(10)  # let rate windows fill with healthy data
+        # let rate windows fill with healthy data; after a release change also let the 3-minute
+        # "recent deploy" signal expire so one run cannot leak into the next
+        time.sleep(200 if (changed or _state["after_deploy"]) else 45)
         t_inject = time.time()
         params = inj.inject(scen, target, rng)
         truth = {"run_id": run_id, "scenario": scen, "target": target, "expected_label": expected,
@@ -108,7 +111,8 @@ def _execute(run_id: str, req: RunRequest):
         st["state"], st["error"] = "failed", f"{type(e).__name__}: {e}"
     finally:
         try:
-            inj.restore({target})
+            nxt = inj.restore({target})
+            _state["after_deploy"] = nxt or scen in ("bad_deploy", "good_deploy")
         except Exception:
             pass
 
