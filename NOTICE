@@ -1,0 +1,21 @@
+EternalAI
+Copyright (c) 2026 EternalAI contributors. Licensed under the MIT License (see LICENSE).
+
+No third-party source code has been copied into this repository yet. If code is
+copied later, the file, origin, licence and commit are listed here.
+
+Ideas and patterns (re-implemented, not copied) come from:
+- microsoft/AIOpsLab (MIT): problem lifecycle and evaluation metrics
+- phamquiluan/RCAEval (MIT): benchmark layout, Acc@k, BARO-style ranking
+- salesforce/PyRCA (BSD-3-Clause): residual-on-parents root-cause scoring
+- HolmesGPT/holmesgpt (Apache-2.0): structured tool results, approval flow
+- suhasramanand/predictive-reliability-platform (MIT): YAML policy and cooldowns
+- langchain-samples/sre-agent (MIT): read/write separation, approval audit
+Ideas only, from repositories with no licence (no code used):
+- k-shevtsov/aiops-anomaly-detector
+- HC0416/Self_Healing_Agent__For_Microservice
+- dakshsawhneyy/AIOps-Driven-Auto-Healing-SRE-System
+
+Data sources named in the training workbook and their licences: Nezha (see its
+repo), PetShop CC-BY-4.0, ITBench Apache-2.0, AIOpsLab MIT, awesome-prometheus-alerts
+CC-BY-4.0, NAB AGPL-3.0, SMD (OmniAnomaly) MIT, RCAEval MIT.
