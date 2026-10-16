@@ -30,7 +30,7 @@ def test_missing_signal_stays_nan_with_mask():
     healthy = _frame(with_mem=False)
     f = window_features(healthy, fit_baseline(healthy))
     assert np.isnan(f["mem_ratio"]) and f["mem_ratio_obs"] == 0.0
-    assert np.isnan(f["deploy_age_s"])  # never reported, never zero-filled
+    assert np.isnan(f["deploys_3m"])  # never reported, never zero-filled
 
 
 def test_feature_names_are_stable():
