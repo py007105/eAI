@@ -54,10 +54,14 @@ class Injector:
                                                  port_bindings=ports or None)
         net_cfg = self.d.api.create_networking_config({net: self.d.api.create_endpoint_config(aliases=[svc])})
         name = c.name
+        # pass only what was set on the container, not what the OLD image baked in
+        img = c.image.attrs["Config"]
+        env = [e for e in a["Config"]["Env"] if e not in (img.get("Env") or [])]
+        labels = {k: v for k, v in a["Config"]["Labels"].items() if (img.get("Labels") or {}).get(k) != v}
         c.stop(timeout=5)
         c.remove()
-        new = self.d.api.create_container(image_ref, name=name, environment=a["Config"]["Env"],
-                                          labels=a["Config"]["Labels"], host_config=host_cfg,
+        new = self.d.api.create_container(image_ref, name=name, environment=env,
+                                          labels=labels, host_config=host_cfg,
                                           networking_config=net_cfg, ports=list(ports) or None)
         self.d.api.start(new["Id"])
 
@@ -151,11 +155,13 @@ class Injector:
             t.join(timeout=5)
         self._threads.clear()
         self._stop.clear()
+        image_changed = False
         for svc in SERVICES:
             c = self._container(svc)
             c.reload()
-            tag = (c.image.tags or ["?:?"])[0]
+            tag = c.attrs["Config"]["Image"]  # the reference it was created from (stable across rebuilds)
             if svc in (dirty or set()) or tag != f"eai/{svc}:v1":
+                image_changed |= tag != f"eai/{svc}:v1"
                 self._recreate(svc, f"eai/{svc}:v1")
             elif c.status != "running":
                 c.start()
@@ -164,3 +170,4 @@ class Injector:
                 self._chaos(svc, "reset")
             except httpx.HTTPError:
                 pass
+        return image_changed
