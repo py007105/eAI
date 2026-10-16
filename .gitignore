@@ -1,0 +1,21 @@
+# secrets
+.env
+*.pem
+*.key
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# workspace material never committed
+references/
+inputs/
+# data and models (use scripts)
+data/raw/
+data/cache/
+*.parquet
+*.zip
+models/artifacts/*.joblib
+# runtime
+*.log
+.DS_Store
