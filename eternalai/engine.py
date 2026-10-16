@@ -51,6 +51,8 @@ class Incident:
     timeline: list = field(default_factory=list)
     forecasts: list = field(default_factory=list)
     diagnosed: bool = False
+    before: dict | None = None      # measured when the incident was diagnosed
+    after: dict | None = None       # measured after the verification window
 
     def log(self, msg):
         self.timeline.append({"t": time.time(), "msg": msg})
@@ -58,7 +60,7 @@ class Incident:
     def public(self) -> dict:
         d = {k: getattr(self, k) for k in ("id", "opened_t", "closed_t", "kind", "status", "services", "ranking",
                                           "likely_cause", "confidence", "abstained", "report", "report_meta",
-                                          "actions", "verification", "timeline", "forecasts")}
+                                          "actions", "verification", "timeline", "forecasts", "before", "after")}
         d["evidence"] = [{"id": e.id, "tool": e.tool, "service": e.service, "summary": e.summary} for e in self.evidence]
         return d
 
@@ -107,6 +109,22 @@ class Engine:
                               "state": {"running": st.running, "image_tag": st.image_tag} if st else None}
         self.frames = frames
         return feats, scores, anom
+
+    def _app_snapshot(self, probe: bool) -> dict:
+        """User-facing measurements: app-wide error ratio and web p95 over the last 10 s, plus (optionally)
+        the success rate of a few synthetic checkouts made right now."""
+        from .verify import checkout_probe
+        import httpx
+        req = self.prom.instant('sum(rate(http_requests_total{service="web"}[10s]))')
+        err = self.prom.instant('sum(rate(http_requests_total{service="web",status=~"5.."}[10s]))')
+        p95 = self.prom.instant('histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service="web"}[10s])))')
+        snap = {"error_ratio": (err / req) if req and req == req and err == err else None,
+                "p95_s": None if p95 != p95 else p95}
+        if probe:
+            with httpx.Client() as c:
+                res = [checkout_probe(c).ok for _ in range(4)]
+            snap["checkout_success"] = sum(res) / len(res)
+        return snap
 
     def _depfail(self):
         d = {}
@@ -179,6 +197,7 @@ class Engine:
                                                         for e in inc.evidence]}
         rep, meta = make_report(ctx)
         inc.report, inc.report_meta, inc.diagnosed = rep.model_dump(), meta, True
+        inc.before = self._app_snapshot(probe=True)
         inc.log(f"diagnosed {label} on {root} (report by {meta['provider']})")
         self._propose(inc, root, rep.runbook_id if not abst else None)
 
@@ -245,6 +264,7 @@ class Engine:
         v = verify_recovery(config.OBSERVATION_S)
         v["t"] = time.time()
         inc.verification = v
+        inc.after = self._app_snapshot(probe=False) | {"checkout_success": v["success_rate"]}
         inc.log(f"verification: {v['outcome']} ({v['success_rate']:.0%} of {v['probes']} checkouts)")
         if v["outcome"] == "recovered":
             self.policy.record_recovered(svc)
