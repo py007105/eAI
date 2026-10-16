@@ -21,3 +21,4 @@ models/artifacts/*.joblib
 .DS_Store
 data/processed/
 runtime/
+data/runs/
