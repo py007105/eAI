@@ -59,10 +59,14 @@ class Executor:
         net_cfg = self.client.api.create_networking_config(
             {net: self.client.api.create_endpoint_config(aliases=[svc])})
         name = c.name
+        # pass only what was set on the container, not what the OLD image baked in
+        img = c.image.attrs["Config"]
+        env = [e for e in a["Config"]["Env"] if e not in (img.get("Env") or [])]
+        labels = {k: v for k, v in a["Config"]["Labels"].items() if (img.get("Labels") or {}).get(k) != v}
         c.stop(timeout=5)
         c.remove()
         new = self.client.api.create_container(
-            image_ref, name=name, environment=a["Config"]["Env"], labels=a["Config"]["Labels"],
+            image_ref, name=name, environment=env, labels=labels,
             host_config=host_cfg, networking_config=net_cfg, ports=list(ports) or None)
         self.client.api.start(new["Id"])
         return new["Id"][:12]
