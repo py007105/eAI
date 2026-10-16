@@ -62,7 +62,9 @@ class Executor:
         # pass only what was set on the container, not what the OLD image baked in
         img = c.image.attrs["Config"]
         env = [e for e in a["Config"]["Env"] if e not in (img.get("Env") or [])]
-        labels = {k: v for k, v in a["Config"]["Labels"].items() if (img.get("Labels") or {}).get(k) != v}
+        # compose labels identify the container and must survive even when the old image carries the same value
+        labels = {k: v for k, v in a["Config"]["Labels"].items()
+                  if k.startswith("com.docker.compose.") or (img.get("Labels") or {}).get(k) != v}
         c.stop(timeout=5)
         c.remove()
         new = self.client.api.create_container(
