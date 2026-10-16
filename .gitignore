@@ -19,3 +19,4 @@ models/artifacts/*.joblib
 # runtime
 *.log
 .DS_Store
+data/processed/
