@@ -38,7 +38,8 @@ def load(path):
                      "failed_pct": s.get("failed_request_pct"), "false_alerts": s.get("false_alerts"),
                      "harmful": s.get("harmful_interventions"), "abstained_ok": s.get("abstained_correctly"),
                      "incidents": s.get("incidents_opened"), "actions": s.get("actions_executed"), "final": s.get("final_status"),
-                     "commit": r.get("system_commit")})
+                     "commit": r.get("system_commit"),
+                     "llm_lines": sum("report by " in json.dumps(i.get("timeline")) for i in (r.get("incidents") or []))})
     return pd.DataFrame(rows)
 
 
@@ -111,7 +112,8 @@ READING_GUIDE = [
     "1. The **failed-request %** (section 2) is the independent measure: the evaluator reads it from the load generator, not from the system under test.",
     "2. **Recovery is self-reported.** It comes from the system's own synthetic-checkout verification. It is never independently verified in v1; no raw probe logs exist. "
     "The consistency check in section 2 compares claimed recoveries with the no-action arm for the same seed.",
-    "3. **Template reports only.** The benchmark brain had no LLM key (both keys empty in its container), so no result here involves a language model.\n",
+    "3. **LLM path.** The benchmark brains were configured without LLM keys (by construction), so reports are expected to be template reports. The report provider is not "
+    "recorded in the rows (design limitation, class c); section 1 counts incident timelines that contain a `report by <provider>` line, which the engine writes only for a non-template provider.\n",
 ]
 
 
@@ -153,6 +155,9 @@ def accounting(d, fails):
                 miss.append(f"{arm}/{sc}: {n}/{REPS}")
     R.append(f"- cells not at {REPS} runs: {miss or 'none'}")
     R.append(f"- system commit recorded in rows: {d.groupby('arm').commit.unique().apply(list).to_dict()}")
+    n_llm = int((got.llm_lines > 0).sum())
+    R.append(f"- runs whose recorded incident timelines contain a `report by <provider>` line (non-template report): {n_llm} of {len(got)}. "
+             "Zero is consistent with template-only reports but is not a direct record; the provider is not stored per row.")
     R.append("- no run was dropped: every row enters every table below. Rows are never filtered.")
     if fails:
         R.append("\nHarness failures (attempts kept; the re-run with the same seed is in the tables above):\n")
