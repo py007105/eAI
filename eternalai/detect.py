@@ -68,11 +68,15 @@ def learn_limits(healthy: np.ndarray, features, margin: float = 0.25) -> dict:
     return lim
 
 
-LIMIT_MARGIN = 0.25   # default margin beyond the healthy range, in healthy spreads; chosen by CV (docs/results/detector_margin.md)
+# Chosen by cross-validation (docs/results/detector_margin.md): margin beyond the healthy range, in healthy spreads, and
+# the forest's slack above the largest healthy validation score. With the forest switched off entirely the CV numbers were
+# identical, so the forest is a conservative joint-anomaly backstop, not the thing that detects faults.
+LIMIT_MARGIN = 1.0
+IF_SLACK = 0.05
 
 
 def fit_service(train: np.ndarray, validation: np.ndarray, target_fpr: float = 0.002, seed: int = 0,
-                limit_margin: float = LIMIT_MARGIN, if_mode="quantile") -> ServiceDetector:
+                limit_margin: float = LIMIT_MARGIN, if_mode=IF_SLACK) -> ServiceDetector:
     """IsolationForest on healthy training windows; its threshold from healthy VALIDATION windows (held-out runs);
     limits from training plus validation healthy windows (still healthy-only).
 
