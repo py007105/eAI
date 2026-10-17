@@ -37,7 +37,7 @@ def ev(tmp_path, monkeypatch):
     monkeypatch.setattr(main.time, "sleep", lambda s: None)
     monkeypatch.setattr(main, "_eai_incidents", lambda: [])
     monkeypatch.setattr(main, "_failed_pct", lambda a, b: 0.0)
-    monkeypatch.setattr(main, "_wait_quiet", lambda *a, **k: True)
+    monkeypatch.setattr(main, "_wait_quiet", lambda *a, **k: (main.inj.log.append(("wait_quiet",)) or True))
     yield main
     sys.modules.pop("main", None)
 
@@ -57,6 +57,9 @@ def test_state_is_finished_only_after_final_restore(ev):
     assert restores[1][2] == "running"              # while the final restore ran, the run was still "running"
     assert ev.runs["r1"]["state"] == "finished"
     assert ev.runs["r1"]["_result"]["t_end"] > 0    # the observation end is reported for data collection
+    # regression (409 race): before the final restore the evaluator waits for the brain to finish any action in flight
+    kinds = [e[0] for e in ev.inj.log]
+    assert kinds[-2:] == ["wait_quiet", "restore"]
 
 
 def test_failed_restore_marks_run_failed_not_finished(ev, monkeypatch):
