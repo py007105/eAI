@@ -68,13 +68,26 @@ def learn_limits(healthy: np.ndarray, features, margin: float = 0.25) -> dict:
     return lim
 
 
-def fit_service(train: np.ndarray, validation: np.ndarray, target_fpr: float = 0.002, seed: int = 0) -> ServiceDetector:
+LIMIT_MARGIN = 0.25   # default margin beyond the healthy range, in healthy spreads; chosen by CV (docs/results/detector_margin.md)
+
+
+def fit_service(train: np.ndarray, validation: np.ndarray, target_fpr: float = 0.002, seed: int = 0,
+                limit_margin: float = LIMIT_MARGIN, if_mode="quantile") -> ServiceDetector:
     """IsolationForest on healthy training windows; its threshold from healthy VALIDATION windows (held-out runs);
-    limits from training plus validation healthy windows (still healthy-only)."""
+    limits from training plus validation healthy windows (still healthy-only).
+
+    `if_mode`: "quantile" (threshold at the 1-target_fpr quantile of validation scores), "off" (the forest never flags;
+    the learned limits alone decide), or a float slack s (threshold = max validation score + s)."""
     model = IsolationForest(n_estimators=200, max_samples=min(256, len(train)), contamination="auto",
                             random_state=seed).fit(train)
-    thr = float(np.quantile(-model.score_samples(validation), 1 - target_fpr))
-    return ServiceDetector(model, thr, learn_limits(np.vstack([train, validation]), list(FEATURES)))
+    val = -model.score_samples(validation)
+    if if_mode == "off":
+        thr = float("inf")
+    elif if_mode == "quantile":
+        thr = float(np.quantile(val, 1 - target_fpr))
+    else:
+        thr = float(val.max() + float(if_mode))
+    return ServiceDetector(model, thr, learn_limits(np.vstack([train, validation]), list(FEATURES), limit_margin))
 
 
 class Persistence:
