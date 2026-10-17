@@ -3,7 +3,7 @@
 Status: structure and talk track. Numbers appear as `[[...]]` placeholders and are filled only from `docs/results/benchmark.md` after the benchmark has finished.
 Rehearse the whole script once on the real stack before presenting: a step that has not been seen to work is not demo material.
 
-**The moment to build towards:** *the service restarted, and EternalAI proved the application works again.*
+**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout, i.e. self-reported. The independent measure is the load generator's failed-request %, which the evaluator reads; show that number alongside it. The benchmark ran with template reports only (no LLM key in its brain container); before a live-LLM demo, confirm the key reaches the brain container (presence only, never print it).
 
 ## 0. Before the demo (do this on a quiet machine, 15 minutes ahead)
 
@@ -27,8 +27,8 @@ Rehearse the whole script once on the real stack before presenting: a step that 
 2. Watch the service map turn amber or red and the failing path highlight; the incident timeline starts.
 3. When a proposal appears in the **Approval queue**, read it aloud: the ranked causes, the proposed runbook, the risk, the evidence ids. Point out the margin between the top two causes and that the percentage shown is a calibrated probability (only shown because its calibration check passed).
 4. Click **Approve**. Narrate: the executor runs one allow-listed runbook; then verification runs a synthetic checkout through all four services for the observation window.
-5. When the banner appears, deliver the line: *"The service restarted, and EternalAI proved the application works again."* Show **before/after**: checkout success, app error rate, web latency.
-6. Click **Reveal the truth**: injected fault, target, and what EternalAI got right or wrong. Read the scorecard line for this run: detection time `[[x]]` s, verified recovery `[[y]]` s, failed requests `[[z]]`%.
+5. When the banner appears, deliver the line: *"The service restarted, and EternalAI's own checkout passed again; the independent measure is the failed-request %."* Show **before/after**: checkout success, app error rate, web latency.
+6. Click **Reveal the truth**: injected fault, target, and what EternalAI got right or wrong. Read the scorecard line for this run: failed requests `[[z]]`% (independent), detection time `[[x]]` s, self-reported recovery `[[y]]` s.
    If it was wrong, say so: an honest wrong answer is part of the demo.
 
 ## 3. Autopilot and the policy engine (2 min)
@@ -52,7 +52,7 @@ Rehearse the whole script once on the real stack before presenting: a step that 
 
 ## 7. Close (1 min)
 
-- Numbers, each from the generated tables: verified recovery rate `[[ ]]` versus the baselines `[[ ]]`; time to verified recovery `[[ ]]`; failed requests `[[ ]]`%; false alerts on healthy runs `[[ ]]`; harmful interventions `[[ ]]`; abstention on the unseen fault `[[ ]]`.
+- Numbers, each from the generated tables, independent measure first: failed requests `[[ ]]`% versus the baselines `[[ ]]`; then self-reported recovery rate `[[ ]]` and seconds to self-reported recovery `[[ ]]`; false alerts on healthy runs `[[ ]]`; harmful interventions `[[ ]]`; abstention on the unseen fault `[[ ]]`.
 - Name the limits in one breath: one application, scripted faults, n = 5 per cell, recovery judged by the system itself. Point at `docs/EVALUATION.md` and `docs/QA_FOR_JUDGES.md`.
 
 ## Fallback plan
