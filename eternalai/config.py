@@ -1,6 +1,12 @@
 """Static configuration: service topology, endpoints, policy limits. Env overrides only."""
 import os
 
+try:  # keys and settings come from the environment or a git-ignored .env; never from code
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:  # python-dotenv is optional; the environment alone also works
+    pass
+
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 WEB_URL = os.getenv("WEB_URL", "http://localhost:8080")
 COMPOSE_PROJECT = os.getenv("COMPOSE_PROJECT", "eai")
