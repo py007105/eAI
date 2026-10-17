@@ -18,6 +18,7 @@ import numpy as np
 from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
 from .collector import DockerView, Prom
+from .dedupe import ReleaseGrace, Suppressor
 from .detect import Persistence, service_anomalous
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
@@ -72,6 +73,7 @@ class Engine:
         self.prom, self.dv = Prom(), DockerView()
         self.executor, self.policy = Executor(), PolicyEngine(mode)
         self.persist = Persistence(3)
+        self.grace, self.suppress = ReleaseGrace(config.DEPLOY_GRACE_S), Suppressor()
         self.incidents: list[Incident] = []
         self.first_anom: dict = {}
         self.latest: dict = {}      # service -> {"features", "score", "anomalous", "state"}
@@ -111,6 +113,9 @@ class Engine:
                 a = service_anomalous(self.detectors[s], f, down)
             else:
                 sc, a = float("nan"), down or rule_diagnose(f) != "healthy"
+            # a normal rolling release restarts the service for a few seconds: judge it only once the grace period is over
+            if self.grace.in_grace(s, f.get("deploys_3m"), time.time()):
+                a = False
             feats[s], scores[s], anom[s] = f, sc, bool(a)
             self.latest[s] = {"features": {k: (None if not np.isfinite(v) else round(float(v), 4))
                                            for k, v in f.items() if not k.endswith("_obs")},
@@ -154,6 +159,13 @@ class Engine:
             if not a:
                 self.first_anom.pop(s, None)
         confirmed = {s for s in anom if self.persist.update(s, anom[s])}
+        # do not re-open an incident every few seconds for an anomaly that already ended unresolved or escalated
+        for inc in self.incidents[-20:]:
+            if inc.closed_t and not getattr(inc, "_noted", False):
+                self.suppress.note_incident(inc.status, inc.services)
+                inc._noted = True
+        self.suppress.update(anom)
+        confirmed = self.suppress.filter(confirmed)
         with self.lock:
             open_inc = next((i for i in self.incidents if i.status in ("open", "awaiting_approval")), None)
             active = [i for i in self.incidents if i.status in ("open", "awaiting_approval", "verifying", "executing")]
