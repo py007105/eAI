@@ -22,7 +22,7 @@ from .detect import Persistence
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
 from .investigate import Investigator, remember_verified
-from .llm import make_report
+from .llm import llm_enabled, make_report, template_report
 from .policy import PolicyEngine
 from .rca import deepest_anomalous, evidence_table
 from .verify import verify_recovery
@@ -122,7 +122,7 @@ class Engine:
                 "p95_s": None if p95 != p95 else p95}
         if probe:
             with httpx.Client() as c:
-                res = [checkout_probe(c).ok for _ in range(4)]
+                res = [checkout_probe(c, timeout=1.5).ok for _ in range(3)]
             snap["checkout_success"] = sum(res) / len(res)
         return snap
 
@@ -195,11 +195,33 @@ class Engine:
         ctx = {"cause": label, "confidence": conf or 0.0, "candidates": cands, "alternatives": alts,
                "ranking": inc.ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary}
                                                         for e in inc.evidence]}
-        rep, meta = make_report(ctx)
-        inc.report, inc.report_meta, inc.diagnosed = rep.model_dump(), meta, True
-        inc.before = self._app_snapshot(probe=True)
-        inc.log(f"diagnosed {label} on {root} (report by {meta['provider']})")
+        # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
+        # report replaces the text later (a live Gemini call took ~7 s in testing).
+        rep = template_report(ctx)
+        inc.report, inc.diagnosed = rep.model_dump(), True
+        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
+        inc.log(f"diagnosed {label} on {root}")
         self._propose(inc, root, rep.runbook_id if not abst else None)
+        self._llm_upgrade_async(inc, ctx)
+
+    def _llm_upgrade_async(self, inc: Incident, ctx: dict):
+        if not llm_enabled():
+            return
+
+        def work():
+            t0 = time.time()
+            rep, meta = make_report(ctx)
+            meta = {**meta, "latency_s": round(time.time() - t0, 2), "llm_pending": False}
+            with self.lock:
+                if meta["provider"] != "template":
+                    report = rep.model_dump()
+                    meta["llm_runbook_suggestion"] = report["runbook_id"]
+                    if inc.actions:  # keep the report consistent with what was actually proposed
+                        report["runbook_id"] = inc.actions[-1]["runbook_id"]
+                    inc.report = report
+                inc.report_meta = meta
+                inc.log(f"report by {meta['provider']} ({meta['latency_s']}s)")
+        threading.Thread(target=work, daemon=True).start()
 
     def _propose(self, inc: Incident, service: str, runbook: str | None):
         if runbook is None:
@@ -248,6 +270,7 @@ class Engine:
 
     def _act_and_verify(self, inc: Incident, act: dict, actor: str):
         svc = act["service"]
+        inc.before = self._app_snapshot(probe=True)  # measured just before acting, with short timeouts
         try:
             res = self.executor.run(act["runbook_id"], svc, actor, [e.id for e in inc.evidence][:6])
             act["executed"], act["result"], act["executed_t"] = True, res, time.time()
@@ -303,12 +326,15 @@ class Engine:
                         inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)
                         inc.evidence = inv.items
                         cands = CAUSE_RUNBOOKS[cause]
-                        rep, meta = make_report({"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
-                                                 "ranking": inc.ranking, "evidence": [
-                                                     {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inc.evidence]})
-                        inc.report, inc.report_meta, inc.diagnosed = rep.model_dump(), meta, True
+                        ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
+                               "ranking": inc.ranking, "evidence": [
+                                   {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inc.evidence]}
+                        rep = template_report(ctx)
+                        inc.report, inc.diagnosed = rep.model_dump(), True
+                        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
                         self.incidents.append(inc)
                         self._propose(inc, s, rep.runbook_id)
+                        self._llm_upgrade_async(inc, ctx)
                     return
 
     # ------------------------------------------------------------ loop
