@@ -121,7 +121,8 @@ def evidence(inc: dict | None, lang="en"):
     return [html.Div([html.B(e["id"]), html.Span(e["summary"])], className="ev") for e in inc["evidence"]]
 
 
-def report(inc: dict | None, lang="en"):
+def report(inc: dict | None, lang="en", show_prob: bool = False):
+    """`show_prob` is True only when the backend says the classifier's calibration check passed."""
     if not inc or not inc.get("report"):
         return muted(t("no_incident", lang))
     r, st = inc["report"], inc["status"]
@@ -133,7 +134,8 @@ def report(inc: dict | None, lang="en"):
     meta = inc.get("report_meta") or {}
     kids = [html.Div(pills), html.P(r["summary"], style={"marginTop": "10px"}),
             html.Div([html.Span(f"{t('cause', lang)}: ", className="muted"), html.B(r["likely_cause"].replace("_", " ")),
-                      html.Span(f"  ({conf:.0%} {t('calibrated', lang)})" if conf is not None else "", className="muted")]),
+                      html.Span((f"  ({conf:.0%} {t('calibrated', lang)})" if show_prob
+                                 else f"  ({t('prob_hidden', lang)})") if conf is not None else "", className="muted")]),
             html.Div([html.Span(f"{t('runbook', lang)}: ", className="muted"), html.B(r.get("runbook_id") or "-")]),
             html.Div(f"{t('provider', lang)}: {meta.get('provider', '?')}"
                      + (f" ({t('llm_disagreed', lang)})" if meta.get("llm_disagreed") else ""),
