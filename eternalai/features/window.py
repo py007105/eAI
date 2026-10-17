@@ -19,7 +19,7 @@ import pandas as pd
 from scipy.stats import theilslopes
 
 SIGNALS = ["req_rate", "err_rate", "p95_s", "mem_bytes", "mem_limit_bytes", "cpu_cores", "up",
-           "dep_fail_rate", "error_log_rate", "deploys_3m", "restarts_3m"]
+           "dep_fail_rate", "error_log_rate", "deploys_3m", "restarts_3m", "scratch_bytes"]
 BASE_KEYS = ["req_rate", "p95_s", "cpu_cores", "mem_bytes", "error_ratio", "cpu_per_req"]
 EPS = 1e-9
 
@@ -59,7 +59,10 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
         return float(w[c].mean()) if c in w and w[c].notna().any() else np.nan
 
     rps, err = mean("req_rate"), mean("err_rate")
-    p95 = float(w["p95_s"].max()) if "p95_s" in w and w["p95_s"].notna().any() else np.nan
+    # Median, not max: p95 interpolated from coarse histogram buckets at a few requests per second jumps between
+    # buckets, so a window MAX looked like a 100x latency spike in healthy traffic (99th percentile of the ratio was
+    # 535 in attempt 2). A real latency fault moves the whole series, which the median still sees.
+    p95 = float(w["p95_s"].median()) if "p95_s" in w and w["p95_s"].notna().any() else np.nan
     cpu, mem = mean("cpu_cores"), mean("mem_bytes")
     err_ratio = _ratio(err, rps) if np.isfinite(err) else np.nan
 
@@ -85,6 +88,11 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
     mem_s = df["mem_bytes"].tail(int(max(window_s * 4, 120) / 2)) if "mem_bytes" in df else pd.Series(dtype=float)
     slope = _slope_per_min(mem_s)
     f["mem_slope_share_per_min"] = _ratio(slope, limit) if np.isfinite(slope) and np.isfinite(limit) and limit > 0 else np.nan
+    # scratch-disk usage (MB) and its growth: the signature of a filling disk (absent from attempt 1-2 features)
+    f["scratch_mb"] = mean("scratch_bytes") / 1e6 if np.isfinite(mean("scratch_bytes")) else np.nan
+    sc_s = df["scratch_bytes"].tail(int(max(window_s * 4, 120) / 2)) if "scratch_bytes" in df else pd.Series(dtype=float)
+    sc_slope = _slope_per_min(sc_s)
+    f["scratch_slope_mb_per_min"] = sc_slope / 1e6 if np.isfinite(sc_slope) else np.nan
     f["up_frac"] = mean("up")
     f["dep_fail_rate"] = mean("dep_fail_rate")
     f["error_log_rate"] = mean("error_log_rate")
