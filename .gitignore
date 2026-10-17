@@ -10,12 +10,12 @@ __pycache__/
 # workspace material never committed
 references/
 inputs/
-# data and models (use scripts)
+# data (use scripts); the FROZEN model artifacts in models/artifacts/ ARE committed (about 9.5 MB, needed so a clean
+# checkout can run; their metadata records the data hash and training commit; regenerate with models/train_models.py)
 data/raw/
 data/cache/
 *.parquet
 *.zip
-models/artifacts/*.joblib
 # runtime
 *.log
 .DS_Store
