@@ -187,11 +187,23 @@ class Engine:
                 # An incident opens ~6 s after onset (3 persistent ticks). Diagnose once a full feature window lies after
                 # the onset, because the classifier was trained on such windows only.
                 if not open_inc.diagnosed and now - open_inc.opened_t >= max(4.0, self.window_s - 4.0):
-                    self._diagnose(open_inc, feats, scores, anom)
+                    self._try_diagnose(open_inc, feats, scores, anom)
         if not open_inc:
             self._predictive(feats, now)
 
     # ------------------------------------------------------------ diagnosis
+    def _try_diagnose(self, inc: Incident, feats, scores, anom):
+        """An exception during diagnosis must never leave an incident 'open' forever (an open incident blocks all new
+        ones): escalate it with the error recorded and the evidence preserved."""
+        try:
+            self._diagnose(inc, feats, scores, anom)
+        except Exception as e:
+            self.last_error = f"diagnosis failed: {type(e).__name__}: {e}"
+            inc.diagnosed = True
+            inc.status, inc.closed_t = "escalated", time.time()
+            inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
+            self._preserve(inc)
+
     def _diagnose(self, inc: Incident, feats, scores, anom):
         depfail = self._depfail()
         onset = {s: self.first_anom.get(s) for s in config.SERVICES}
