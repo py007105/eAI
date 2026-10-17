@@ -27,6 +27,19 @@ SCENARIOS = {
 HEALTHY_SCENARIOS = {"traffic_surge", "good_deploy"}
 
 
+def strip_inherited(container_env, image_env, container_labels, image_labels):
+    """Env and labels to pass when recreating a container from a DIFFERENT image.
+
+    Env: only values set on the container itself, never ones the old image baked in (regression: a bad
+    release image once ran with the old image's RELEASE_FLAVOR=good). Labels: drop values inherited from
+    the old image but always keep compose labels, which identify the container (regression: stripping
+    them left the new container invisible to lookups). Kept separate from EternalAI's copy on purpose."""
+    env = [e for e in container_env if e not in (image_env or [])]
+    labels = {k: v for k, v in container_labels.items()
+              if k.startswith("com.docker.compose.") or (image_labels or {}).get(k) != v}
+    return env, labels
+
+
 class Injector:
     def __init__(self, chaos_token: str, web_url="http://web:8000"):
         self.d = docker.from_env()
@@ -54,12 +67,8 @@ class Injector:
                                                  port_bindings=ports or None)
         net_cfg = self.d.api.create_networking_config({net: self.d.api.create_endpoint_config(aliases=[svc])})
         name = c.name
-        # pass only what was set on the container, not what the OLD image baked in
         img = c.image.attrs["Config"]
-        env = [e for e in a["Config"]["Env"] if e not in (img.get("Env") or [])]
-        # compose labels identify the container and must survive even when the old image carries the same value
-        labels = {k: v for k, v in a["Config"]["Labels"].items()
-                  if k.startswith("com.docker.compose.") or (img.get("Labels") or {}).get(k) != v}
+        env, labels = strip_inherited(a["Config"]["Env"], img.get("Env"), a["Config"]["Labels"], img.get("Labels"))
         c.stop(timeout=5)
         c.remove()
         new = self.d.api.create_container(image_ref, name=name, environment=env,
