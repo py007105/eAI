@@ -3,7 +3,7 @@
 Status: structure and talk track. Numbers appear as `[[...]]` placeholders and are filled only from `docs/results/benchmark.md` after the benchmark has finished.
 Rehearse the whole script once on the real stack before presenting: a step that has not been seen to work is not demo material.
 
-**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout, i.e. self-reported. The independent measure is the load generator's failed-request %, which the evaluator reads; show that number alongside it. The benchmark ran with template reports only (no LLM key in its brain container); before a live-LLM demo, confirm the key reaches the brain container (presence only, never print it).
+**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout, i.e. self-reported. The independent measure is the load generator's failed-request %, which the evaluator reads; show that number alongside it. The benchmark brains were configured without LLM keys, but the report provider is not recorded per run, so do not say "template only" as a verified fact; before a live-LLM demo, confirm the key reaches the brain container (presence only, never print it).
 
 ## 0. Before the demo (do this on a quiet machine, 15 minutes ahead)
 
