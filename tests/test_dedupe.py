@@ -17,6 +17,21 @@ def test_grace_is_per_service_and_a_rollback_restarts_it():
     assert g.in_grace("web", 2, 130.0)                   # a rollback is another release change (counter 1 -> 2)
 
 
+def test_callers_of_a_service_in_release_grace_are_covered_too():
+    """Regression (live smoke test): a bad inventory release made orders and web fail first; flagging them while inventory
+    was still in grace opened an incident on the wrong service."""
+    from eternalai.dedupe import downstream_of
+    topo = {"web": ["orders", "inventory"], "orders": ["inventory", "payments"], "inventory": [], "payments": []}
+    assert downstream_of("web", topo) == {"orders", "inventory", "payments"}
+    assert downstream_of("orders", topo) == {"inventory", "payments"} and downstream_of("inventory", topo) == set()
+    in_grace = {"web": False, "orders": False, "inventory": True, "payments": False}   # inventory was just released
+
+    def covered(s):
+        return in_grace[s] or any(in_grace[d] for d in downstream_of(s, topo))
+    assert covered("inventory") and covered("orders") and covered("web")   # all depend on the released service
+    assert not covered("payments")                                          # an unrelated service is still judged
+
+
 def test_unresolved_incident_suppresses_reopening_until_quiet():
     s = Suppressor(quiet_ticks=3)
     s.note_incident("escalated", ["inventory"])
