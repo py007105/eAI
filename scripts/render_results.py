@@ -94,16 +94,37 @@ def pooled(d, arm):
     f, h, u = x[x.scenario.isin(SUPPORTED)], x[x.scenario.isin(HEALTHY)], x[x.scenario.isin(UNSEEN)]
     rec = f.recovered.fillna(False).astype(float)
     return {"arm": arm, "supported runs": len(f),
-            "verified recovery rate": fmt_ci(boot_ci(rec), pct=True, d=1) if len(rec) else "-",
-            "time to verified recovery s (recovered runs)": fmt_ci(boot_ci(f.ttvr_s[f.recovered == True]), d=1),
-            "failed requests % (supported runs)": fmt_ci(boot_ci(f.failed_pct), d=2),
+            "failed requests % (supported runs; independent measure)": fmt_ci(boot_ci(f.failed_pct), d=2),
+            "recovery rate, self-reported": fmt_ci(boot_ci(rec), pct=True, d=1) if len(rec) else "-",
+            "seconds to self-reported recovery (recovered runs)": fmt_ci(boot_ci(f.ttvr_s[f.recovered == True]), d=1),
             "detection time s (detected runs)": fmt_ci(boot_ci(f.detect_s[f.detected == True]), d=1),
             "root-cause top-1": f"{int(f.top1.fillna(False).astype(bool).sum())}/{len(f)}" if arm != "no_action" else "-",
             "root-cause top-3": f"{int(f.top3.fillna(False).astype(bool).sum())}/{len(f)}" if arm != "no_action" else "-",
             "healthy runs with a false alert": f"{int((h.false_alerts.fillna(0) > 0).sum())}/{len(h)}",
             "harmful interventions (all runs)": int(x.harmful.fillna(0).sum()),
             "unseen fault: abstained correctly": f"{int(u.abstained_ok.fillna(False).astype(bool).sum())}/{len(u)}",
-            "unseen fault: recovered": f"{int(u.recovered.fillna(False).astype(bool).sum())}/{len(u)}"}
+            "unseen fault: self-reported recovery": f"{int(u.recovered.fillna(False).astype(bool).sum())}/{len(u)}"}
+
+
+READING_GUIDE = [
+    "**How to read this document**\n",
+    "1. The **failed-request %** (section 2) is the independent measure: the evaluator reads it from the load generator, not from the system under test.",
+    "2. **Recovery is self-reported.** It comes from the system's own synthetic-checkout verification. It is never independently verified in v1; no raw probe logs exist. "
+    "The consistency check in section 2 compares claimed recoveries with the no-action arm for the same seed.",
+    "3. **Template reports only.** The benchmark brain had no LLM key (both keys empty in its container), so no result here involves a language model.\n",
+]
+
+
+def consistency_lines(d, arms):
+    if "no_action" not in arms:
+        return ["- not computable: no `no_action` rows"]
+    na = d[d.arm == "no_action"].set_index("seed").failed_pct
+    bad = d[(d.arm != "no_action") & (d.recovered == True) & d.scenario.isin(SUPPORTED)]
+    lines = [f"- {r.arm} / {r.scenario} / seed {r.seed}: claimed recovered with {r.failed_pct:.2f}% failed vs {na[r.seed]:.2f}% with no action"
+             for r in bad.itertuples() if r.seed in na.index and pd.notna(r.failed_pct) and pd.notna(na[r.seed]) and r.failed_pct > na[r.seed]]
+    checked = sum(1 for r in bad.itertuples() if r.seed in na.index)
+    return [f"A claimed recovery should come with a failed-request % no higher than the `no_action` arm's value for the same seed. "
+            f"Claimed recoveries compared: {checked}. Violations, one per line:\n"] + (lines or ["- none"])
 
 
 def paired_diff(d, a, b, col, scenarios, as_rate=False, n=2000, seed=0):
@@ -147,34 +168,42 @@ def render(d, d2, triage, fails, fixture):
     R = ["# Held-out benchmark results" + (" (FIXTURE)" if fixture else ""), ""]
     if fixture:
         R.append(FIXTURE_BANNER)
-    R.append("Rendered by `scripts/render_results.py` from the raw rows. Method and rules: `docs/EVALUATION_PLAN.md`. Cells with n = 5 are not compared "
-             "for significance; intervals are bootstrap 95% over runs and are shown only for pooled metrics.")
+    R.append("Rendered by `scripts/render_results.py` from the raw rows. Method and rules: `docs/EVALUATION_PLAN.md` (including Amendment 1). Cells with n = 5 are not compared "
+             "for significance; intervals are bootstrap 95% over runs and are shown only for pooled metrics.\n")
+    R += READING_GUIDE
     R += accounting(d, fails)
 
-    R.append("\n## 2. Per-cell raw values\n")
-    R += per_cell(d, arms, "Verified recovery (1 = recovered, 0 = not), supported fault scenarios", "recovered", SUPPORTED, boolean=True)
-    R += per_cell(d, arms, "Time to verified recovery, seconds (recovered runs only)", "ttvr_s", SUPPORTED)
-    R += per_cell(d, arms, "Failed-request %, injection to end of observation (independent of the brain)", "failed_pct", SUPPORTED + UNSEEN + HEALTHY, d_=2)
+    R.append("\n## 2. The independent measure first: failed-request %\n")
+    R.append("Computed by the evaluator from the load generator's counters between injection and the end of the observation window. It does not depend on what "
+             "the system under test reports.\n")
+    R += per_cell(d, arms, "Failed-request %, per cell (all scenarios)", "failed_pct", SUPPORTED + UNSEEN + HEALTHY, d_=2)
+    R.append("\n### Consistency check of self-reported recovery against the no-action arm\n")
+    R += consistency_lines(d, arms)
+
+    R.append("\n## 3. Everything else per cell (reported by the system under test or derived from its incident log)\n")
+    R += per_cell(d, arms, "Recovery, SELF-REPORTED by the system's own checkout verification (1 = recovered, 0 = not), supported fault scenarios", "recovered",
+                  SUPPORTED, boolean=True)
+    R += per_cell(d, arms, "Seconds to self-reported recovery (recovered runs only)", "ttvr_s", SUPPORTED)
     R += per_cell(d, arms, "Detection time, seconds (detected runs only)", "detect_s", SUPPORTED + UNSEEN)
     R += per_cell(d, arms, "Root-cause top-1 (1 = injected service ranked first)", "top1", SUPPORTED, boolean=True)
     R += per_cell(d, arms, "False alerts on healthy runs (incidents opened)", "false_alerts", HEALTHY, d_=0)
     R += per_cell(d, arms, "Harmful interventions (executed actions on a service other than the target; any action in a healthy run)", "harmful",
                   SUPPORTED + UNSEEN + HEALTHY, d_=0)
     R += per_cell(d, arms, "Unseen fault: abstained correctly (1 = yes)", "abstained_ok", UNSEEN, boolean=True)
-    R += per_cell(d, arms, "Unseen fault: verified recovery (not expected from EternalAI by design)", "recovered", UNSEEN, boolean=True)
+    R += per_cell(d, arms, "Unseen fault: self-reported recovery (not expected from EternalAI by design)", "recovered", UNSEEN, boolean=True)
 
-    R.append("\n## 3. Pooled metrics per arm (bootstrap 95% interval over runs)\n")
+    R.append("\n## 4. Pooled metrics per arm (bootstrap 95% interval over runs)\n")
     R.append(pd.DataFrame([pooled(d, a) for a in arms]).to_markdown(index=False))
 
     me = [a for a in ("eternalai_autopilot", "eternalai_ask_first") if a in arms]
-    R.append("\n## 4. Pooled paired differences (same seeds; mean difference with bootstrap 95% interval over seeds)\n")
+    R.append("\n## 5. Pooled paired differences (same seeds; mean difference with bootstrap 95% interval over seeds)\n")
     R.append("Negative is better for times and failed-request %, positive is better for recovery. `interval excludes zero` is a statement about the "
              "interval only; it is not a significance test and the plan makes no claim from it for individual cells.\n")
     rows = []
     for a in me:
         for b in [x for x in arms if x != a]:
-            for label, col, better in (("failed requests % (supported)", "failed_pct", "low"), ("verified recovery (supported)", "recovered", "high"),
-                                       ("time to verified recovery s", "ttvr_s", "low"), ("detection time s", "detect_s", "low")):
+            for label, col, better in (("failed requests % (supported)", "failed_pct", "low"), ("self-reported recovery (supported)", "recovered", "high"),
+                                       ("seconds to self-reported recovery", "ttvr_s", "low"), ("detection time s", "detect_s", "low")):
                 dd = d.copy()
                 if col == "recovered":
                     dd[col] = dd[col].fillna(False).astype(float)
@@ -185,18 +214,6 @@ def render(d, d2, triage, fails, fixture):
                                  "interval excludes zero": bool(p[1] > 0 or p[2] < 0), "direction": "favours " + (a if (p[0] < 0) == (better == "low") else b)})
     R.append(pd.DataFrame(rows).to_markdown(index=False) if rows else "- not enough paired data")
 
-    R.append("\n## 5. Consistency check on self-reported recovery\n")
-    R.append("Recovery is reported by the system under test (see plan section 5). A claimed recovery should come with a failed-request % no higher than the "
-             "`no_action` arm's value for the same seed. Violations, one per line:\n")
-    if "no_action" in arms:
-        na = d[d.arm == "no_action"].set_index("seed").failed_pct
-        bad = d[(d.arm != "no_action") & (d.recovered == True) & d.scenario.isin(SUPPORTED)]
-        lines = [f"- {r.arm} / {r.scenario} / seed {r.seed}: claimed recovered with {r.failed_pct:.2f}% failed vs {na[r.seed]:.2f}% with no action"
-                 for r in bad.itertuples() if r.seed in na.index and pd.notna(r.failed_pct) and pd.notna(na[r.seed]) and r.failed_pct > na[r.seed]]
-        R += lines or ["- none"]
-    else:
-        R.append("- not computable: no `no_action` rows")
-
     R.append("\n## 6. Metrics on which EternalAI is not ahead of an arm (pooled point estimates, plain list)\n")
     pr = {a: pooled(d, a) for a in arms}
     notes = []
@@ -204,10 +221,10 @@ def render(d, d2, triage, fails, fixture):
         for b in [x for x in arms if x != a]:
             pa, pb = d[(d.arm == a) & d.scenario.isin(SUPPORTED)], d[(d.arm == b) & d.scenario.isin(SUPPORTED)]
             for label, fa, fb, lower in (("failed requests %", pa.failed_pct.mean(), pb.failed_pct.mean(), True),
-                                         ("verified recovery rate", pa.recovered.fillna(False).astype(float).mean(),
+                                         ("self-reported recovery rate", pa.recovered.fillna(False).astype(float).mean(),
                                           pb.recovered.fillna(False).astype(float).mean(), False),
                                          ("detection time s", pa.detect_s[pa.detected == True].mean(), pb.detect_s[pb.detected == True].mean(), True),
-                                         ("time to verified recovery s", pa.ttvr_s[pa.recovered == True].mean(), pb.ttvr_s[pb.recovered == True].mean(), True)):
+                                         ("seconds to self-reported recovery", pa.ttvr_s[pa.recovered == True].mean(), pb.ttvr_s[pb.recovered == True].mean(), True)):
                 if pd.notna(fa) and pd.notna(fb) and ((fa >= fb) if lower else (fa <= fb)):
                     notes.append(f"- {label}: {a} {fa:.2f} versus {b} {fb:.2f}")
     R += notes or ["- none by pooled point estimate"]
