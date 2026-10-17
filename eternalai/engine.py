@@ -18,7 +18,7 @@ import numpy as np
 from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
 from .collector import DockerView, Prom
-from .detect import Persistence
+from .detect import Persistence, service_anomalous
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
 from .investigate import Investigator, remember_verified
@@ -108,7 +108,7 @@ class Engine:
             down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
             if self.detectors and s in self.detectors:
                 sc = self.detectors[s].score(f)
-                a = down or sc > self.detectors[s].threshold
+                a = service_anomalous(self.detectors[s], f, down)
             else:
                 sc, a = float("nan"), down or rule_diagnose(f) != "healthy"
             feats[s], scores[s], anom[s] = f, sc, bool(a)
