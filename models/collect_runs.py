@@ -28,6 +28,13 @@ TIMEOUT = {"memory_leak": 100, "disk_fill": 80}
 DEFAULT_TIMEOUT = 45
 
 
+def scenario_order(rep: int, scenarios: list[str]) -> list[tuple[int, str]]:
+    """(index, scenario) pairs in a per-repetition shuffled order, so run order cannot predict the label."""
+    order = list(enumerate(scenarios))
+    random.Random(rep).shuffle(order)
+    return order
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--reps", type=int, default=10)
@@ -40,9 +47,7 @@ def main():
     prom = Prom()
     n = 0
     for rep in range(a.reps):
-        order = list(enumerate(a.scenarios))
-        random.Random(rep).shuffle(order)  # run order must not correlate with the label
-        for si, scen in order:
+        for si, scen in scenario_order(rep, a.scenarios):
             seed = a.seed0 + rep * 100 + si
             tag = out / f"{scen}_{seed}"
             if (tag.with_suffix(".json")).exists():
@@ -55,7 +60,8 @@ def main():
                 time.sleep(5)
             rev = httpx.get(f"{EV}/runs/{rid}/reveal", timeout=10)
             if rev.status_code != 200:
-                print(f"{scen} seed {seed}: run failed, skipping")
+                err = httpx.get(f"{EV}/runs/{rid}/status", timeout=10).json().get("error", "unknown")
+                print(f"{scen} seed {seed}: run failed ({err}), skipping; rerun to retry this seed", flush=True)
                 continue
             truth = rev.json()["truth"]
             t0 = truth["t_inject"]
