@@ -1,0 +1,15 @@
+.git
+.venv
+.env
+runtime
+data/raw
+data/runs
+data/processed
+!data/processed/knowledge_base.csv
+docs
+tests
+references
+inputs
+**/__pycache__
+*.pyc
+*.log
