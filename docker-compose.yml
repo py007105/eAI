@@ -58,10 +58,39 @@ services:
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "truth:/truth"]
     environment:
       PROMETHEUS_URL: http://prometheus:9090
-      EAI_URL: ${EAI_URL:-http://host.docker.internal:8000}
+      EAI_URL: ${EAI_URL:-http://eternalai:8000}   # set EAI_URL=http://host.docker.internal:8000 to score a host-run backend
       CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
     extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on: [web]
+
+  # The brain. It mounts the Docker socket (root-equivalent on the host: see docs/ARCHITECTURE.md, Security)
+  # but NOT the truth volume. Approve/reject/mode endpoints are refused until a real token is set in .env.
+  eternalai:
+    build: {context: ., dockerfile: eternalai/Dockerfile}
+    image: eai/eternalai:v1
+    networks: [eai]
+    ports: ["8000:8000"]
+    mem_limit: 512m
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock", "eternalai-runtime:/srv/runtime"]
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      WEB_URL: http://web:8000
+      EVALUATOR_URL: http://evaluator:8200
+      ETERNALAI_MODE: ${ETERNALAI_MODE:-ask-first}
+      ETERNALAI_APPROVAL_TOKEN: ${ETERNALAI_APPROVAL_TOKEN:-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    depends_on: [prometheus, web]
+
+  dashboard:
+    build: {context: ., dockerfile: dashboard/Dockerfile}
+    image: eai/dashboard:v1
+    networks: [eai]
+    ports: ["8050:8050"]
+    mem_limit: 256m
+    environment:
+      BACKEND_URL: http://eternalai:8000
+    depends_on: [eternalai]
 
   loadgen:
     build: ./loadgen
@@ -93,3 +122,4 @@ volumes:
   payments-data: {}
   orders-data: {}
   truth: {}
+  eternalai-runtime: {}
