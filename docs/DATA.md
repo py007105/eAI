@@ -68,3 +68,32 @@ Full output: `docs/results/runs_sanity.md` (`python models/check_runs.py`), run 
 - **One drift flag:** the `orders` memory baseline falls with run position (Spearman rho -0.36, p = 0.003), probably because early runs used a long-running container with a grown database and later ones used freshly recreated containers. It is carried into model training as a known risk and tested with an ablation in `docs/results/models_cv.md` rather than assumed harmless.
 
 Limits that apply to all live data: one application (four Python services), faults injected by a script on one machine, a single workload generator, and no-action runs only (EternalAI was not running while collecting).
+
+- **Revised data check (restore contamination).** The first version of the sanity check looked at the 105 s before injection. The evaluator only waits 45 s after a restore, so the early part of that window is the restore itself (containers coming back, callers erroring). Pooled over all runs the error ratio is 0.148 / 0.040 / 0.003 / 0.000 in the 5 s bins starting at 50 / 45 / 40 / 35 s before injection (`scripts/debug_settle.py`). The clean pre-injection period is therefore the 40 s before injection. With that window only 1 of 72 runs is flagged (`cpu_burn_1406`, missing CPU series): the three "scrape gap" exclusions above were artefacts of the restore window and are no longer excluded. The order tests were also replaced (a blocked-CV AUC can fall below 0.5 from prior shift, and chi-square is invalid with under one expected count per cell): run position does not predict the label (Spearman rho -0.02, p 0.86), and a permutation test of "previous scenario predicts the next" gives p = 0.029, weak evidence of some dependence that I report as it is.
+
+## 6. Model development log (what went wrong, in order)
+
+All numbers are out-of-fold macro-F1 or rates from grouped cross-validation by run on the training seeds; the files named are kept in `docs/results/`. This was iterative on the same data, so the cross-validation figures are optimistic (several forking paths); the held-out benchmark in `benchmark.md` is the real test.
+
+| attempt | what it was | classifier macro-F1 | detector flags fault windows | detector false alarms |
+|---|---|---|---|---|
+| 1 (`models_cv_attempt1.md`) | 30 s windows, fault labels from 8 s after injection, per-class sigmoid calibration, forest only | 0.365 | 14% | 3.1% of healthy windows |
+| 2 (`window_sweep_attempt2.md`) | 10 s windows | 0.397 | 15% | 2.7% |
+| 3 (`window_sweep_attempt3.md`) | median p95, disk features, temperature calibration | 0.618 | 14% | 2.6% |
+| 4 | healthy windows taken only from the clean pre-injection period, learned limits added to the detector | 0.998 | 99.6% | 12.2 persistent false alarms per 100 service-minutes |
+| final (`models_cv.md`) | short slope lookback, conservative forest threshold | 0.998 | 95-100% per scenario | 0 events in 123 service-minutes (95% upper bound about 2.4 per 100) |
+
+The causes, each found by looking at data rather than guessing, and each now covered by a regression test:
+1. **30 s windows blur a fault's onset** (`scripts/debug_windows.py`): a crash showed `up_frac` 0.67 ten seconds after injection. Windows are now 10 s, fault windows must lie wholly after injection, and the window length is chosen by cross-validation (`window_sweep.md`).
+2. **Per-class sigmoid calibration collapsed rare classes into "healthy"** (calibrated recall 0 where the uncalibrated model had 0.87-1.0). Replaced by temperature scaling (one parameter, the predicted class cannot change).
+3. **No feature saw the scratch disk**, so a filling disk looked like a generic error spike. Disk usage and growth features added.
+4. **A window MAX of p95 turned histogram-bucket jumps into "latency spikes"** in healthy traffic (99th percentile of the ratio was 535). Now the median.
+5. **About 10% of "healthy" windows contained the previous run's restore** (1,479 windows with error ratio above 5%), contaminating the baselines, the forest and the labels. This was the largest single cause of poor results.
+6. **Slope features looked 120 s back**, into the restore, and produced most of the remaining false alarms. Lookback is now 20 s; slow growth is the forecaster's job.
+7. **IsolationForest alone could not flag single-feature excursions** (a 78% error ratio scored below the healthy 99th percentile), so learned healthy-range limits were added. With the forest switched off entirely the cross-validation numbers were identical: the forest adds nothing measurable here and is kept only as a conservative backstop (`detector_margin.md`).
+8. **Classifier confidence says nothing about novelty:** a never-seen fault was labelled with high confidence (0% abstention). A novelty gate (distance to the nearest known windows, threshold from out-of-fold distances) now abstains on 97% of `cpu_burn` windows with 1.0% false abstention on known windows. Hold-one-fault-type-out abstention is 100% for crash, memory leak, disk fill and bad deploy, 98% for error spike and 76% for latency.
+9. **Overall ECE was a misleading calibration test** (0.026 while fault predictions were poor), so the dashboard rule now also requires ECE on fault predictions of 0.10 or less with at least 50 such windows. That rule was fixed before the corrected results were seen.
+
+Bugs in the live system found by smoke tests (seeds in neither the training nor the benchmark range, results not reported): the engine applied only the forest score and not the learned limits; a release restart opened an incident on a healthy `good_deploy`, then on the wrong service until the grace covered the release's callers; a diagnosis exception could leave an incident open forever; a repeated escalation for the same anomaly; the prototype-rules baseline treated an empty forecast dictionary as "anomalous"; the threshold baseline crashed on an empty service list.
+
+**Harness change after training:** the leak and disk faults were first driven from outside the service (the evaluator re-posted 4-8 MB or 15-35 MB every 2 s), so no runbook on the target could ever stop them. They now run inside the service process (a leak that grows until the process dies; a 30 s file burst), so a restart or cleanup genuinely fixes them. The training data were collected with the earlier driver; the first seconds of the signatures are the same, but this is a small shift between training and benchmark conditions.
