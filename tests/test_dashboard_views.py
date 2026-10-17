@@ -45,4 +45,31 @@ def test_proof_banner_only_on_verified_recovery():
 
 def test_labels_fallback_and_hindi_present():
     assert t("panel_map", "hi") != t("panel_map", "en")
-    assert t("mode_autopilot", "hi") == LABELS["en"]["mode_autopilot"]  # falls back to English
+    assert t("axis_support", "hi") == LABELS["en"]["axis_support"]  # untranslated key falls back to English
+
+
+def test_every_label_key_used_in_code_exists():
+    """Regression: a panel once showed the raw key 'PANEL_SCORE' because the key did not exist."""
+    import re
+    root = Path(__file__).resolve().parents[1] / "dashboard"
+    used = set()
+    for f in ("views.py", "app.py"):
+        src = (root / f).read_text(encoding="utf-8")
+        used |= set(re.findall(r"""\bt\(\s*["']([a-z0-9_\-]+)["']""", src))
+        used |= set(re.findall(r"""P\([^)]*?,\s*["'](panel_[a-z]+)["']""", src))
+        used |= set(re.findall(r"""cell\(\s*["']([a-z_]+)["']""", src))
+    used |= {f"kind_{k}" for k in ("reactive", "predicted")} | {f"mode_{m}" for m in ("watch-only", "ask-first", "autopilot")}
+    missing = sorted(k for k in used if k not in LABELS["en"])
+    assert not missing, f"label keys used but not defined: {missing}"
+
+
+def test_incident_without_verification_is_not_shown_as_all_quiet_or_recovered():
+    waiting = {**INC, "status": "awaiting_approval", "verification": None}
+    children, cls = views.proof(waiting)
+    assert cls == "" and t("not_verified") in str(children) and t("no_incident") not in str(children)
+
+
+def test_empty_charts_show_a_message_not_bare_axes():
+    fig, has = views.forecast_fig(None)
+    assert not has and fig.layout.annotations and fig.layout.xaxis.visible is False
+    assert views.causes_fig(None).layout.annotations
