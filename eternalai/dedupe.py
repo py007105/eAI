@@ -13,6 +13,19 @@ from __future__ import annotations
 UNRESOLVED = ("escalated", "unresolved", "partially_recovered")
 
 
+def downstream_of(service: str, topology: dict | None = None) -> set:
+    """Everything `service` depends on, directly or through other services."""
+    from . import config
+    topology = topology or config.TOPOLOGY
+    seen, stack = set(), list(topology.get(service, []))
+    while stack:
+        s = stack.pop()
+        if s not in seen:
+            seen.add(s)
+            stack.extend(topology.get(s, []))
+    return seen
+
+
 class ReleaseGrace:
     def __init__(self, grace_s: float = 15.0):
         self.grace_s, self.last_seen_at, self.last_value = grace_s, {}, {}
