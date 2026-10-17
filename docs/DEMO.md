@@ -39,7 +39,7 @@ Rehearse the whole script once on the real stack before presenting: a step that 
 ## 4. A fault it has not seen (2 min)
 
 - Trigger the unseen fault (cpu_burn) from the evaluator (`POST :8200/runs {"scenario":"cpu_burn"}` keeps the demo honest: it was never in the training data).
-- Expected behaviour: EternalAI abstains ("insufficient evidence"), proposes no action, preserves the evidence and escalates. Say plainly that it is deliberately conservative here, and that a threshold-and-restart script would have restarted the service and recovered it; the trade-off is `[[benchmark: unseen-fault row]]`.
+- Expected behaviour: EternalAI abstains ("insufficient evidence"), proposes no action, preserves the evidence and escalates. Say plainly that it is deliberately conservative here: a threshold-and-restart script acts without diagnosing, and whether that recovers this fault is a benchmark row, `[[benchmark: unseen-fault row, all arms]]`, not something to assert from memory.
 
 ## 5. Healthy negatives (1 min)
 
