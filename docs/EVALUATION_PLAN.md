@@ -22,7 +22,7 @@ written as a dated amendment at the bottom, never by editing the text above it.
 - Live dependencies on the working tree while the benchmark runs: `docker-compose.yml` (re-read at the start of each arm),
   `telemetry/prometheus.yml` (bind mount) and `scripts/run_benchmark.py` with `models/collect_runs.py` and `eternalai/` (re-imported at
   the start of each arm). None of these may change until the run ends. All other work happens in a separate git worktree.
-- No LLM key is given to the brain during the benchmark: every report is the deterministic template report.
+- No LLM key is given to the brain during the benchmark: every report is expected to be the deterministic template report (see Amendment 3: configured by construction, not recorded per row).
 
 ## 2. Design
 
