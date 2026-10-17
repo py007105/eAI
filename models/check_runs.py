@@ -40,6 +40,10 @@ BANNED_SUBSTRINGS = ["scenario", "inject", "chaos", "truth", "target", "seed", "
 # runs only for being 12-14 samples long; that threshold was stricter than the collection design and was
 # lowered after seeing that first pass (recorded here, and in docs/DATA.md).
 MIN_POST_SAMPLES = 10
+# The evaluator waits 45 s after a restore, but errors from the restore tail persist until about 40 s before injection:
+# pooled over all runs the error ratio is 0.148 / 0.040 / 0.003 / 0.000 for the 5 s bins starting at -50 / -45 / -40 / -35
+# (scripts/debug_settle.py). The clean pre-injection period is therefore [t0-40 s, t0-5 s].
+CLEAN_PRE_S = 40
 TRUTH_FIELDS = ["run_id", "scenario", "target", "expected_label", "supported", "t_inject", "params", "seed"]
 
 
@@ -133,15 +137,25 @@ def main():
         frame = raw.loc[tg] if tg in svcs else pd.DataFrame()
         web = raw.loc["web"] if "web" in svcs else pd.DataFrame()
         if not frame.empty:
-            pre_n = int(((frame.index >= t0 - 110) & (frame.index < t0 - 5)).sum())
+            # The CLEAN pre-injection period is [t0-45 s, t0-5 s]: the evaluator waits >= 45 s after restoring the stack,
+            # so earlier saved data overlaps the restore of the previous run (see docs/DATA.md, "restore contamination").
+            pre_n = int(((frame.index >= t0 - CLEAN_PRE_S) & (frame.index < t0 - 5)).sum())
             post_n = int(((frame.index >= t0 + 8) & (frame.index <= t0 + 60)).sum())
-            if pre_n < 40:
-                reasons.append(f"only {pre_n} pre-injection samples")
+            if pre_n < 15:
+                reasons.append(f"only {pre_n} clean pre-injection samples")
             if post_n < MIN_POST_SAMPLES:
                 reasons.append(f"only {post_n} post-injection samples")
-            nanfrac = float(window(frame, t0 - 110, t0 - 5).req_rate.isna().mean())
+            nanfrac = float(window(frame, t0 - CLEAN_PRE_S, t0 - 5).req_rate.isna().mean())
             if nanfrac > 0.3 and scen != "crash":
-                reasons.append(f"{nanfrac:.0%} of pre-injection req_rate missing (scrape gap)")
+                reasons.append(f"{nanfrac:.0%} of clean pre-injection req_rate missing (scrape gap)")
+            # the stack must actually be healthy before the injection, for EVERY service
+            for sv in svcs:
+                w_ = window(raw.loc[sv], t0 - CLEAN_PRE_S, t0 - 5)
+                den = float(w_.req_rate.sum())
+                er = float(w_.err_rate.sum()) / den if den > 0 else 0.0
+                if er > 0.05:
+                    reasons.append(f"{sv} error ratio {er:.2f} before injection (stack not settled)")
+                    break
             vis, ev = signature(scen, frame, t0, web)
             if not vis:
                 reasons.append(f"fault not visible: {ev}")
@@ -189,20 +203,26 @@ def main():
     R.append(f"- Kruskal-Wallis of run position across scenarios: H={kw.statistic:.2f}, p={kw.pvalue:.3f} "
              f"(small p would mean some scenarios cluster early or late)")
     y = np.array([r["truth"]["scenario"] not in HEALTHY for r in order]).astype(int)
-    aucs = []
-    for tri, tei in GroupKFold(5).split(pos.reshape(-1, 1), y, groups=pos // 3):
-        m = DecisionTreeClassifier(max_depth=3, random_state=0).fit(pos[tri].reshape(-1, 1), y[tri])
-        if len(set(y[tei])) == 2:
-            aucs.append(roc_auc_score(y[tei], m.predict_proba(pos[tei].reshape(-1, 1))[:, 1]))
-    R.append(f"- AUC of predicting fault-vs-healthy from run position alone (blocked CV): "
-             f"{np.mean(aucs):.3f} over {len(aucs)} folds (0.5 = no information)" if aucs else "- AUC check: not enough folds")
-    prev = ["start"] + list(scen[:-1])
-    ct = pd.crosstab(pd.Series(prev, name="previous"), pd.Series(scen, name="current"))
-    chi_p = chi2_contingency(ct)[1]
-    R.append(f"- Does the previous run's scenario predict the current one? chi-square p={chi_p:.3f} "
-             f"(large p = no detectable dependence)")
+    rho, p_rho = spearmanr(pos, y)
+    third = np.array_split(np.arange(len(y)), 3)
+    R.append(f"- Does run position predict fault-vs-healthy? Spearman rho={rho:+.3f}, p={p_rho:.3f}; share of fault runs by "
+             f"third of the run order: {[round(float(y[t].mean()), 2) for t in third]} (overall {y.mean():.2f})")
+    # Previous-scenario dependence by PERMUTATION test (a 9x9 table with <1 expected count per cell makes chi-square invalid)
+    prev = np.array(["start"] + list(scen[:-1]))
+
+    def stat(seq):
+        pv = np.array(["start"] + list(seq[:-1]))
+        ct_ = pd.crosstab(pv, seq).values.astype(float)
+        exp = ct_.sum(1, keepdims=True) * ct_.sum(0, keepdims=True) / ct_.sum()
+        return float(((ct_ - exp) ** 2 / np.where(exp > 0, exp, 1)).sum())
+    obs = stat(scen)
+    rng = np.random.default_rng(0)
+    perm = [stat(rng.permutation(scen)) for _ in range(2000)]
+    p_perm = float((np.array(perm) >= obs).mean())
+    R.append(f"- Does the previous run's scenario predict the current one? permutation test (2000 shuffles of the run order, "
+             f"chi-square statistic as the score): p={p_perm:.3f} (a large p means no detectable dependence)")
     R.append("\nBaseline drift: Spearman correlation between run position and each service's pre-injection median "
-             "(window t0-110 s to t0-60 s, far from restore noise):\n")
+             "(clean window t0-40 s to t0-15 s):\n")
     drift = []
     for svc in config.SERVICES:
         for sig in ("p95_s", "cpu_cores", "mem_bytes", "req_rate"):
@@ -211,7 +231,7 @@ def main():
                 if svc in r["raw"].index.get_level_values(0):
                     f = r["raw"].loc[svc]
                     xs.append(idx[r["id"]])
-                    ys.append(med(window(f, r["truth"]["t_inject"] - 110, r["truth"]["t_inject"] - 60)[sig]))
+                    ys.append(med(window(f, r["truth"]["t_inject"] - CLEAN_PRE_S, r["truth"]["t_inject"] - 15)[sig]))
             xs, ys = np.array(xs), np.array(ys)
             ok_ = np.isfinite(ys)
             if ok_.sum() > 10:
