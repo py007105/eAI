@@ -1,0 +1,5 @@
+body font-family: "Noto Sans Devanagari", Inter, "Segoe UI", sans-serif
+Noto Sans Devanagari loaded: True
+panel box-shadow: rgba(255, 255, 255, 0.02) 0px 0px 0px 1px, rgba(0, 0, 0, 0.45) 0px 10px 30px 0px
+icon circles on page: 10
+Hindi title rendered: लाइव सेवा नक्शा
