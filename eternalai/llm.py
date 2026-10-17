@@ -17,8 +17,14 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .classify import ABSTAIN, CLASSES
 
-Cause = Literal[tuple(c for c in CLASSES if c != "healthy") + (ABSTAIN,)]  # type: ignore[valid-type]
-Runbook = Literal["restart_service", "recreate_container", "rollback_release", "clear_temp_path"]
+# Pinned, not a "-latest" alias, so results are reproducible. "gemini-2.5-flash" returned HTTP 404
+# ("no longer available to new users") when tested on 2026-10-17; override with GEMINI_MODEL.
+GEMINI_DEFAULT_MODEL = "gemini-3.8-flash"
+
+CAUSES = tuple(c for c in CLASSES if c != "healthy") + (ABSTAIN,)
+RUNBOOKS = ("restart_service", "recreate_container", "rollback_release", "clear_temp_path")
+Cause = Literal[CAUSES]  # type: ignore[valid-type]
+Runbook = Literal[RUNBOOKS]  # type: ignore[valid-type]
 
 
 class IncidentReport(BaseModel):
@@ -31,10 +37,28 @@ class IncidentReport(BaseModel):
 
 
 SYSTEM = ("You are an SRE assistant. Using ONLY the evidence items provided, return a JSON object with keys: "
-          "summary (2-3 sentences), evidence_ids (ids you relied on), likely_cause, alternative_causes, "
-          "runbook_id (one of the candidate runbooks or null), missing_information. "
+          "summary (string, 2-3 sentences), evidence_ids (list of the evidence ids you relied on), "
+          f"likely_cause (exactly one of: {', '.join(CAUSES)}), "
+          "alternative_causes (list; every item must be one of those same values, never free text), "
+          "runbook_id (one of the candidate runbooks given in the input, or null), "
+          "missing_information (a LIST of short strings, empty if nothing is missing). "
           "If evidence is insufficient use likely_cause 'insufficient_evidence' and runbook_id null. "
-          "Never output commands.")
+          "Never output shell commands.")
+
+# Structured-output schema for Gemini (OpenAPI subset): the model is constrained to our enums, and the
+# strict pydantic validation below still runs on whatever comes back.
+GEMINI_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "summary": {"type": "STRING"},
+        "evidence_ids": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "likely_cause": {"type": "STRING", "enum": list(CAUSES)},
+        "alternative_causes": {"type": "ARRAY", "items": {"type": "STRING", "enum": list(CAUSES)}},
+        "runbook_id": {"type": "STRING", "enum": list(RUNBOOKS), "nullable": True},
+        "missing_information": {"type": "ARRAY", "items": {"type": "STRING"}},
+    },
+    "required": ["summary", "evidence_ids", "likely_cause", "alternative_causes", "missing_information"],
+}
 
 
 def template_report(ctx: dict) -> IncidentReport:
@@ -64,12 +88,13 @@ def _prompt(ctx: dict) -> str:
 
 
 def _gemini(prompt: str, client: httpx.Client) -> str:
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", GEMINI_DEFAULT_MODEL)
     r = client.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                     params={"key": os.environ["GEMINI_API_KEY"]}, timeout=20,
                     json={"systemInstruction": {"parts": [{"text": SYSTEM}]},
                           "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                          "generationConfig": {"responseMimeType": "application/json", "temperature": 0.1}})
+                          "generationConfig": {"responseMimeType": "application/json", "temperature": 0.1,
+                                               "responseSchema": GEMINI_SCHEMA}})
     r.raise_for_status()
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
@@ -82,6 +107,10 @@ def _groq(prompt: str, client: httpx.Client) -> str:
                           "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}]})
     r.raise_for_status()
     return r.json()["choices"][0]["message"]["content"]
+
+
+def llm_enabled() -> bool:
+    return any(os.getenv(k) for k in ("GEMINI_API_KEY", "GROQ_API_KEY"))
 
 
 def validate(raw: str, ctx: dict) -> IncidentReport:
