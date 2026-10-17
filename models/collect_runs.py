@@ -65,7 +65,9 @@ def main():
                 continue
             truth = rev.json()["truth"]
             t0 = truth["t_inject"]
-            end = time.time() - 12  # leave out the restore phase that follows the run
+            # leave out the restore that follows the run: use the evaluator's own end of observation when it
+            # reports one (current evaluator), else the old heuristic (evaluator images before 2026-10-17)
+            end = rev.json()["score"].get("t_end") or (time.time() - 12)
             span_end = min(t0 + 100, end)
             frames = {}
             for s in config.SERVICES:
