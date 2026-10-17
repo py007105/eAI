@@ -163,11 +163,29 @@ def accounting(d, fails):
     return R
 
 
+def completeness(d):
+    """(complete, distinct runs, markdown table of runs per arm x scenario)."""
+    got = d.drop_duplicates(["arm", "scenario", "seed"])
+    cnt = got.groupby(["arm", "scenario"]).size().unstack(fill_value=0).reindex(index=ARMS, columns=SCENARIOS, fill_value=0)
+    tab = cnt.reset_index().rename(columns={"arm": "arm (runs per scenario, planned %d)" % REPS}).to_markdown(index=False)
+    return bool((cnt == REPS).all().all()), len(got), tab
+
+
+def incomplete_banner(n_runs, tab):
+    exp = len(ARMS) * len(SCENARIOS) * REPS
+    return [f"> **INCOMPLETE: {n_runs} of {exp} planned runs.** This document was rendered before the benchmark finished. Arms and cells differ in how many runs they contain, "
+            "so pooled rows compare arms on different scenarios and seeds and must not be read as a ranking. Paired differences use only seeds present in both arms. "
+            "Nothing here is the final result.\n", "Runs present per cell:\n", tab, ""]
+
+
 def render(d, d2, triage, fails, fixture):
     arms = [a for a in ARMS if a in set(d.arm)]
     R = ["# Held-out benchmark results" + (" (FIXTURE)" if fixture else ""), ""]
     if fixture:
         R.append(FIXTURE_BANNER)
+    complete, n_runs, tab = completeness(d)
+    if not complete:
+        R += incomplete_banner(n_runs, tab)
     R.append("Rendered by `scripts/render_results.py` from the raw rows. Method and rules: `docs/EVALUATION_PLAN.md` (including Amendment 1). Cells with n = 5 are not compared "
              "for significance; intervals are bootstrap 95% over runs and are shown only for pooled metrics.\n")
     R += READING_GUIDE
