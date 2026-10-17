@@ -85,12 +85,16 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
 
     limit = mean("mem_limit_bytes")
     f["mem_share"] = _ratio(mem, limit) if np.isfinite(limit) and limit > 0 else np.nan
-    mem_s = df["mem_bytes"].tail(int(max(window_s * 4, 120) / 2)) if "mem_bytes" in df else pd.Series(dtype=float)
+    # Slope lookback is short (>= 20 s, 2 windows). A 120 s lookback reached into the previous run's restore, where a
+    # recreated container makes memory/disk jump, and produced most of the detector's false alarms. Slow, gradual growth is
+    # the forecaster's job (eternalai/forecast.py), which keeps its own longer lookback.
+    slope_n = int(max(2 * window_s, 20.0) / 2) + 1
+    mem_s = df["mem_bytes"].tail(slope_n) if "mem_bytes" in df else pd.Series(dtype=float)
     slope = _slope_per_min(mem_s)
     f["mem_slope_share_per_min"] = _ratio(slope, limit) if np.isfinite(slope) and np.isfinite(limit) and limit > 0 else np.nan
     # scratch-disk usage (MB) and its growth: the signature of a filling disk (absent from attempt 1-2 features)
     f["scratch_mb"] = mean("scratch_bytes") / 1e6 if np.isfinite(mean("scratch_bytes")) else np.nan
-    sc_s = df["scratch_bytes"].tail(int(max(window_s * 4, 120) / 2)) if "scratch_bytes" in df else pd.Series(dtype=float)
+    sc_s = df["scratch_bytes"].tail(slope_n) if "scratch_bytes" in df else pd.Series(dtype=float)
     sc_slope = _slope_per_min(sc_s)
     f["scratch_slope_mb_per_min"] = sc_slope / 1e6 if np.isfinite(sc_slope) else np.nan
     f["up_frac"] = mean("up")
