@@ -16,11 +16,11 @@ class Probe:
     detail: str
 
 
-def checkout_probe(client: httpx.Client, base=config.WEB_URL) -> Probe:
+def checkout_probe(client: httpx.Client, base=config.WEB_URL, timeout: float = 5.0) -> Probe:
     """One sandbox checkout (web -> orders -> inventory + payments). Must return a confirmed order."""
     t0 = time.perf_counter()
     try:
-        r = client.post(f"{base}/api/checkout", timeout=5,
+        r = client.post(f"{base}/api/checkout", timeout=timeout,
                         json={"sku": "sku-mug", "qty": 1, "card": "4242424242424242"})
         ok = r.status_code == 200 and r.json().get("status") == "confirmed"
         return Probe(ok, time.perf_counter() - t0, f"HTTP {r.status_code}")
