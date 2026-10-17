@@ -35,6 +35,11 @@ warnings.filterwarnings("ignore")
 HEALTHY = {"traffic_surge", "good_deploy"}
 BANNED_SUBSTRINGS = ["scenario", "inject", "chaos", "truth", "target", "seed", "label", "expected", "crash", "leak",
                      "bad_deploy", "good_deploy", "cpu_burn", "surge", "run_id"]
+# Samples are 2 s apart. The default 45 s run timeout saves about 34 s (13 samples) of post-injection data by
+# design, so 10 samples (20 s) is the completeness floor. A first version of this check used 15 and flagged 17
+# runs only for being 12-14 samples long; that threshold was stricter than the collection design and was
+# lowered after seeing that first pass (recorded here, and in docs/DATA.md).
+MIN_POST_SAMPLES = 10
 TRUTH_FIELDS = ["run_id", "scenario", "target", "expected_label", "supported", "t_inject", "params", "seed"]
 
 
@@ -111,7 +116,8 @@ def main():
     cnt = pd.Series([r["truth"]["scenario"] for r in runs]).value_counts().reindex(SCENARIOS).fillna(0).astype(int)
     R.append("\n| scenario | runs | planned |\n|---|---|---|\n" + "\n".join(f"| {s} | {n} | {a.reps} |" for s, n in cnt.items()))
     R.append(f"\nMissing seeds: {missing or 'none'}")
-    tgt = pd.crosstab(pd.Series([r["truth"]["scenario"] for r in runs]), pd.Series([r["truth"]["target"] for r in runs]))
+    tgt = pd.crosstab(pd.Series([r["truth"]["scenario"] for r in runs]), pd.Series([r["truth"]["target"] for r in runs]),
+                      rownames=["scenario"], colnames=["target"])
     R.append("\nTargets chosen per scenario (random, by the evaluator):\n\n" + tgt.to_markdown())
 
     # ---- 2. corruption
@@ -131,7 +137,7 @@ def main():
             post_n = int(((frame.index >= t0 + 8) & (frame.index <= t0 + 60)).sum())
             if pre_n < 40:
                 reasons.append(f"only {pre_n} pre-injection samples")
-            if post_n < 15:
+            if post_n < MIN_POST_SAMPLES:
                 reasons.append(f"only {post_n} post-injection samples")
             nanfrac = float(window(frame, t0 - 110, t0 - 5).req_rate.isna().mean())
             if nanfrac > 0.3 and scen != "crash":
