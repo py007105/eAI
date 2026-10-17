@@ -57,7 +57,7 @@ None are stated here. See:
 
 ## Limitations (short form; the full list is in `docs/EVALUATION.md`)
 
-72 training runs, one application, scripted faults, laboratory public data, optimistic cross-validation scores, n = 5 per benchmark cell, recovery judged by the system itself, the Gemini path tried only a few times and Groq untested.
+72 training runs, one application, scripted faults, laboratory public data, optimistic cross-validation scores, n = 5 per benchmark cell, recovery **self-reported** by the system's own checkout (the independent measure is the load generator's failed-request %), benchmark reports were template-only (no LLM key in the benchmark brain), the Gemini path tried only a few times and Groq untested.
 
 ## Repository layout
 
