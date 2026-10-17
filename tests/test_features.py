@@ -13,6 +13,31 @@ def _frame(n=120, leak=False, with_mem=True):
     return d
 
 
+def test_isolated_p95_spike_does_not_look_like_a_latency_fault():
+    """Regression: a window MAX of the p95 series made healthy traffic show lat_ratio 100+ (bucket-interpolation jumps)."""
+    healthy = _frame()
+    base = fit_baseline(healthy)
+    spiky = healthy.copy()
+    spiky.iloc[-3, spiky.columns.get_loc("p95_s")] = 0.9              # one bucket jump inside the last 10 s
+    assert window_features(spiky, base, 10.0)["lat_ratio"] < 1.5
+    slow = healthy.copy()
+    slow.loc[slow.index > slow.index.max() - 10, "p95_s"] = 0.9      # the whole window is slow: a real fault
+    assert window_features(slow, base, 10.0)["lat_ratio"] > 10
+
+
+def test_disk_fill_is_visible_in_features():
+    """Regression: no feature saw the scratch disk, so a filling disk looked like a generic error spike."""
+    d = _frame()
+    d["scratch_bytes"] = 0.0
+    base = fit_baseline(d)
+    filling = d.copy()
+    filling["scratch_bytes"] = np.arange(len(d)) * 12e6
+    f = window_features(filling, base, 10.0)
+    assert f["scratch_mb"] > 1000 and f["scratch_slope_mb_per_min"] > 100
+    quiet = window_features(d, base, 10.0)
+    assert quiet["scratch_mb"] == 0 and quiet["scratch_slope_mb_per_min"] == 0
+
+
 def test_healthy_window_is_near_baseline():
     d = _frame()
     f = window_features(d, fit_baseline(d))
