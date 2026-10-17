@@ -37,6 +37,7 @@ ARMS = {"no_action": (None, None), "threshold_restart": ("threshold_restart", "a
         "prototype_rules": ("prototype_rules", "autopilot"), "eternalai_ask_first": ("eternalai", "ask-first"),
         "eternalai_autopilot": ("eternalai", "autopilot")}
 DOCKER = r"C:\Program Files\Docker\Docker\resources\bin"
+SYSTEM_COMMIT = subprocess.run("git rev-parse --short HEAD", shell=True, capture_output=True, text=True).stdout.strip()
 
 
 def sh(cmd, **env):
@@ -155,6 +156,7 @@ def main():
                        "target": truth["target"], "incidents": incidents, "brain_status": {
                            k: meta.get(k) for k in ("brain", "mode", "model_meta", "calibration", "fallbacks_in_use")},
                        "approve_after_s": a.approve_after if a.arm == "eternalai_ask_first" else None,
+                       "system_commit": SYSTEM_COMMIT, "models": "models-v1 (frozen; see docs/MODEL_CARD.md)",
                        "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
                 with RAW.open("a") as f:
                     f.write(json.dumps(row) + "\n")
