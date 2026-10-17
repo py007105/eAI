@@ -94,6 +94,13 @@ def fit_service(train: np.ndarray, validation: np.ndarray, target_fpr: float = 0
     return ServiceDetector(model, thr, learn_limits(np.vstack([train, validation]), list(FEATURES), limit_margin))
 
 
+def service_anomalous(detector: ServiceDetector, feats: dict, down: bool) -> bool:
+    """The one place the live engine decides 'this service looks anomalous': the explicit not-scraped rule, then the
+    detector (forest score OR learned healthy-range limits). The engine once used the forest score alone, so the limits
+    that do the detecting in cross-validation were never applied live (found by the live smoke test)."""
+    return bool(down) or detector.anomalous(feats)
+
+
 class Persistence:
     """Open an incident only after `k` consecutive anomalous ticks for the same service."""
 
