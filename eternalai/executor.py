@@ -75,7 +75,7 @@ class Executor:
         img = c.image.attrs["Config"]
         env, labels = strip_inherited(a["Config"]["Env"], img.get("Env"), a["Config"]["Labels"], img.get("Labels"))
         c.stop(timeout=5)
-        c.remove()
+        c.remove(force=True)
         new = self.client.api.create_container(
             image_ref, name=name, environment=env, labels=labels,
             host_config=host_cfg, networking_config=net_cfg, ports=list(ports) or None)
