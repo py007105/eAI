@@ -48,5 +48,19 @@ body { background:
 .metric .k { color: var(--muted); font-size:.75rem; letter-spacing:1px; text-transform: uppercase; }
 .btn-gold { background: linear-gradient(90deg, var(--saffron), var(--gold)); border:0; color:#1a1204; font-weight:800; box-shadow: 0 0 20px rgba(255,107,44,.45); }
 .btn-gold:hover { filter: brightness(1.1); color:#000; }
+.btn-ghost { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); font-weight: 700;
+  box-shadow: 0 0 12px rgba(46,230,214,.25); }
+.btn-ghost:hover { background: rgba(46,230,214,.12); color: #bffcf6; box-shadow: 0 0 18px rgba(46,230,214,.5); }
+.btn:disabled, .btn.disabled { opacity: .5; }
+
+/* dark dropdowns (Dash 4 dcc.Dropdown class names) */
+.dash-dropdown, .dash-dropdown-trigger { background: var(--panel2) !important; color: var(--text) !important;
+  border: 1px solid var(--line) !important; border-radius: 8px; }
+.dash-dropdown-value, .dash-dropdown-value-item { color: var(--text) !important; }
+.dash-dropdown-content { background: var(--panel2) !important; color: var(--text) !important; border: 1px solid var(--line) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6), 0 0 16px rgba(139,92,246,.2); }
+.dash-dropdown-search { background: var(--panel) !important; color: var(--text) !important; border-color: var(--line) !important; }
+.dash-options-list, .dash-options-list * { color: var(--text); }
+.dash-options-list label:hover, .dash-options-list [role=option]:hover { background: rgba(255,178,30,.14); }
 .muted { color: var(--muted); font-size:.85rem; }
 .form-control, .Select-control, .form-select { background: var(--panel2) !important; color: var(--text) !important; border-color: var(--line) !important; }
