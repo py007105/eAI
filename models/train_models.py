@@ -30,7 +30,7 @@ import envinfo  # noqa: E402
 from eternalai import artifacts, config  # noqa: E402
 from eternalai.calibrate import TemperatureCalibrated  # noqa: E402
 from eternalai.classify import ABSTAIN, CLASSES, FaultClassifier  # noqa: E402
-from eternalai.detect import FEATURES as DET_FEATURES, fit_service  # noqa: E402
+from eternalai.detect import FEATURES as DET_FEATURES, TWO_SIDED, fit_service  # noqa: E402
 from eternalai.features.window import FEATURE_NAMES, fit_baseline, window_features  # noqa: E402
 from eternalai.rca import EVIDENCE, Ranker, baro_rank, deepest_anomalous, evidence_table  # noqa: E402
 from eternalai.safe_model import SafeHGB  # noqa: E402
@@ -59,11 +59,23 @@ def load_runs(path):
     return runs, excluded
 
 
+# The evaluator waits 45 s after restoring the stack, but the restore tail (callers erroring) lasts until ~40 s before
+# injection; pooled over all runs the error ratio is 0.148 / 0.040 / 0.003 / 0.000 in the 5 s bins starting at
+# -50 / -45 / -40 / -35 s (scripts/debug_settle.py). Everything earlier than -40 s is therefore not "healthy".
+SETTLE_S = 40.0
+
+
 def make_baselines(runs):
-    """Healthy-only per-service baseline: pre-injection data of all runs (contains no fault information)."""
+    """Healthy-only per-service baseline from the CLEAN pre-injection period [t0-45 s, t0-5 s] of all runs.
+    The saved data starts earlier, but its first part is the restore of the previous run (containers coming back up,
+    callers erroring): attempt 1-3 fitted baselines and labelled 'healthy' windows on that, which contaminated them."""
     out = {}
     for s in config.SERVICES:
-        pre = [r["frames"][s][r["frames"][s].index < r["truth"]["t_inject"] - 60] for r in runs if s in r["frames"]]
+        pre = []
+        for r in runs:
+            if s in r["frames"]:
+                f, t0 = r["frames"][s], r["truth"]["t_inject"]
+                pre.append(f[(f.index >= t0 - SETTLE_S) & (f.index < t0 - 5)])
         out[s] = fit_baseline(pd.concat(pre))
     return out
 
@@ -85,10 +97,13 @@ def build_rows(runs, baselines, window_s=10.0):
                 for k in ("depfail_inventory", "depfail_payments", "depfail_orders"):
                     f[k] = float(w[k].tail(5).mean()) if k in w else np.nan
                 rel = end - t0
+                # a window is CLEAN-healthy only if it lies wholly inside [t0-SETTLE_S, t0-5]: earlier data overlaps the
+                # restore of the previous run
+                clean_pre = -(SETTLE_S - window_s) <= rel <= -5
                 if tr["scenario"] in HEALTHY_SCEN:
-                    label = "healthy" if rel <= -5 or rel >= max(window_s, 20 if tr["scenario"] == "good_deploy" else 0) \
+                    label = "healthy" if clean_pre or rel >= max(window_s, 20 if tr["scenario"] == "good_deploy" else 0) \
                         else "other"
-                elif rel <= -5:
+                elif clean_pre:
                     label = "healthy"
                 elif rel >= window_s and s == tr["target"]:
                     label = tr["expected_label"]
@@ -134,7 +149,12 @@ def det_flags(det, df):
     for s, d in det.items():
         m = (df.service == s).values
         sc[m] = -d.model.score_samples(df.loc[m, DET_FEATURES].values)
-        out[m] = sc[m] > d.threshold
+        flag = sc[m] > d.threshold
+        for f, (lo, hi) in d.limits.items():          # learned healthy-range limits (NaN never flags)
+            v = df.loc[m, f].values.astype(float)
+            with np.errstate(invalid="ignore"):
+                flag |= (v > hi) | ((v < lo) if f in TWO_SIDED else False)
+        out[m] = flag
     out |= (df.up_frac == 0).values | df.up_frac.isna().values   # not scraped = anomalous (missing is not normal)
     return out, sc
 
