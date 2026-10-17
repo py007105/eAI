@@ -98,8 +98,16 @@ def test_consistency_check_flags_recovery_with_more_failures_than_no_action(fixt
 def test_pooled_recovery_rate_and_interval_are_computed_over_runs(fixture_file, tmp_path):
     d = rr.load(fixture_file)
     p = rr.pooled(d, "eternalai_autopilot")
-    assert p["supported runs"] == 30 and p["verified recovery rate"].startswith("96.7 [")      # 29 of 30 recovered
+    assert p["supported runs"] == 30 and p["recovery rate, self-reported"].startswith("96.7 [")      # 29 of 30 recovered
     assert rr.boot_ci([1.0] * 29 + [0.0])[0] == pytest.approx(29 / 30)
+
+
+def test_independent_measure_comes_first_and_banner_states_limits(fixture_file, tmp_path):
+    out = render(fixture_file, tmp_path)
+    assert "Template reports only" in out and "Recovery is self-reported" in out
+    assert out.index("## 2. The independent measure first") < out.index("SELF-REPORTED by the system") < out.index("## 4. Pooled")
+    assert out.index("Consistency check of self-reported recovery") < out.index("## 3.")
+    assert "verified recovery" not in out.lower().replace("never independently verified", "")
 
 
 def test_paired_difference_uses_matching_seeds(fixture_file):
