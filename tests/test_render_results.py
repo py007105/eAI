@@ -69,6 +69,25 @@ def test_accounting_counts_225_and_keeps_every_row(fixture_file, tmp_path):
     assert "cells not at 5 runs: none" in text and "no run was dropped" in text
 
 
+def test_complete_fixture_has_no_incomplete_banner(fixture_file, tmp_path):
+    assert "INCOMPLETE" not in render(fixture_file, tmp_path)
+
+
+def test_incomplete_benchmark_gets_banner_and_per_cell_counts(fixture_file, tmp_path):
+    rows = [json.loads(x) for x in fixture_file.read_text().splitlines()]
+    part = [x for x in rows if not (x["arm"] in ("prototype_rules", "no_action") or (x["arm"] == "eternalai_ask_first" and x["rep"] > 1))]
+    p = tmp_path / "partial.jsonl"
+    p.write_text("\n".join(json.dumps(x) for x in part))
+    text = render(p, tmp_path)
+    assert f"INCOMPLETE: {len(part)} of 225 planned runs" in text
+    assert "must not be read as a ranking" in text
+    line = next(x for x in text.splitlines() if x.startswith("| eternalai_ask_first"))
+    cells = lambda s: [c.strip() for c in s.strip("|").split("|")][1:]  # noqa: E731
+    assert cells(line) == ["2"] * 9                       # two runs in each of the nine scenarios
+    assert cells(next(x for x in text.splitlines() if x.startswith("| no_action"))) == ["0"] * 9
+    assert "FIXTURE DATA, NOT RESULTS" in text           # fixture banner still present
+
+
 def test_cell_shows_all_five_raw_values_with_mean_and_range(fixture_file, tmp_path):
     text = render(fixture_file, tmp_path)
     line = next(x for x in text.splitlines() if x.startswith("| error_spike | eternalai_autopilot |") and "1.00 2.00 3.00 4.00 5.00" in x)
