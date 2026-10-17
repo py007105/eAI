@@ -25,6 +25,19 @@ def test_isolated_p95_spike_does_not_look_like_a_latency_fault():
     assert window_features(slow, base, 10.0)["lat_ratio"] > 10
 
 
+def test_old_restore_step_does_not_create_a_slope():
+    """Regression: a 120 s slope lookback reached into the previous run's restore (a recreated container makes memory and
+    disk jump), and that produced most of the detector's false alarms on healthy windows."""
+    n = 120
+    t = np.arange(n) * 2.0
+    d = pd.DataFrame({"req_rate": 10.0, "err_rate": 0.0, "p95_s": 0.05, "cpu_cores": 0.1, "up": 1.0,
+                      "mem_limit_bytes": 256e6, "mem_bytes": 100e6, "scratch_bytes": 0.0}, index=t)
+    d.loc[d.index < 100, "mem_bytes"] = 240e6        # old container, near its limit ...
+    d.loc[d.index < 100, "scratch_bytes"] = 700e6    # ... with a full scratch disk, then recreated: both drop to normal
+    f = window_features(d, fit_baseline(d[d.index >= 100]), 10.0)
+    assert abs(f["mem_slope_share_per_min"]) < 1e-6 and abs(f["scratch_slope_mb_per_min"]) < 1e-6
+
+
 def test_disk_fill_is_visible_in_features():
     """Regression: no feature saw the scratch disk, so a filling disk looked like a generic error spike."""
     d = _frame()
