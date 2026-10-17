@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -17,7 +18,9 @@ import numpy as np
 from . import config
 from .forecast import forecast_exhaustion
 
-KNOWLEDGE_CSV = Path(__file__).resolve().parents[1] / "data" / "processed" / "knowledge_base.csv"
+# Derived from the training workbook, so it is not committed; set EAI_KNOWLEDGE_CSV (e.g. to a bind-mounted file) to use it.
+KNOWLEDGE_CSV = Path(os.getenv("EAI_KNOWLEDGE_CSV") or
+                     Path(__file__).resolve().parents[1] / "data" / "processed" / "knowledge_base.csv")
 INCIDENT_STORE = Path("runtime/incidents_verified.jsonl")
 
 
