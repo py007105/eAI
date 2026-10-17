@@ -37,7 +37,7 @@ RELEASE_SEQ = Gauge("app_release_seq", "Release sequence number of the running i
 
 SCRATCH_LIMIT = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  # "disk full" threshold
 
-chaos = {"latency_ms": 0, "error_rate": 0.0, "leak": [], "cpu_burn": False}
+chaos = {"latency_ms": 0, "error_rate": 0.0, "leak": [], "cpu_burn": False, "stream": False}
 
 
 def _burn():
@@ -161,8 +161,30 @@ def setup(app: FastAPI) -> logging.Logger:
             chaos["cpu_burn"] = True
             for _ in range(int(val) or 1):
                 threading.Thread(target=_burn, daemon=True).start()
+        elif kind == "leak_stream":  # a leak INSIDE this process: grows until the process dies, so a restart removes it
+            import threading
+            chaos["stream"] = True
+            mb = int(val)
+
+            def _leak():
+                while chaos["stream"]:
+                    chaos["leak"].append(bytearray(mb * 1024 * 1024))
+                    time.sleep(2)
+            threading.Thread(target=_leak, daemon=True).start()
+        elif kind == "disk_burst":  # a runaway job dumping files for ~30 s, then stopping; the files stay until cleaned
+            import threading
+            chaos["stream"] = True
+            mb = int(val)
+
+            def _burst():
+                end = time.time() + 30
+                while chaos["stream"] and time.time() < end:
+                    with open(SCRATCH / f"fill-{time.time_ns()}.bin", "wb") as f:
+                        f.write(os.urandom(1024 * 1024) * mb)
+                    time.sleep(2)
+            threading.Thread(target=_burst, daemon=True).start()
         elif kind == "reset":
-            chaos.update(latency_ms=0, error_rate=0.0, leak=[], cpu_burn=False)
+            chaos.update(latency_ms=0, error_rate=0.0, leak=[], cpu_burn=False, stream=False)
         else:
             raise HTTPException(400, "unknown kind")
         return {"ok": True, "kind": kind}
