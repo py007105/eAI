@@ -18,12 +18,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import confusion_matrix, f1_score
 from sklearn.model_selection import StratifiedGroupKFold
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from eternalai import artifacts, config  # noqa: E402
+from eternalai.safe_model import SafeHGB  # noqa: E402
 from eternalai.classify import ABSTAIN, CLASSES, FaultClassifier  # noqa: E402
 from eternalai.detect import FEATURES as DET_FEATURES, fit_service  # noqa: E402
 from eternalai.features.window import FEATURE_NAMES, fit_baseline, window_features  # noqa: E402
@@ -120,7 +120,7 @@ def det_flags(det, df):
 def fit_classifier(df, seed=0):
     d = df[(df.label.isin(CLASSES))]
     X, y, g = d[CLS_FEATURES].values, d.label.values, d.run.values
-    base = HistGradientBoostingClassifier(max_depth=4, max_iter=150, learning_rate=0.06, min_samples_leaf=15,
+    base = SafeHGB(max_depth=4, max_iter=150, learning_rate=0.06, min_samples_leaf=15,
                                           l2_regularization=1.0, class_weight="balanced", random_state=seed)
     inner = list(StratifiedGroupKFold(3, shuffle=True, random_state=seed).split(X, y, g))
     cal = CalibratedClassifierCV(base, method="sigmoid", cv=inner).fit(X, y)
@@ -249,7 +249,7 @@ def main():
         trr, ter = ranking[ranking.run.isin(tr_runs)], ranking[ranking.run.isin(te_runs)]
         if ter.empty or trr.empty:
             continue
-        m = HistGradientBoostingClassifier(max_depth=3, max_iter=80, learning_rate=0.08, min_samples_leaf=10,
+        m = SafeHGB(max_depth=3, max_iter=80, learning_rate=0.08, min_samples_leaf=10,
                                            l2_regularization=1.0, random_state=0).fit(trr[EVIDENCE].values, trr.is_root)
         for (run, rel), g in ter.groupby(["run", "rel"]):
             p = m.predict_proba(g[EVIDENCE].values)[:, 1]
@@ -271,7 +271,7 @@ def main():
     print("\n".join(R))
 
     if not a.no_save:
-        ranker_model = HistGradientBoostingClassifier(max_depth=3, max_iter=80, learning_rate=0.08, min_samples_leaf=10,
+        ranker_model = SafeHGB(max_depth=3, max_iter=80, learning_rate=0.08, min_samples_leaf=10,
                                                       l2_regularization=1.0, random_state=0).fit(ranking[EVIDENCE].values, ranking.is_root)
         desc = f"{len(runs)} no-action live runs, training seeds 1000+, scenarios {sorted(set(df.scenario))}"
         artifacts.save("baselines", base, training_data=desc, features=["req_rate", "p95_s", "cpu_cores", "mem_bytes",
