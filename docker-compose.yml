@@ -53,6 +53,7 @@ services:
   evaluator:
     build: ./evaluator
     image: eai/evaluator:v1
+    mem_limit: 256m
     networks: [eai]
     ports: ["8200:8200"]
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "truth:/truth"]
@@ -76,6 +77,7 @@ services:
       PROMETHEUS_URL: http://prometheus:9090
       WEB_URL: http://web:8000
       EVALUATOR_URL: http://evaluator:8200
+      ETERNALAI_BRAIN: ${ETERNALAI_BRAIN:-eternalai}   # eternalai | threshold_restart | prototype_rules (benchmark baselines)
       ETERNALAI_MODE: ${ETERNALAI_MODE:-ask-first}
       ETERNALAI_APPROVAL_TOKEN: ${ETERNALAI_APPROVAL_TOKEN:-change-me}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -95,6 +97,7 @@ services:
   loadgen:
     build: ./loadgen
     image: eai/loadgen:v1
+    mem_limit: 128m
     networks: [eai]
     environment:
       TARGET_URL: http://web:8000
@@ -104,6 +107,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.55.1
+    mem_limit: 512m
     networks: [eai]
     ports: ["9090:9090"]
     volumes: [./telemetry/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
@@ -111,6 +115,7 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.64.0
+    mem_limit: 512m
     networks: [eai]
     ports: ["16686:16686"]
     environment: {COLLECTOR_OTLP_ENABLED: "true"}
