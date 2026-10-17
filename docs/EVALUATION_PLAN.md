@@ -127,4 +127,23 @@ self-reported (section 5).
 
 ## Amendments
 
-(none yet)
+### Amendment 1 (2026-10-18, written while the benchmark is running; still no benchmark result read beyond completion counts and the two rows disclosed in section 0)
+
+These are procedures for after the benchmark and wording rules. They change no v1 code, data or analysis rule above.
+
+**A. Export before any reset.** Before any reset procedure (including the scorecard reset in `docs/DEMO.md`) and before touching the evaluator's volume, the raw results and the evaluator's truth files are exported and checksummed:
+`docs/results/benchmark_raw.jsonl` and the contents of the `eai_truth` volume (one JSON per attempt plus `results.jsonl`) are copied under `results/benchmark-v1/`, with SHA-256 checksums in `results/benchmark-v1/SHA256SUMS`, and committed (or committed as an archive plus checksums
+if too large). Only then may a reset be run. A reset is never run first.
+
+**B. Orders-crash post-mortem, exact steps.** (1) Read the preserved evidence file for incident `e5267f50` and record the classifier's top class and probability, the abstain threshold in force and the recorded reason. (2) Tabulate which (fault, target service) pairs occur
+in the 72 training runs (from `data/runs/*.json`) and in the benchmark rows. If the benchmark crashed a target that was never crashed in training, classify it (c) design limitation (weak generalisation across targets); otherwise look for a bug (b) and show the evidence. (3) Across all
+scenarios and arms, check whether abstentions on supported faults cluster by target service, and report the table whatever it shows.
+
+**C. Recovery is self-reported; wording rules.** Recovery stays class (c): the system under test reports it. In every document and rendered table the load generator's failed-request % is presented **first** as the independent measure, the consistency check against the `no_action` arm is shown next to it, and
+recovery is called "self-reported" wherever it appears. No document may describe recovery as independently verified. (The word "verified" in a metric name means the system's own checkout verification.) A **proposal for v2, not applied**: evaluator-side probe logging that stores the raw probe result
+of every probe per run (timestamp, status, latency), so recovery can be computed independently of the system under test.
+
+**D. LLM path.** The benchmark used template reports only, because the brain container's LLM keys were empty (checked on the running container, without printing values). Every rendered table and results document states this. After the benchmark, with keys passed through compose, a small separate live LLM
+check is run on non-benchmark seeds (excluded from all benchmark tables), reporting the schema-validity rate and latency. Before any demo, confirm the key variable is present in the brain container (presence only, never the value).
+
+**E. Merge order.** `docs-prep` is merged into `main` only after the benchmark completes. Then the exact differences between the benchmark tree and tag `benchmark-system-v1` are listed (expected: documentation only).
