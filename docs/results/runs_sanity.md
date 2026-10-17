@@ -37,7 +37,7 @@ Targets chosen per scenario (random, by the evaluator):
 
 ## 2. Corruption and visibility of the injected fault
 
-- runs flagged: 4 of 72 (excluded from training, listed in data/runs/EXCLUDED.json)
+- runs flagged: 1 of 72 (excluded from training, listed in data/runs/EXCLUDED.json)
 
 Visible-fault evidence per run:
 
@@ -83,12 +83,12 @@ Visible-fault evidence per run:
 | error_spike_1502   | error_spike   | orders    | ok       | error ratio 0.014 -> 0.419            |
 | error_spike_1602   | error_spike   | payments  | ok       | error ratio 0.000 -> 0.551            |
 | error_spike_1702   | error_spike   | inventory | ok       | error ratio 0.000 -> 0.578            |
-| good_deploy_1008   | good_deploy   | inventory | FLAG     | deploys_3m max 1                      |
+| good_deploy_1008   | good_deploy   | inventory | ok       | deploys_3m max 1                      |
 | good_deploy_1108   | good_deploy   | orders    | ok       | deploys_3m max 1                      |
 | good_deploy_1208   | good_deploy   | web       | ok       | deploys_3m max 1                      |
 | good_deploy_1308   | good_deploy   | inventory | ok       | deploys_3m max 1                      |
 | good_deploy_1408   | good_deploy   | inventory | ok       | deploys_3m max 1                      |
-| good_deploy_1508   | good_deploy   | payments  | FLAG     | deploys_3m max 1                      |
+| good_deploy_1508   | good_deploy   | payments  | ok       | deploys_3m max 1                      |
 | good_deploy_1608   | good_deploy   | orders    | ok       | deploys_3m max 1                      |
 | good_deploy_1708   | good_deploy   | payments  | ok       | deploys_3m max 1                      |
 | latency_1001       | latency       | web       | ok       | p95 median 0.046s -> 0.975s           |
@@ -96,7 +96,7 @@ Visible-fault evidence per run:
 | latency_1201       | latency       | orders    | ok       | p95 median 0.049s -> 0.975s           |
 | latency_1301       | latency       | inventory | ok       | p95 median 0.009s -> 0.975s           |
 | latency_1401       | latency       | inventory | ok       | p95 median 0.009s -> 2.425s           |
-| latency_1501       | latency       | orders    | FLAG     | p95 median 0.048s -> 2.425s           |
+| latency_1501       | latency       | orders    | ok       | p95 median 0.048s -> 2.425s           |
 | latency_1601       | latency       | inventory | ok       | p95 median 0.034s -> 0.975s           |
 | latency_1701       | latency       | inventory | ok       | p95 median 0.033s -> 0.975s           |
 | memory_leak_1003   | memory_leak   | inventory | ok       | memory +91 MB; target died: False     |
@@ -119,44 +119,41 @@ Visible-fault evidence per run:
 Flagged runs and why:
 
 - `cpu_burn_1406`: fault not visible: cpu 0.031 -> nan cores
-- `good_deploy_1008`: 42% of pre-injection req_rate missing (scrape gap)
-- `good_deploy_1508`: 38% of pre-injection req_rate missing (scrape gap)
-- `latency_1501`: 53% of pre-injection req_rate missing (scrape gap)
 
 ## 3. Leakage checks
 
 - raw signal columns (15): ['cpu_cores', 'dep_fail_rate', 'depfail_inventory', 'depfail_orders', 'depfail_payments', 'deploys_3m', 'err_rate', 'error_log_rate', 'mem_bytes', 'mem_limit_bytes', 'p95_s', 'req_rate', 'restarts_3m', 'scratch_bytes', 'up']
 - raw columns containing a scenario name, injection flag or truth field: none
-- model feature names (40) containing such a word: none
+- model feature names (44) containing such a word: none
 - truth fields available only to the evaluator: ['run_id', 'scenario', 'target', 'expected_label', 'supported', 't_inject', 'params', 'seed']; none are columns of the run CSVs: True
 - bookkeeping columns (rel/end/run/scenario/target/service/label) among classifier inputs: none
 - `deploys_3m` and `restarts_in_window` are derived from `app_release_seq` / `app_start_time_seconds`, which a production monitor can observe; they are not read from the evaluator.
 
 ## 4. Run order and drift
 
-- Kruskal-Wallis of run position across scenarios: H=2.04, p=0.980 (small p would mean some scenarios cluster early or late)
-- AUC of predicting fault-vs-healthy from run position alone (blocked CV): 0.448 over 4 folds (0.5 = no information)
-- Does the previous run's scenario predict the current one? chi-square p=0.263 (large p = no detectable dependence)
+- Kruskal-Wallis of run position across scenarios: H=1.43, p=0.994 (small p would mean some scenarios cluster early or late)
+- Does run position predict fault-vs-healthy? Spearman rho=-0.021, p=0.860; share of fault runs by third of the run order: [0.79, 0.75, 0.78] (overall 0.77)
+- Does the previous run's scenario predict the current one? permutation test (2000 shuffles of the run order, chi-square statistic as the score): p=0.029 (a large p means no detectable dependence)
 
-Baseline drift: Spearman correlation between run position and each service's pre-injection median (window t0-110 s to t0-60 s, far from restore noise):
+Baseline drift: Spearman correlation between run position and each service's pre-injection median (clean window t0-40 s to t0-15 s):
 
 | service   | signal    |   spearman_rho |     p | flag   |
 |:----------|:----------|---------------:|------:|:-------|
-| web       | p95_s     |          0.132 | 0.282 | False  |
-| web       | cpu_cores |          0.235 | 0.054 | False  |
-| web       | mem_bytes |         -0.011 | 0.929 | False  |
-| web       | req_rate  |         -0.101 | 0.414 | False  |
-| orders    | p95_s     |          0.116 | 0.347 | False  |
-| orders    | cpu_cores |          0.02  | 0.873 | False  |
-| orders    | mem_bytes |         -0.357 | 0.003 | True   |
-| orders    | req_rate  |         -0.201 | 0.1   | False  |
-| inventory | p95_s     |          0.198 | 0.105 | False  |
-| inventory | cpu_cores |         -0.059 | 0.633 | False  |
-| inventory | mem_bytes |         -0.096 | 0.434 | False  |
-| inventory | req_rate  |         -0.188 | 0.124 | False  |
-| payments  | p95_s     |          0.152 | 0.216 | False  |
-| payments  | cpu_cores |         -0.071 | 0.567 | False  |
-| payments  | mem_bytes |          0.241 | 0.047 | False  |
-| payments  | req_rate  |         -0.21  | 0.085 | False  |
+| web       | p95_s     |          0.376 | 0.001 | True   |
+| web       | cpu_cores |          0.288 | 0.015 | False  |
+| web       | mem_bytes |         -0.087 | 0.472 | False  |
+| web       | req_rate  |         -0.044 | 0.718 | False  |
+| orders    | p95_s     |          0.252 | 0.034 | False  |
+| orders    | cpu_cores |          0.159 | 0.186 | False  |
+| orders    | mem_bytes |         -0.429 | 0     | True   |
+| orders    | req_rate  |         -0.043 | 0.723 | False  |
+| inventory | p95_s     |          0.3   | 0.011 | False  |
+| inventory | cpu_cores |          0.24  | 0.044 | False  |
+| inventory | mem_bytes |          0.035 | 0.77  | False  |
+| inventory | req_rate  |         -0.104 | 0.386 | False  |
+| payments  | p95_s     |          0.138 | 0.251 | False  |
+| payments  | cpu_cores |          0.192 | 0.108 | False  |
+| payments  | mem_bytes |          0.276 | 0.02  | False  |
+| payments  | req_rate  |         -0.028 | 0.818 | False  |
 
-- baseline-drift flags (|rho|>0.3 and p<0.01): 1 -> orders.mem_bytes
+- baseline-drift flags (|rho|>0.3 and p<0.01): 2 -> web.p95_s; orders.mem_bytes
