@@ -24,8 +24,8 @@ from timing import settle_seconds
 
 PROM = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
 EAI = os.getenv("EAI_URL", "http://host.docker.internal:8000")
-TRUTH = Path("/truth")
-TRUTH.mkdir(exist_ok=True)
+TRUTH = Path(os.getenv("TRUTH_DIR", "/truth"))  # a volume only this container mounts
+TRUTH.mkdir(parents=True, exist_ok=True)
 RESULTS = TRUTH / "results.jsonl"
 
 app = FastAPI(title="eai-evaluator")
@@ -105,17 +105,23 @@ def _execute(run_id: str, req: RunRequest):
         t_end = time.time()
         incidents = _eai_incidents() or []
         res = score_run(truth, incidents, _failed_pct(t_inject, t_end), t_end)
+        res["t_end"] = t_end  # end of the observation window, before the restore that follows
         with _lock, RESULTS.open("a") as f:
             f.write(json.dumps(res) + "\n")
-        st["_result"], st["state"] = res, "finished"
+        st["_result"] = res
     except Exception as e:
-        st["state"], st["error"] = "failed", f"{type(e).__name__}: {e}"
+        st["error"] = f"{type(e).__name__}: {e}"
     finally:
+        # The run only counts as finished AFTER the stack has been restored. Marking it finished first let the
+        # caller start the next run while this restore was still recreating containers: two restores collided
+        # ("expected 1 container ..., found 0") and about 1 in 8 collection runs failed.
         try:
             nxt = inj.restore({target})
             _state["after_deploy"] = nxt or scen in ("bad_deploy", "good_deploy")
-        except Exception:
-            pass
+        except Exception as e:
+            st.setdefault("error", f"restore failed: {type(e).__name__}: {e}")
+            st.pop("_result", None)
+        st["state"] = "finished" if "_result" in st else "failed"
 
 
 @app.get("/health")
