@@ -108,28 +108,16 @@ class Injector:
             return {"error_rate": p}
         if scenario == "memory_leak":
             mb = rng.choice([4, 6, 8])
-
-            def leak():
-                while not self._stop.is_set():
-                    try:
-                        self._chaos(svc, "leak", mb)
-                    except httpx.HTTPError:
-                        return
-                    time.sleep(2)
-            self._background(leak)
-            return {"leak_mb_per_2s": mb}
+            # One call: the leak then runs INSIDE the service process, like a real leak, so a restart or recreate removes
+            # it. (Training data was collected with the evaluator re-posting the leak every 2 s from outside; the first
+            # seconds look the same. Docs record this change.)
+            self._chaos(svc, "leak_stream", mb)
+            return {"leak_mb_per_2s": mb, "mode": "in-process stream"}
         if scenario == "disk_fill":
             mb = rng.choice([15, 25, 35])
-
-            def fill():
-                while not self._stop.is_set():
-                    try:
-                        self._chaos(svc, "disk", mb)
-                    except httpx.HTTPError:
-                        return
-                    time.sleep(2)
-            self._background(fill)
-            return {"fill_mb_per_2s": mb}
+            # A runaway job inside the service dumps files for ~30 s and stops; the files stay until cleaned.
+            self._chaos(svc, "disk_burst", mb)
+            return {"fill_mb_per_2s": mb, "mode": "in-process 30 s burst"}
         if scenario == "bad_deploy":
             self._recreate(svc, f"eai/{svc}:v3-bad")
             return {"image": f"eai/{svc}:v3-bad"}
