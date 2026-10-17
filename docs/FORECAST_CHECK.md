@@ -15,6 +15,10 @@ For a gradual memory leak and a gradual disk fill, does EternalAI issue an exhau
   Before the real runs, one smoke run per fault confirms that a predicted incident is opened in watch-only mode (the code path `Engine._predictive` is not mode-gated as far as I read it, but that is an assumption until seen).
 - **System under test:** the tag `benchmark-system-v1` code, unchanged; frozen models `models-v1`.
 
+## Double use: live watch-only verification (item 22)
+
+Because the brain runs in **watch-only** mode here, the same 20 runs are also the live check of watch-only mode. It is reported as such, with these extra criteria fixed in advance: in every run `/audit` and the incident rows show **0 executed actions** (no restart, recreate, rollback or cleanup), and at least one incident (predicted or reactive) is opened in each of the 10 leak/disk runs. A single executed action in any run is a watch-only failure, reported as is. This verifies watch-only on this scripted workload only.
+
 ## Measurements (computed by a script from raw data, never typed)
 
 1. **First warning time** `t_warn`: the earliest of (a) `opened_t` of an incident with `kind == "predicted"` and (b) the first `forecast` evidence item in any incident, read from `GET /incidents` (`forecasts`, `opened_t`, `timeline`) right after the run.
@@ -25,11 +29,13 @@ For a gradual memory leak and a gradual disk fill, does EternalAI issue an exhau
 
 ## Success criteria (fixed in advance)
 
+Reporting wording: results are stated as counts over the runs actually made, for example "0 warnings in 5 healthy runs" (per healthy scenario), never as "no false warnings", which would claim more than 5 runs can show.
+
 | criterion | pass if |
 |---|---|
 | warning issued | at least 4 of 5 runs for each of `memory_leak` and `disk_fill` have a warning before `t_limit` |
 | lead time | median lead time at least **30 s** for each fault type; every run's lead time listed |
-| false warnings on healthy runs | **0** warnings in the 5 `traffic_surge` and 5 `good_deploy` runs (any warning is a fail, reported as is) |
+| warnings on healthy runs | **0** warnings in the 5 `traffic_surge` runs and **0** in the 5 `good_deploy` runs (any warning is a fail, reported as is) |
 | wrong-service warnings | 0 in the leak/disk runs |
 
 Not a pass/fail criterion, only reported: how often the stated window contained the actual time. With n = 5 per fault, results are reported as raw per-run values and counts, with no confidence claims. A failed criterion is reported as failed and is not
