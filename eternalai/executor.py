@@ -26,6 +26,19 @@ class ExecutionError(Exception):
     pass
 
 
+def strip_inherited(container_env, image_env, container_labels, image_labels):
+    """What to pass when recreating a container from a DIFFERENT image.
+
+    Env: only values set on the container itself; values the old image baked in must not override the
+    new image's own (regression: a "bad" release image once ran with the old image's RELEASE_FLAVOR=good).
+    Labels: drop values inherited from the old image, but always keep compose labels, which identify the
+    container (regression: stripping them left the new container invisible to lookups)."""
+    env = [e for e in container_env if e not in (image_env or [])]
+    labels = {k: v for k, v in container_labels.items()
+              if k.startswith("com.docker.compose.") or (image_labels or {}).get(k) != v}
+    return env, labels
+
+
 class Executor:
     def __init__(self, client: docker.DockerClient | None = None):
         self.client = client or docker.from_env()
@@ -59,12 +72,8 @@ class Executor:
         net_cfg = self.client.api.create_networking_config(
             {net: self.client.api.create_endpoint_config(aliases=[svc])})
         name = c.name
-        # pass only what was set on the container, not what the OLD image baked in
         img = c.image.attrs["Config"]
-        env = [e for e in a["Config"]["Env"] if e not in (img.get("Env") or [])]
-        # compose labels identify the container and must survive even when the old image carries the same value
-        labels = {k: v for k, v in a["Config"]["Labels"].items()
-                  if k.startswith("com.docker.compose.") or (img.get("Labels") or {}).get(k) != v}
+        env, labels = strip_inherited(a["Config"]["Env"], img.get("Env"), a["Config"]["Labels"], img.get("Labels"))
         c.stop(timeout=5)
         c.remove()
         new = self.client.api.create_container(
