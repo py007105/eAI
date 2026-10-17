@@ -147,3 +147,17 @@ of every probe per run (timestamp, status, latency), so recovery can be computed
 check is run on non-benchmark seeds (excluded from all benchmark tables), reporting the schema-validity rate and latency. Before any demo, confirm the key variable is present in the brain container (presence only, never the value).
 
 **E. Merge order.** `docs-prep` is merged into `main` only after the benchmark completes. Then the exact differences between the benchmark tree and tag `benchmark-system-v1` are listed (expected: documentation only).
+
+### Amendment 2 (2026-10-18, written while the benchmark is running; no benchmark result read beyond completion counts and the two rows disclosed in section 0)
+
+Adds two secondary analyses. Neither changes a v1 code path, a v1 row or an analysis rule above.
+
+**F. Forecast lead time and false warnings (secondary metric).** For `memory_leak` and `disk_fill` runs: the time between the first forecast warning and the resource limit or the failure; and the number of forecast warnings raised on non-gradual runs (every other scenario).
+The v1 raw rows store, per incident, only `id, opened_t, closed_t, kind, status, likely_cause, abstained, ranking, actions, verification, timeline`; they do **not** store the forecast objects or the time of the first warning. This metric is therefore reported as
+**"not measured in benchmark v1"**. It is not inferred from `kind` or `opened_t`. It is measured instead by a dedicated live check on non-benchmark seeds (`docs/FORECAST_CHECK.md`, success criteria fixed there before it is run), reported separately, never pooled into benchmark tables.
+
+**G. Offline RCAEval/PyRCA-style diagnosis baseline.** An offline comparison on the 72 training runs (71 used), grouped by run, of a simple RCAEval/PyRCA-style root-cause ranker against EternalAI's ranker on the same runs. It is labelled **offline**, uses no live arm and no
+benchmark row, and is kept in its own file (`docs/results/offline_rca_baseline.md`). Only RE1 is available locally (RE2/RE3 are not downloaded), so no claim is made about those datasets. It is run only after the benchmark finishes.
+
+**H. Order of post-benchmark work, with the Docker permission rule.** Docker is touched only after `benchmark_status` shows 225/225, no benchmark process is running, and the export-and-checksum step (A) is done. Then, in order: forecast check, offline RCA baseline, live LLM check,
+preflight and the demo launcher (three runs from a clean `docker compose up`). Each reports what happened, including failures. Groq stays labelled untested.
