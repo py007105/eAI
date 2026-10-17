@@ -27,3 +27,4 @@ APPROVED_TEMP_PATH = "/tmp/eai-scratch"
 SCRATCH_LIMIT_BYTES = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  # mirrors the app's disk-full threshold
 PREDICT_HORIZON_S = 90     # act on a forecast when earliest exhaustion is closer than this
 OBSERVATION_S = 20        # how long checkout must stay healthy before "recovered"
+DEPLOY_GRACE_S = 15.0     # ignore anomalies this long after a release change (a normal rolling release restarts the service)
