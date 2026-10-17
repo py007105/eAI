@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from scenarios import HEALTHY_SCENARIOS, SCENARIOS, SERVICES, Injector
 from scoring import aggregate, score_run
+from timing import settle_seconds
 
 PROM = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
 EAI = os.getenv("EAI_URL", "http://host.docker.internal:8000")
@@ -87,7 +88,7 @@ def _execute(run_id: str, req: RunRequest):
         _wait_quiet()
         # let rate windows fill with healthy data; after a release change also let the 3-minute
         # "recent deploy" signal expire so one run cannot leak into the next
-        time.sleep(200 if (changed or _state["after_deploy"]) else 45)
+        time.sleep(settle_seconds(changed, _state["after_deploy"]))
         t_inject = time.time()
         params = inj.inject(scen, target, rng)
         truth = {"run_id": run_id, "scenario": scen, "target": target, "expected_label": expected,
