@@ -18,7 +18,7 @@ import numpy as np
 from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
 from .collector import DockerView, Prom
-from .dedupe import ReleaseGrace, Suppressor
+from .dedupe import ReleaseGrace, Suppressor, downstream_of
 from .detect import Persistence, service_anomalous
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
@@ -99,7 +99,7 @@ class Engine:
     # ------------------------------------------------------------ observation
     def _observe(self):
         states = self.dv.poll()
-        feats, scores, anom = {}, {}, {}
+        feats, scores, anom, raw = {}, {}, {}, {}
         frames = {}
         for s in config.SERVICES:
             df = self.prom.signals(s, 150)
@@ -113,10 +113,18 @@ class Engine:
                 a = service_anomalous(self.detectors[s], f, down)
             else:
                 sc, a = float("nan"), down or rule_diagnose(f) != "healthy"
-            # a normal rolling release restarts the service for a few seconds: judge it only once the grace period is over
-            if self.grace.in_grace(s, f.get("deploys_3m"), time.time()):
+            feats[s], scores[s], raw[s] = f, sc, (bool(a), st)
+        # A normal rolling release restarts the service for a few seconds. Judge it only once the grace period is over, and
+        # judge its CALLERS the same way: they fail only because of that blip, and flagging them first opened an incident on
+        # the wrong service with the real root still "healthy" in the evidence (found by the live smoke test).
+        now = time.time()
+        in_grace = {s: self.grace.in_grace(s, feats[s].get("deploys_3m"), now) for s in config.SERVICES}
+        for s in config.SERVICES:
+            a, st = raw[s]
+            if in_grace[s] or any(in_grace[d] for d in downstream_of(s)):
                 a = False
-            feats[s], scores[s], anom[s] = f, sc, bool(a)
+            anom[s] = bool(a)
+            f, sc = feats[s], scores[s]
             self.latest[s] = {"features": {k: (None if not np.isfinite(v) else round(float(v), 4))
                                            for k, v in f.items() if not k.endswith("_obs")},
                               "score": None if not np.isfinite(sc) else round(sc, 4), "anomalous": bool(a),
