@@ -66,6 +66,8 @@ class Incident:
 
 
 class Engine:
+    use_models = True   # baseline engines (eternalai/baselines.py) set this False and never load trained artifacts
+
     def __init__(self, mode: str = config.MODE):
         self.prom, self.dv = Prom(), DockerView()
         self.executor, self.policy = Executor(), PolicyEngine(mode)
@@ -76,10 +78,15 @@ class Engine:
         self.depfail: dict = {}
         self.lock = threading.RLock()
         self._stop = threading.Event()
-        self.detectors, self.det_meta = artifacts.load("detectors")
-        self.classifier, self.cls_meta = artifacts.load("classifier")
-        self.ranker, self.rank_meta = artifacts.load("ranker")
-        self.baselines = (artifacts.load("baselines")[0]) or {}
+        if self.use_models:
+            self.detectors, self.det_meta = artifacts.load("detectors")
+            self.classifier, self.cls_meta = artifacts.load("classifier")
+            self.ranker, self.rank_meta = artifacts.load("ranker")
+            self.baselines = (artifacts.load("baselines")[0]) or {}
+        else:
+            self.detectors = self.classifier = self.ranker = None
+            self.det_meta = self.cls_meta = self.rank_meta = None
+            self.baselines = {}
         # The feature window must be the one the models were trained with (train/serve consistency).
         self.window_s = float((self.cls_meta or self.det_meta or {}).get("window_s", 30.0))
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
