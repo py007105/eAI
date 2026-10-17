@@ -32,20 +32,29 @@ class Prediction:
     confidence: float           # calibrated probability of `label` (not an anomaly score)
     probs: dict[str, float]
     abstained: bool
+    reason: str = ""            # "" | "low_confidence" | "novel"
+    novelty: float | None = None
 
 
 class FaultClassifier:
-    def __init__(self, model, features: list[str], classes: list[str], abstain_below: float):
+    """Calibrated classifier plus a novelty gate. It abstains when the window is far from every known training window
+    (the confidence alone cannot tell: it labelled a never-seen fault with high confidence) or when confidence is low."""
+
+    def __init__(self, model, features: list[str], classes: list[str], abstain_below: float, gate=None):
         self.model, self.features, self.classes, self.abstain_below = model, features, classes, abstain_below
+        self.gate = gate
 
     def predict(self, feats: dict) -> Prediction:
         x = np.array([[feats.get(f, np.nan) for f in self.features]], dtype=float)
         p = self.model.predict_proba(x)[0]
         probs = {c: float(v) for c, v in zip(self.classes, p)}
         best = max(probs, key=probs.get)
+        nov = self.gate.distance_of(feats) if self.gate is not None else None
+        if self.gate is not None and nov > self.gate.threshold_:
+            return Prediction(ABSTAIN, probs[best], probs, True, "novel", nov)
         if probs[best] < self.abstain_below:
-            return Prediction(ABSTAIN, probs[best], probs, True)
-        return Prediction(best, probs[best], probs, False)
+            return Prediction(ABSTAIN, probs[best], probs, True, "low_confidence", nov)
+        return Prediction(best, probs[best], probs, False, "", nov)
 
 
 def rule_diagnose(feats: dict) -> str:
