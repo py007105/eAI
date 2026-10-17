@@ -72,7 +72,7 @@ def _wait_quiet(max_s=90):
             misses += 1
             if misses >= 3:  # EternalAI is not running; nothing to wait for
                 return False
-        elif not any(i["status"] in ("open", "awaiting_approval", "verifying") for i in inc):
+        elif not any(i["status"] in ("open", "awaiting_approval", "executing", "verifying") for i in inc):
             return True
         time.sleep(2)
     return False
@@ -116,6 +116,7 @@ def _execute(run_id: str, req: RunRequest):
         # caller start the next run while this restore was still recreating containers: two restores collided
         # ("expected 1 container ..., found 0") and about 1 in 8 collection runs failed.
         try:
+            _wait_quiet(30)   # let the brain finish any action in flight; restoring underneath it caused a 409 race
             nxt = inj.restore({target})
             _state["after_deploy"] = nxt or scen in ("bad_deploy", "good_deploy")
         except Exception as e:
