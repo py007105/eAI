@@ -30,7 +30,7 @@ import envinfo  # noqa: E402
 from eternalai import artifacts, config  # noqa: E402
 from eternalai.calibrate import TemperatureCalibrated  # noqa: E402
 from eternalai.classify import ABSTAIN, CLASSES, FaultClassifier  # noqa: E402
-from eternalai.detect import FEATURES as DET_FEATURES, LIMIT_MARGIN, TWO_SIDED, fit_service  # noqa: E402
+from eternalai.detect import FEATURES as DET_FEATURES, IF_SLACK, LIMIT_MARGIN, TWO_SIDED, fit_service  # noqa: E402
 from eternalai.features.window import FEATURE_NAMES, fit_baseline, window_features  # noqa: E402
 from eternalai.novelty import NOVELTY_FEATURES, NoveltyGate  # noqa: E402
 from eternalai.rca import EVIDENCE, Ranker, baro_rank, deepest_anomalous, evidence_table  # noqa: E402
@@ -386,7 +386,13 @@ def main():
     R.append(f"- persistent-flag false alarms (the events the engine would open an incident for), pre-injection healthy "
              f"windows: {ev_total} events in {minutes:.0f} healthy service-minutes = **{100 * ev_total / max(minutes, 1e-9):.1f} per "
              f"100 service-minutes**; by service: {ev_by_svc}")
-    R.append(f"- limit margin in use: {LIMIT_MARGIN} (chosen by `--detector-sweep`, docs/results/detector_margin.md)")
+    upper = 100 * 3.0 / max(minutes, 1e-9) if ev_total == 0 else float("nan")
+    if ev_total == 0:
+        R.append(f"- zero events is an observation, not proof of zero: by the rule of three the 95% upper bound on the rate is "
+                 f"about {upper:.1f} per 100 service-minutes given only {minutes:.0f} healthy service-minutes")
+    R.append(f"- detector configuration in use: learned-limit margin {LIMIT_MARGIN}, forest threshold = largest healthy "
+             f"validation score + {IF_SLACK} (chosen by `--detector-sweep`, docs/results/detector_margin.md; the forest "
+             f"turned out to add nothing measurable over the limits)")
     R.append("\n| scenario | target windows flagged (rel 8-60 s) | median time to first persistent flag (s) |\n|---|---|---|")
     for sc, g in oof[~oof.scenario.isin(HEALTHY_SCEN)].groupby("scenario"):
         tg = g[(g.service == g.target) & (g.rel >= g.window_s) & (g.rel <= 60)]
