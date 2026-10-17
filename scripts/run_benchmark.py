@@ -89,8 +89,14 @@ def main():
     ap.add_argument("--approve-after", type=float, default=5.0)
     ap.add_argument("--scenarios", nargs="*", default=SCENARIOS)
     ap.add_argument("--manage-stack", action="store_true", help="(re)start / stop the brain container for this arm")
+    ap.add_argument("--smoke", action="store_true", help="plumbing check on seeds that are in neither the training (1000-1707) "
+                    "nor the benchmark (<1000) range; results go to docs/results/benchmark_smoke.jsonl and are not reported")
     a = ap.parse_args()
-    assert a.seed0 + a.reps * 10 + 9 < 1000, "benchmark seeds must stay below the training seeds (1000+)"
+    global RAW
+    if a.smoke:
+        a.seed0, RAW = max(a.seed0, 2000), Path("docs/results/benchmark_smoke.jsonl")
+    else:
+        assert a.seed0 + a.reps * 10 + 9 < 1000, "benchmark seeds must stay below the training seeds (1000+)"
     brain, mode = ARMS[a.arm]
     token = os.getenv("ETERNALAI_APPROVAL_TOKEN", "benchmark-token-not-a-secret")
     meta = {}
