@@ -69,6 +69,14 @@ def test_accounting_counts_225_and_keeps_every_row(fixture_file, tmp_path):
     assert "cells not at 5 runs: none" in text and "no run was dropped" in text
 
 
+def test_report_provider_lines_in_timelines_are_counted(fixture_file, tmp_path):
+    rows = [json.loads(x) for x in fixture_file.read_text().splitlines()]
+    rows[0]["incidents"] = [{"timeline": [[1.0, "opened"], [2.0, "report by gemini (1.2s)"]]}]
+    p = tmp_path / "with_llm.jsonl"
+    p.write_text("\n".join(json.dumps(x) for x in rows))
+    assert ": 1 of 225" in render(p, tmp_path)
+
+
 def test_complete_fixture_has_no_incomplete_banner(fixture_file, tmp_path):
     assert "INCOMPLETE" not in render(fixture_file, tmp_path)
 
@@ -123,7 +131,9 @@ def test_pooled_recovery_rate_and_interval_are_computed_over_runs(fixture_file, 
 
 def test_independent_measure_comes_first_and_banner_states_limits(fixture_file, tmp_path):
     out = render(fixture_file, tmp_path)
-    assert "Template reports only" in out and "Recovery is self-reported" in out
+    assert "configured without LLM keys" in out and "Recovery is self-reported" in out
+    assert "contain a `report by <provider>` line (non-template report): 0 of 225" in out
+    assert "template reports only" not in out.lower().replace("expected to be template reports", "")
     assert out.index("## 2. The independent measure first") < out.index("SELF-REPORTED by the system") < out.index("## 4. Pooled")
     assert out.index("Consistency check of self-reported recovery") < out.index("## 3.")
     assert "verified recovery" not in out.lower().replace("never independently verified", "")
