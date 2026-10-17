@@ -40,7 +40,7 @@ failure triage rule and the rules for harness failures are in `docs/EVALUATION_P
 This is a stated limitation of v1, with a consistency check described in the plan.
 
 **LLM layer.** The model returns JSON validated against a strict schema; evidence ids must exist, the runbook must be one the deterministic table allows for the diagnosed cause, and the engine's own diagnosis stays
-authoritative. Actions never depend on the LLM. The benchmark runs use the template report only.
+authoritative. Actions never depend on the LLM. The benchmark brains were started with both LLM key variables empty (by construction), so reports are expected to be template reports; the report provider is not recorded in the result rows (design limitation, class c), and `scripts/render_results.py` counts timelines containing a `report by <provider>` line as a consistency check.
 
 ## 3. Reproduce
 
