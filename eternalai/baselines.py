@@ -169,6 +169,15 @@ def proto_find(snaps, z, preds, down_streak, deploys, rps_baseline, now, topolog
     return findings, roots, symptomatic
 
 
+def proto_anomalous(service, symptomatic, preds, snap, z) -> bool:
+    """Does the ported prototype consider this service to be in trouble? `preds[service]` is a dict that is always present
+    ({'mem': None, 'disk': None} when nothing is forecast), so test its VALUES: a plain truthiness test flagged every service
+    permanently (found by the live smoke test)."""
+    p = preds.get(service) or {}
+    return bool(service in symptomatic or p.get("mem") or p.get("disk") or snap["disk"] >= 0.9 * SCRATCH_LIMIT_MB
+                or z["cpu"]["anomalous"] or z["mem"]["anomalous"])
+
+
 class PrototypeRulesEngine(Engine):
     use_models = False
 
@@ -205,8 +214,7 @@ class PrototypeRulesEngine(Engine):
         preds = self._preds()
         _, _, symptomatic = proto_find(snaps, z, preds, self.down_streak, self.deploys, self._rps_base(), now)
         for s in config.SERVICES:
-            anom[s] = s in symptomatic or bool(preds.get(s)) or snaps[s]["disk"] >= 0.9 * SCRATCH_LIMIT_MB \
-                or z[s]["cpu"]["anomalous"] or z[s]["mem"]["anomalous"]
+            anom[s] = proto_anomalous(s, symptomatic, preds, snaps[s], z[s])
             self.latest[s]["anomalous"] = bool(anom[s])
         return feats, scores, anom
 
