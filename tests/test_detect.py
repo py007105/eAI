@@ -35,6 +35,19 @@ def test_single_feature_excursions_are_caught():
     assert d.out_of_range(row(error_ratio=0.78)) == ["error_ratio"]
 
 
+def test_live_decision_uses_limits_not_only_the_forest_score():
+    """Regression (found by the live smoke test): the engine compared only the forest score with its threshold, so a
+    1.4 s latency fault (lat_ratio ~28) was never flagged live although it is flagged 100% offline."""
+    from eternalai.detect import service_anomalous
+    rng = np.random.default_rng(5)
+    d = fit_service(healthy(800, rng), healthy(800, rng))
+    latency_fault = row(lat_ratio=28.0)
+    assert d.score(latency_fault) <= d.threshold                 # the forest alone does NOT flag it
+    assert service_anomalous(d, latency_fault, down=False)       # the live decision does
+    assert service_anomalous(d, row(), down=True)                # not scraped => anomalous
+    assert not service_anomalous(d, row(), down=False)
+
+
 def test_limits_come_from_healthy_data_only_and_do_not_fire_on_healthy():
     rng = np.random.default_rng(2)
     tr, va = healthy(800, rng), healthy(800, rng)
