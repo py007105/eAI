@@ -4,7 +4,7 @@ Numbers are `[[placeholders]]` until `docs/results/benchmark.md` exists; they ar
 
 **Isn't a cross-validation macro-F1 near 1.0 just overfitting?**
 Not in the sense of leakage: every split is by whole run (never by random rows), calibration and thresholds are fitted inside training folds, and the data check found no label-bearing columns and no run-order effect. But it is optimistic for three honest reasons: the faults are strong and cleanly injected
-by the same script that produced the training data; we iterated four times on the same cross-validation data (the first attempt scored 0.365, and every change is logged in `docs/DATA.md`), so there are forking paths; and there is a single application. The test that matters is the held-out benchmark on seeds the models never saw: `[[held-out cause-label accuracy and recovery rates]]`.
+by the same script that produced the training data; we iterated four times on the same cross-validation data (the first attempt scored 0.365, and every change is logged in `docs/DATA.md`), so there are forking paths; and there is a single application. The test that matters is the held-out benchmark on seeds the models never saw: `[[held-out cause-label accuracy, failed-request % and self-reported recovery rates]]`.
 We did not run a shuffled-label control on the live data (we did on the public RE1 data, where it stayed at chance).
 
 **Does it work on a different application?**
@@ -27,7 +27,7 @@ The measured comparison, including the metrics where EternalAI is not ahead: `[[
 Partly, and we say so. The evaluator is independent code with a private truth volume, the models never see the fault name, and the benchmark uses unseen seeds and shares them across arms. But the same team wrote the fault injector that generated the training data, so the benchmark measures in-distribution performance on one application. It is not a test against faults we did not think of, other than the one deliberately unseen type.
 
 **Who decides recovery?**
-In v1 the system under test does (its own verification probe). The evaluator contributes an independent failed-request percentage from the load generator and a consistency check against the no-action arm for the same seed, but no independent probe logs exist. That is a stated limitation and a candidate change for a v2.
+In v1 the system under test does (its own verification probe), so recovery is self-reported and never independently verified; we lead with the load generator's failed-request % for that reason. The evaluator contributes an independent failed-request percentage from the load generator and a consistency check against the no-action arm for the same seed, but no independent probe logs exist. That is a stated limitation and a candidate change for a v2.
 
 **Did you change anything after seeing results?**
 The analysis plan was committed before any result was read (`docs/EVALUATION_PLAN.md`; its commit time is the evidence), and the v1 system is a git tag. Fixes found after seeing results become a v2 on fresh seeds, reported next to v1 and never replacing it. Before the benchmark we did fix many bugs found by smoke tests on seeds outside both the training and benchmark ranges; those are listed in `docs/DATA.md`.
