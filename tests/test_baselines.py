@@ -54,6 +54,18 @@ def test_cpu_with_normal_traffic_is_runaway_and_with_high_traffic_is_overload():
     assert f2[0]["kind"] == "overload"
 
 
+def test_quiet_service_with_empty_forecasts_is_not_anomalous():
+    """Regression: preds[s] == {'mem': None, 'disk': None} is a non-empty dict, hence truthy; the prototype port flagged every
+    service permanently and opened a bogus incident before any fault."""
+    from eternalai.baselines import proto_anomalous
+    quiet_z = z(p95=False, err=False, cpu=False, mem=False)
+    assert not proto_anomalous("web", set(), {"web": {"mem": None, "disk": None}}, snap(), quiet_z)
+    assert proto_anomalous("web", set(), {"web": {"mem": {"slope": 1.0, "eta_s": 30.0}, "disk": None}}, snap(), quiet_z)
+    assert proto_anomalous("web", {"web"}, {}, snap(), quiet_z)
+    assert proto_anomalous("web", set(), {}, snap(disk=290.0), quiet_z)          # disk nearly full
+    assert proto_anomalous("web", set(), {}, snap(), z(p95=False, err=False, cpu=True, mem=False))
+
+
 def test_zscore_detector_needs_a_streak_and_learns_only_normal_values():
     zd = ZScoreDetector()
     for _ in range(20):
