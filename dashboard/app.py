@@ -182,7 +182,9 @@ def refresh(_, lang):
     rcls = "panel glow-bad" if inc and inc["status"] in ("open", "awaiting_approval", "executing", "verifying") else (
         "panel glow-ok" if inc and inc["status"] == "recovered" else "panel")
     return (bar, views.service_map(svc["services"], svc["topology"] or TOPOLOGY_FALLBACK, lang), views.causes_fig(inc, lang),
-            views.margin_text(inc, lang), views.report(inc, lang), views.timeline(inc, lang), views.evidence(inc, lang),
+            views.margin_text(inc, lang),
+            views.report(inc, lang, bool((status.get("calibration") or {}).get("show_probability"))),
+            views.timeline(inc, lang), views.evidence(inc, lang),
             fig_f, note, views.approvals(poller.get("approvals") or [], lang), p,
             f"panel glow-{pcls}" if pcls else "panel", rcls, views.scorecard(poller.get("scorecard"), lang))
 
