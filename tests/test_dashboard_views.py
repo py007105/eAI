@@ -43,6 +43,13 @@ def test_proof_banner_only_on_verified_recovery():
     assert views.proof(bad)[1] == "bad"
 
 
+def test_probability_shown_only_when_calibration_verified():
+    hidden = str(views.report(INC, "en", show_prob=False))
+    shown = str(views.report(INC, "en", show_prob=True))
+    assert "90%" not in hidden and t("prob_hidden") in hidden       # default: no percentage without a calibration check
+    assert "90%" in shown and t("prob_hidden") not in shown
+
+
 def test_labels_fallback_and_hindi_present():
     assert t("panel_map", "hi") != t("panel_map", "en")
     assert t("axis_support", "hi") == LABELS["en"]["axis_support"]  # untranslated key falls back to English
