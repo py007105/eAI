@@ -23,10 +23,22 @@ EVALUATOR_URL = os.getenv("EVALUATOR_URL", "http://localhost:8200")
 engine: Engine | None = None
 
 
+def make_engine() -> Engine:
+    """ETERNALAI_BRAIN selects the brain: `eternalai` (default) or one of the benchmark baselines."""
+    brain = os.getenv("ETERNALAI_BRAIN", "eternalai")
+    if brain == "eternalai":
+        return Engine()
+    from .baselines import PrototypeRulesEngine, ThresholdRestartEngine
+    cls = {"threshold_restart": ThresholdRestartEngine, "prototype_rules": PrototypeRulesEngine}.get(brain)
+    if cls is None:
+        raise RuntimeError(f"unknown ETERNALAI_BRAIN={brain!r}")
+    return cls("autopilot")  # baselines have no approval flow
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global engine
-    engine = Engine()
+    engine = make_engine()
     t = threading.Thread(target=engine.run_forever, daemon=True)
     t.start()
     yield
@@ -59,7 +71,7 @@ def health():
 
 @app.get("/status")
 def status():
-    return {"mode": engine.policy.mode, "models": engine.models_loaded,
+    return {"mode": engine.policy.mode, "brain": os.getenv("ETERNALAI_BRAIN", "eternalai"), "models": engine.models_loaded,
             "model_meta": {k: v and {"trained_at": v["trained_at_utc"], "git_commit": v["git_commit"]}
                            for k, v in (("detectors", engine.det_meta), ("classifier", engine.cls_meta),
                                         ("ranker", engine.rank_meta))},
