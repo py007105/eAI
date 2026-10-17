@@ -60,7 +60,8 @@ class ThresholdRestartEngine(Engine):
         return
 
     def _diagnose(self, inc, feats, scores, anom):
-        hot = sorted((s for s, a in anom.items() if a), key=lambda s: -feats[s].get("_severity", 0))
+        # the flags may already have cleared by now (a blip): fall back to the services that confirmed the incident
+        hot = sorted((s for s, a in anom.items() if a) or inc.services, key=lambda s: -feats[s].get("_severity", 0))
         inc.ranking = [{"service": s, "score": round(feats[s].get("_severity", 0), 3)} for s in hot]
         inc.likely_cause, inc.confidence, inc.abstained = "insufficient_evidence", None, False   # it does not diagnose
         inc.report = _report(f"Threshold rule fired on {hot[0] if hot else '?'}; restarting it.", "insufficient_evidence",
