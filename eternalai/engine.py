@@ -80,6 +80,8 @@ class Engine:
         self.classifier, self.cls_meta = artifacts.load("classifier")
         self.ranker, self.rank_meta = artifacts.load("ranker")
         self.baselines = (artifacts.load("baselines")[0]) or {}
+        # The feature window must be the one the models were trained with (train/serve consistency).
+        self.window_s = float((self.cls_meta or self.det_meta or {}).get("window_s", 30.0))
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
                               "ranker": self.ranker is not None, "baselines": bool(self.baselines)}
         self.busy: set[str] = set()   # services with an action in flight
@@ -94,7 +96,7 @@ class Engine:
             df = self.prom.signals(s, 150)
             frames[s] = df
             base = self.baselines.get(s) or fit_baseline(df.iloc[: len(df) // 2])  # live fallback, flagged in status
-            f = window_features(df, base)
+            f = window_features(df, base, self.window_s)
             st = states.get(s)
             down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
             if self.detectors and s in self.detectors:
@@ -155,7 +157,9 @@ class Engine:
                 open_inc = inc
             if open_inc is not None:
                 open_inc.services = sorted(set(open_inc.services) | confirmed)
-                if not open_inc.diagnosed and now - open_inc.opened_t >= 4:  # let evidence accumulate for ~2 ticks
+                # An incident opens ~6 s after onset (3 persistent ticks). Diagnose once a full feature window lies after
+                # the onset, because the classifier was trained on such windows only.
+                if not open_inc.diagnosed and now - open_inc.opened_t >= max(4.0, self.window_s - 4.0):
                     self._diagnose(open_inc, feats, scores, anom)
         if not open_inc:
             self._predictive(feats, now)
