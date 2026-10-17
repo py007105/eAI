@@ -161,3 +161,13 @@ benchmark row, and is kept in its own file (`docs/results/offline_rca_baseline.m
 
 **H. Order of post-benchmark work, with the Docker permission rule.** Docker is touched only after `benchmark_status` shows 225/225, no benchmark process is running, and the export-and-checksum step (A) is done. Then, in order: forecast check, offline RCA baseline, live LLM check,
 preflight and the demo launcher (three runs from a clean `docker compose up`). Each reports what happened, including failures. Groq stays labelled untested.
+
+### Amendment 3 (2026-10-18, written while the benchmark is running; no benchmark result read beyond completion counts and the two rows disclosed in section 0)
+
+Corrects the wording of Amendment 1 D and section 1 on the LLM path. No v1 code, data or analysis rule changes.
+
+**I. What is known about the LLM path in the benchmark, and how.** (1) By construction: `scripts/run_benchmark.py::start_brain` recreates the brain container for every brain arm with `GEMINI_API_KEY=""` and `GROQ_API_KEY=""` set in the launching environment, which overrides `.env` in compose. The `no_action` arm has no brain. So the benchmark brains were **configured** without LLM keys.
+(2) Amendment 1 D says this was "checked on the running container"; that check was made earlier, is not recorded in any file, and cannot be repeated now without Docker commands, so it is not cited as evidence. (3) **The result rows do not record which provider produced a report.** The row's `incidents` entries keep `id, opened_t, closed_t, kind, status, likely_cause, abstained, ranking, actions, verification, timeline` and `brain_status` keeps `brain, mode, model_meta, calibration, fallbacks_in_use`; neither holds the report provider.
+(4) The engine writes a timeline line `report by <provider> (...s)` only when a non-template provider answered (`eternalai/engine.py`, the `provider != "template"` branch). After the run, the rows' timelines are searched for that line; zero hits is consistent with template-only reports but is **not a direct record**.
+
+**Wording rule from now on.** Documents say: "the benchmark brains were configured without LLM keys (by construction); the per-run report provider is not recorded in the rows, which is a design limitation (class c); the absence of 'report by <provider>' lines in the recorded timelines is consistent with template-only reports." Nothing asserts "template only" as a verified fact. A v2 would store the report provider in each incident row (proposal only, not applied).
