@@ -64,6 +64,10 @@ def status():
                            for k, v in (("detectors", engine.det_meta), ("classifier", engine.cls_meta),
                                         ("ranker", engine.rank_meta))},
             "fallbacks_in_use": [k for k, v in engine.models_loaded.items() if not v],
+            # a probability may be shown as a percentage only if training verified its calibration (ECE <= 0.05)
+            "calibration": {"ece": (engine.cls_meta or {}).get("ece_oof"),
+                            "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
+                            "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
