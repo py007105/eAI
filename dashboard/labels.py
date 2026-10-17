@@ -47,6 +47,7 @@ LABELS = {
         "kind_reactive": "Reactive",
         "cause": "Likely cause",
         "calibrated": "calibrated",
+        "prob_hidden": "probability hidden: calibration not verified",
         "provider": "Report written by",
         "llm_disagreed": "LLM disagreed; engine diagnosis kept",
         "runbook": "Proposed runbook",
