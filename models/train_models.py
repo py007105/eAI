@@ -21,7 +21,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import confusion_matrix, f1_score
 from sklearn.model_selection import StratifiedGroupKFold
 
@@ -29,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import envinfo  # noqa: E402
 from eternalai import artifacts, config  # noqa: E402
+from eternalai.calibrate import TemperatureCalibrated  # noqa: E402
 from eternalai.classify import ABSTAIN, CLASSES, FaultClassifier  # noqa: E402
 from eternalai.detect import FEATURES as DET_FEATURES, fit_service  # noqa: E402
 from eternalai.features.window import FEATURE_NAMES, fit_baseline, window_features  # noqa: E402
@@ -68,7 +68,10 @@ def make_baselines(runs):
     return out
 
 
-def build_rows(runs, baselines):
+def build_rows(runs, baselines, window_s=10.0):
+    """One row per (run, service, 2 s step). A fault label is given only when the whole feature window lies after the
+    injection (rel >= window_s); windows that straddle the onset are labelled 'other' and are used neither to train nor
+    to evaluate the classifier (attempt 1 labelled them as faults and the model could not tell them from healthy)."""
     rows = []
     for r in runs:
         t0, tr = r["truth"]["t_inject"], r["truth"]
@@ -78,20 +81,21 @@ def build_rows(runs, baselines):
                 w = df[(df.index <= end) & (df.index > end - 150)]
                 if len(w) < 20:
                     continue
-                f = window_features(w, baselines[s])
+                f = window_features(w, baselines[s], window_s)
                 for k in ("depfail_inventory", "depfail_payments", "depfail_orders"):
                     f[k] = float(w[k].tail(5).mean()) if k in w else np.nan
                 rel = end - t0
                 if tr["scenario"] in HEALTHY_SCEN:
-                    label = "healthy" if rel <= -5 or rel >= (20 if tr["scenario"] == "good_deploy" else 8) else "other"
+                    label = "healthy" if rel <= -5 or rel >= max(window_s, 20 if tr["scenario"] == "good_deploy" else 0) \
+                        else "other"
                 elif rel <= -5:
                     label = "healthy"
-                elif rel >= 8 and s == tr["target"]:
+                elif rel >= window_s and s == tr["target"]:
                     label = tr["expected_label"]
                 else:
                     label = "other"
                 rows.append({"run": r["id"], "scenario": tr["scenario"], "target": tr["target"], "service": s,
-                             "rel": rel, "end": end, "label": label, **f})
+                             "rel": rel, "end": end, "label": label, "window_s": window_s, **f})
     return pd.DataFrame(rows)
 
 
@@ -104,7 +108,7 @@ def folds(d, n=5, seed=0):
 def known_mask(d):
     """Windows used to judge the classifier on KNOWN classes (healthy, or the target service after onset)."""
     return d.label.isin(CLASSES) & (d.scenario != "cpu_burn") & (
-        (d.label == "healthy") | ((d.service == d.target) & (d.rel >= 8)))
+        (d.label == "healthy") | ((d.service == d.target) & (d.rel >= d.window_s)))
 
 
 def train_mask(d):
@@ -145,7 +149,9 @@ def fit_classifier(df, seed=0, features=None, calibrate=True):
     if not calibrate:
         return base.fit(X, y)
     inner = list(StratifiedGroupKFold(3, shuffle=True, random_state=seed).split(X, y, g))  # grouped by run
-    return CalibratedClassifierCV(base, method="sigmoid", cv=inner).fit(X, y)
+    # temperature scaling (one parameter, arg-max unchanged). Attempt 1-2 used per-class sigmoid calibration, which
+    # collapsed rare-class predictions into "healthy"; see eternalai/calibrate.py and docs/DATA.md.
+    return TemperatureCalibrated(base, inner).fit(X, y)
 
 
 def predict(cls, d, features=None):
@@ -186,17 +192,71 @@ def ece_and_table(conf, correct, bins=10):
     return float(ece), rows
 
 
+def cv_oof(df, extras=True):
+    """Out-of-fold detector flags and classifier predictions (grouped by run). `extras` adds the uncalibrated
+    classifier and the memory-feature ablation."""
+    no_mem = [f for f in CLS_FEATURES if f not in MEM_FEATURES]
+    oof = []
+    for k, (tr_runs, te_runs) in enumerate(folds(df, 5, 0)):
+        tr, te = df[df.run.isin(tr_runs)], df[df.run.isin(te_runs)].copy()
+        assert not set(tr.run) & set(te.run)
+        det = fit_detectors(tr, seed=k)
+        te["anom"], te["score"] = det_flags(det, te)
+        cls = fit_classifier(tr, k)
+        te["pred"], te["conf"], _ = predict(cls, te)
+        if extras:
+            raw = fit_classifier(tr, k, calibrate=False)
+            te["pred_raw"], te["conf_raw"], _ = predict(raw, te)
+            abl = fit_classifier(tr, k, no_mem)
+            te["pred_nomem"], te["conf_nomem"], _ = predict(abl, te, no_mem)
+        oof.append(te)
+    return pd.concat(oof)
+
+
+def sweep(runs, base, windows, out, run_dir, excluded):
+    """Pick the feature-window length by cross-validation: a small, explicit search (3 candidates)."""
+    rows = []
+    for w in windows:
+        d = build_rows(runs, base, float(w))
+        o = cv_oof(d, extras=False)
+        kn = o[known_mask(o)]
+        faults = [c for c in CLASSES if c != "healthy" and c in set(kn.label)]
+        rec = {c: float((kn[kn.label == c].pred == c).mean()) for c in faults}
+        tg = o[(o.service == o.target) & (o.rel >= o.window_s) & (o.rel <= 60) & ~o.scenario.isin(HEALTHY_SCEN)
+               & (o.scenario != "cpu_burn")]
+        hh = o[o.label == "healthy"]
+        rows.append({"window_s": w, "macro_F1": f1_score(kn.label, kn.pred, average="macro"),
+                     "mean_fault_recall": float(np.mean(list(rec.values()))), **{f"recall_{c}": v for c, v in rec.items()},
+                     "detector_flag_rate_on_fault_windows": float(tg.anom.mean()),
+                     "detector_false_alarm_rate": float(hh.anom.mean())})
+    t = pd.DataFrame(rows)
+    best = t.loc[t.macro_F1.idxmax(), "window_s"]
+    R = ["# Feature-window sweep (grouped CV by run)\n",
+         "Generated by `python models/train_models.py --sweep 10 20 30`. The window length was chosen by out-of-fold macro-F1 "
+         "of the known-class classifier. Longer windows blur the onset of a fault (see `scripts/debug_windows.py`), but the "
+         "evaluated windows differ per row because a fault window must lie fully after injection, so compare with that in mind.\n",
+         *envinfo.env_lines(SEEDS, run_dir, excluded), "", t.round(3).to_markdown(index=False),
+         f"\nChosen by the rule above: **{best:.0f} s**. A live-system consideration points the same way: the engine "
+         f"diagnoses about 10 s after onset, so a window much longer than that would mix pre-fault data into every diagnosis."]
+    Path(out).write_text("\n".join(R) + "\n", encoding="utf-8")
+    print("\n".join(R))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default="data/runs")
     ap.add_argument("--out", default="docs/results/models_cv.md")
+    ap.add_argument("--window", type=float, default=10.0, help="feature window in seconds")
+    ap.add_argument("--sweep", type=int, nargs="*", help="compare these window lengths and exit")
     ap.add_argument("--no-save", action="store_true")
     a = ap.parse_args()
     runs, excluded = load_runs(a.runs)
     if len(runs) < 20:
         sys.exit(f"only {len(runs)} runs found; collect more with models/collect_runs.py")
     base = make_baselines(runs)
-    df = build_rows(runs, base)
+    if a.sweep:
+        return sweep(runs, base, a.sweep, "docs/results/window_sweep.md", a.runs, excluded)
+    df = build_rows(runs, base, a.window)
     no_mem = [f for f in CLS_FEATURES if f not in MEM_FEATURES]
     R = ["# Model evaluation on live-stack runs (grouped CV by run)\n",
          "Generated by `models/train_models.py`. These are cross-validation numbers on TRAINING-seed, no-action runs. "
@@ -207,20 +267,7 @@ def main():
          *envinfo.env_lines(SEEDS, a.runs, excluded)]
 
     # ================= main grouped CV: detector, calibrated classifier, raw classifier, memory ablation
-    oof = []
-    for k, (tr_runs, te_runs) in enumerate(folds(df, 5, 0)):
-        tr, te = df[df.run.isin(tr_runs)], df[df.run.isin(te_runs)].copy()
-        assert not set(tr.run) & set(te.run)
-        det = fit_detectors(tr, seed=k)
-        te["anom"], te["score"] = det_flags(det, te)
-        cls = fit_classifier(tr, k)
-        te["pred"], te["conf"], _ = predict(cls, te)
-        raw = fit_classifier(tr, k, calibrate=False)
-        te["pred_raw"], te["conf_raw"], _ = predict(raw, te)
-        abl = fit_classifier(tr, k, no_mem)
-        te["pred_nomem"], te["conf_nomem"], _ = predict(abl, te, no_mem)
-        oof.append(te)
-    oof = pd.concat(oof)
+    oof = cv_oof(df)
     kn = oof[known_mask(oof)]
 
     R.append("\n## Detector (IsolationForest per service, out-of-fold)\n")
@@ -229,7 +276,7 @@ def main():
              f"{hh.anom.mean():.4f} per window ({int(hh.anom.sum())} of {len(hh)})")
     R.append("\n| scenario | target windows flagged (rel 8-60 s) | median time to first persistent flag (s) |\n|---|---|---|")
     for sc, g in oof[~oof.scenario.isin(HEALTHY_SCEN)].groupby("scenario"):
-        tg = g[(g.service == g.target) & (g.rel >= 8) & (g.rel <= 60)]
+        tg = g[(g.service == g.target) & (g.rel >= g.window_s) & (g.rel <= 60)]
         ttd = []
         for _, gr in g[g.service == g.target].groupby("run"):
             gr = gr[gr.rel >= 0].sort_values("end")
@@ -251,13 +298,27 @@ def main():
     ece_cal, tab = ece_and_table(kn.conf.values, (kn.pred == kn.label).values.astype(float))
     ece_raw, _ = ece_and_table(kn.conf_raw.values, (kn.pred_raw == kn.label).values.astype(float))
     R.append(f"\n### Calibration of the top-class probability (out-of-fold)\n\n"
-             f"- expected calibration error: **{ece_cal:.3f}** calibrated (sigmoid, fitted inside training folds) versus "
+             f"- expected calibration error: **{ece_cal:.3f}** calibrated (temperature scaling, fitted inside training folds) versus "
              f"{ece_raw:.3f} for the same model uncalibrated (ECE = weighted gap between confidence and accuracy; 0 is perfect)")
     R.append("\n| confidence bin | windows | mean confidence | accuracy |\n|---|---|---|---|\n" +
              "\n".join(f"| {b} | {n} | {c:.3f} | {acc:.3f} |" for b, n, c, acc in tab))
-    ece_ok = ece_cal <= 0.05
+    # The overall ECE is dominated by the many easy 'healthy' windows (attempt 1 passed it at 0.026 while fault
+    # predictions were badly off), so the probability a user actually sees, the one attached to a FAULT prediction,
+    # is checked on its own.
+    fp = kn[kn.pred != "healthy"]
+    if len(fp):
+        ece_fault, tab_f = ece_and_table(fp.conf.values, (fp.pred == fp.label).values.astype(float), bins=5)
+    else:
+        ece_fault, tab_f = float("nan"), []
+    R.append(f"\n- calibration on windows predicted as a FAULT class only ({len(fp)} windows): ECE **{ece_fault:.3f}**")
+    if tab_f:
+        R.append("\n| confidence bin | windows | mean confidence | accuracy |\n|---|---|---|---|\n" +
+                 "\n".join(f"| {b} | {n} | {c:.3f} | {acc:.3f} |" for b, n, c, acc in tab_f))
+    ece_ok = bool(ece_cal <= 0.05 and len(fp) >= 50 and ece_fault <= 0.10)
     R.append(f"\n- decision: the dashboard {'shows' if ece_ok else 'does NOT show'} the probability as a percentage "
-             f"(rule: ECE <= 0.05). {'' if ece_ok else 'It shows the predicted class and an uncalibrated-confidence warning instead.'}")
+             f"(rule, fixed before the attempt-2 results were seen: overall ECE <= 0.05 AND ECE on fault predictions <= 0.10 "
+             f"with at least 50 such windows). "
+             f"{'' if ece_ok else 'It shows the predicted class with a calibration-not-verified note instead.'}")
 
     # ---- memory-baseline drift ablation
     f_full = f1_score(kn.label, kn.pred, average="macro")
@@ -289,7 +350,7 @@ def main():
     # ================= unseen faults
     R.append("\n## Unseen-fault behaviour\n")
     cls_final = fit_classifier(df)
-    un = df[(df.scenario == "cpu_burn") & (df.service == df.target) & (df.rel >= 8)].copy()
+    un = df[(df.scenario == "cpu_burn") & (df.service == df.target) & (df.rel >= df.window_s)].copy()
     if len(un):
         un["pred"], un["conf"], _ = predict(cls_final, un)
         R.append(f"- **cpu_burn (never in any training set)**: abstained on {(un.conf < tau).mean():.0%} of {len(un)} windows "
@@ -302,7 +363,7 @@ def main():
         tr = df[df.scenario != f]
         tau_f, _ = choose_tau(oof_known(tr, 3, 0))
         cls_f = fit_classifier(tr)
-        te = df[(df.scenario == f) & (df.service == df.target) & (df.rel >= 8) & df.label.isin(CLASSES)].copy()
+        te = df[(df.scenario == f) & (df.service == df.target) & (df.rel >= df.window_s) & df.label.isin(CLASSES)].copy()
         te["pred"], te["conf"], _ = predict(cls_f, te)
         lo_rows.append({"held-out type": f, "windows": len(te), "threshold": tau_f,
                         "abstained": f"{(te.conf < tau_f).mean():.0%}",
@@ -382,7 +443,8 @@ def main():
         desc = (f"{len(runs)} no-action live runs (training seeds 1000-1707, {len(excluded)} corrupted runs excluded), "
                 f"scenarios {sorted(set(df.scenario))}")
         meta = {"data_hash": envinfo.data_hash(a.runs, excluded), "n_runs": len(runs), "excluded_runs": sorted(excluded),
-                "abstain_below": tau, "ece_oof": round(ece_cal, 4), "show_probability_in_ui": bool(ece_ok),
+                "abstain_below": tau, "ece_oof": round(ece_cal, 4), "ece_fault_predictions": round(float(ece_fault), 4),
+                "show_probability_in_ui": bool(ece_ok), "window_s": a.window,
                 "seeds": SEEDS}
         artifacts.save("baselines", base, training_data=desc, features=["req_rate", "p95_s", "cpu_cores", "mem_bytes",
                                                                        "error_ratio", "cpu_per_req"], extra=meta)
