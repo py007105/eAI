@@ -42,7 +42,8 @@ class GateError(RuntimeError):
 
 def _docker(args, timeout=60):
     env = {**os.environ, "PATH": os.environ.get("PATH", "") + os.pathsep + DOCKER}
-    return subprocess.run(["docker", *args], capture_output=True, text=True, timeout=timeout, env=env)
+    exe = str(Path(DOCKER) / "docker.exe")      # Windows resolves the executable from the parent's PATH, not from `env`
+    return subprocess.run([exe if Path(exe).exists() else "docker", *args], capture_output=True, text=True, timeout=timeout, env=env)
 
 
 def read_stock():
