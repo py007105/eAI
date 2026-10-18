@@ -67,18 +67,60 @@ def stop_brain():
     sh("docker compose stop eternalai")
 
 
-def approver(stop, token, after):
-    """Simulated operator: approve any pending proposal once it has waited `after` seconds."""
-    first_seen = {}
+def reset_brain(token, tries=12):
+    """v2 (item D): clear the brain's per-run state before every run. Retries while an action is still in flight; returns what happened, which is
+    recorded in the row. A failure is recorded, not hidden (the run still goes ahead)."""
+    last = None
+    for _ in range(tries):
+        try:
+            r = httpx.post(f"{EAI}/admin/reset", headers={"X-Approval-Token": token}, timeout=10)
+            last = {"status": r.status_code, **(r.json() if r.headers.get("content-type", "").startswith("application/json") else {})}
+            if r.status_code in (200, 404):   # 404: the brain under test has no reset endpoint (a v1 image); nothing to retry
+                return last
+        except (httpx.HTTPError, ValueError) as e:
+            last = {"error": f"{type(e).__name__}: {e}"}
+        time.sleep(5)
+    print(f"RESET failed after {tries} tries: {last}", flush=True)
+    return last
+
+
+def approver(stop, token, after, stats=None):
+    """Simulated operator: approve any pending proposal once it has waited `after` seconds.
+
+    v2 (item C): every GET and approve call is checked and logged. v1 swallowed every error and ignored the status of the approve call, so
+    the progress log could not say why an ask-first proposal was never approved. `stats` (a dict) collects counts that go into the result row.
+    """
+    stats = stats if stats is not None else {}
+    stats.update({"approved": 0, "approve_failures": 0, "poll_errors": 0, "thread_errors": 0, "last_status": None})
+    first_seen, approved = {}, set()
     while not stop.is_set():
         try:
-            for a in httpx.get(f"{EAI}/approvals", timeout=3).json():
-                t0 = first_seen.setdefault(a["incident_id"], time.time())
-                if time.time() - t0 >= after:
-                    httpx.post(f"{EAI}/approvals/{a['incident_id']}/approve", json={"approver": "benchmark-operator"},
-                               headers={"X-Approval-Token": token}, timeout=5)
-        except (httpx.HTTPError, ValueError):
-            pass
+            r = httpx.get(f"{EAI}/approvals", timeout=3)
+            if r.status_code != 200:
+                stats["poll_errors"] += 1
+                print(f"APPROVER poll: HTTP {r.status_code} {r.text[:120]}", flush=True)
+            else:
+                for a in r.json():
+                    iid = a["incident_id"]
+                    t0 = first_seen.setdefault(iid, time.time())
+                    if iid in approved or time.time() - t0 < after:
+                        continue
+                    p = httpx.post(f"{EAI}/approvals/{iid}/approve", json={"approver": "benchmark-operator"},
+                                   headers={"X-Approval-Token": token}, timeout=5)
+                    stats["last_status"] = p.status_code
+                    if p.status_code == 200:
+                        approved.add(iid)
+                        stats["approved"] += 1
+                        print(f"APPROVER approved {iid} ({a['runbook_id']} on {a['service']}) after {time.time() - t0:.1f}s", flush=True)
+                    else:
+                        stats["approve_failures"] += 1
+                        print(f"APPROVER approve {iid}: HTTP {p.status_code} {p.text[:120]}", flush=True)
+        except (httpx.HTTPError, ValueError) as e:
+            stats["poll_errors"] += 1
+            print(f"APPROVER transient {type(e).__name__}: {e}", flush=True)
+        except Exception as e:  # noqa: BLE001 - v1 let anything else kill this thread silently; log it and keep going
+            stats["thread_errors"] += 1
+            print(f"APPROVER unexpected {type(e).__name__}: {e}", flush=True)
         time.sleep(1)
 
 
@@ -90,6 +132,8 @@ def main():
     ap.add_argument("--approve-after", type=float, default=5.0)
     ap.add_argument("--scenarios", nargs="*", default=SCENARIOS)
     ap.add_argument("--manage-stack", action="store_true", help="(re)start / stop the brain container for this arm")
+    ap.add_argument("--models-label", default="models-v1 (frozen; see docs/MODEL_CARD.md)", help="recorded with every row")
+    ap.add_argument("--no-reset", action="store_true", help="v1 behaviour: do not reset the brain's per-run state between runs")
     ap.add_argument("--smoke", action="store_true", help="plumbing check on seeds that are in neither the training (1000-1707) "
                     "nor the benchmark (<1000) range; results go to docs/results/benchmark_smoke.jsonl and are not reported")
     a = ap.parse_args()
@@ -121,14 +165,16 @@ def main():
             r = json.loads(line)
             done.add((r["arm"], r["scenario"], r["seed"]))
     stop = threading.Event()
+    astats = {}
     if a.arm == "eternalai_ask_first":
-        threading.Thread(target=approver, args=(stop, token, a.approve_after), daemon=True).start()
+        threading.Thread(target=approver, args=(stop, token, a.approve_after, astats), daemon=True).start()
     try:
         for rep in range(a.reps):
             for si, scen in scenario_order(100 + rep, a.scenarios):
                 seed = a.seed0 + rep * 10 + SCENARIOS.index(scen)
                 if (a.arm, scen, seed) in done:
                     continue
+                reset_res = reset_brain(token) if brain is not None and not a.no_reset else None
                 r = httpx.post(f"{EV}/runs", json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT),
                                                    "healthy_s": 60}, timeout=20)
                 if r.status_code != 200:
@@ -147,7 +193,8 @@ def main():
                 if brain is not None:
                     try:
                         incidents = [{k: i.get(k) for k in ("id", "opened_t", "closed_t", "kind", "status", "likely_cause",
-                                                            "abstained", "ranking", "actions", "verification", "timeline")}
+                                                            "abstained", "ranking", "actions", "verification", "timeline",
+                                                            "diagnosis", "report_meta", "forecasts", "confidence", "services")}
                                      for i in httpx.get(f"{EAI}/incidents", timeout=10).json()
                                      if i["opened_t"] >= truth["t_inject"] - 1]
                     except (httpx.HTTPError, ValueError):
@@ -156,7 +203,8 @@ def main():
                        "target": truth["target"], "incidents": incidents, "brain_status": {
                            k: meta.get(k) for k in ("brain", "mode", "model_meta", "calibration", "fallbacks_in_use")},
                        "approve_after_s": a.approve_after if a.arm == "eternalai_ask_first" else None,
-                       "system_commit": SYSTEM_COMMIT, "models": "models-v1 (frozen; see docs/MODEL_CARD.md)",
+                       "system_commit": SYSTEM_COMMIT, "models": a.models_label,
+                       "approver": dict(astats) if a.arm == "eternalai_ask_first" else None, "brain_reset": reset_res,
                        "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
                 with RAW.open("a") as f:
                     f.write(json.dumps(row) + "\n")
