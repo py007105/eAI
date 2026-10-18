@@ -79,6 +79,7 @@ def main():
         plan = json.loads(Path(a.plan_json).read_text())
         planned["v2 fresh training seeds"] = [j["seed"] for j in plan["training_jobs"]]
         planned["v2 evaluation seeds"] = [e["seed"] for e in plan["evaluation_seeds"]]
+        planned["v2 surge capture seeds"] = plan.get("capture_seeds", [])
         reserved.pop("training block (collect_runs default 1000+)")        # the fresh training seeds are SUPPOSED to be in the unused part of that block
         reserved["used training seeds 1000-1799 (v1)"] = range(1000, 1800)
     problems = check(used, planned, reserved)
