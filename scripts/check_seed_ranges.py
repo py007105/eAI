@@ -4,7 +4,7 @@
 
 Used seeds: training (the `seed` field of every data/runs/*.json), benchmark v1 (100 + 10*rep + scenario index, 5 reps x 9 scenarios),
 the two disclosed smoke seeds in docs/EVALUATION_PLAN.md section 0 (100, 104), the seeds in the benchmark smoke file, and the reserved blocks
-the code itself uses (training 1000-1999, smoke/benchmark-smoke 2000-2999). The evaluator's own result volume is not read here (no Docker).
+the code itself uses (training 1000-1999, smoke/benchmark-smoke 2000-2999). With --truth-zip the seeds of every run in the exported evaluator volume are included.
 Exit code 1 if any planned range overlaps.
 """
 import argparse
@@ -16,7 +16,7 @@ PLANNED = {"forecast check": range(3000, 3005), "forecast smoke": range(3900, 39
 RESERVED = {"training block (collect_runs default 1000+)": range(1000, 2000), "smoke block (run_benchmark --smoke uses >= 2000)": range(2000, 3000)}
 
 
-def used_seeds(runs_dir, smoke_file):
+def used_seeds(runs_dir, smoke_file, truth_zip=None):
     used = {}
     for js in Path(runs_dir).glob("*.json"):
         if js.name != "EXCLUDED.json":
@@ -29,6 +29,20 @@ def used_seeds(runs_dir, smoke_file):
     if smoke_file and Path(smoke_file).exists():
         for line in Path(smoke_file).read_text().splitlines():
             used.setdefault(json.loads(line)["seed"], []).append("benchmark smoke file")
+    if truth_zip and Path(truth_zip).exists():
+        import zipfile
+        z = zipfile.ZipFile(truth_zip)
+        for name in z.namelist():
+            if not name.startswith("truth/"):
+                continue
+            for line in z.read(name).decode(errors="replace").splitlines() if name.endswith(".jsonl") else [z.read(name).decode(errors="replace")]:
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                s = d.get("seed", (d.get("truth") or {}).get("seed")) if isinstance(d, dict) else None
+                if isinstance(s, int):
+                    used.setdefault(s, []).append("evaluator truth volume record")
     return used
 
 
@@ -54,9 +68,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default="data/runs")
     ap.add_argument("--smoke", default="docs/results/benchmark_smoke.jsonl")
+    ap.add_argument("--truth-zip", help="results/benchmark-v1/truth_and_evidence.zip: seeds of every run the evaluator ever recorded")
     ap.add_argument("--out")
     a = ap.parse_args()
-    used = used_seeds(a.runs, a.smoke)
+    used = used_seeds(a.runs, a.smoke, a.truth_zip)
     problems = check(used)
     lines = ["# Seed range check", "", f"Seeds already used: {len(used)} distinct (min {min(used)}, max {max(used)}).", "",
              "Planned: " + "; ".join(f"{k} {r.start}-{r.stop - 1}" for k, r in PLANNED.items()), "",
