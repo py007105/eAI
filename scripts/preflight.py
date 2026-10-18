@@ -1,10 +1,13 @@
 """Pre-demo checks. Prints PASS/FAIL per check and exits non-zero if any fails. Never prints a secret value.
 
-    python scripts/preflight.py [--require-llm-key] [--tag benchmark-system-v1]
+    python scripts/preflight.py [--require-llm-key] [--tag benchmark-system-v2]
 
 Checks: Docker daemon reachable; the four model artifacts load; the approval token inside the brain container is set and not the placeholder;
 each LLM key variable is PRESENT (non-empty) inside the brain container (presence only; GROQ is reported but never required, it is untested);
 the evaluator scorecard is empty; the code paths the benchmark ran are identical to the benchmark tag.
+v2 adds the telemetry condition check (Amendment 4, Stage 0 chose T3): every app container must run with OTEL_SDK_DISABLED=true and no Jaeger container may be
+running. The dashboard is NOT part of the evaluated condition (it was not running during any v2 collection or evaluation run); if it is running that is reported as
+a documented difference (INFO), never a failure, and a short rehearsal with it on must confirm it does not change the brain's behaviour (docs/DEMO.md).
 Each check is a function returning (ok, detail) so tests can replace the Docker, HTTP and git calls with mocks.
 """
 import argparse
@@ -65,6 +68,32 @@ def check_llm_keys(env, require=False):
     return (present["GEMINI_API_KEY"] or not require), detail
 
 
+APP_SERVICES = ("web", "orders", "inventory", "payments")
+
+
+def check_telemetry_condition(client_factory=_client):
+    """T3: apps run with OTEL_SDK_DISABLED=true, Jaeger not running. Dashboard presence is reported, not judged."""
+    try:
+        cl = client_factory()
+        svc = lambda name: cl.containers.list(filters={"label": f"com.docker.compose.service={name}"})  # noqa: E731
+        bad, missing = [], []
+        for name in APP_SERVICES:
+            cs = svc(name)
+            if not cs:
+                missing.append(name)
+                continue
+            env = dict(e.split("=", 1) for e in cs[0].attrs["Config"]["Env"] if "=" in e)
+            if env.get("OTEL_SDK_DISABLED", "false").lower() != "true":
+                bad.append(name)
+        jaeger = bool(svc("jaeger"))
+        dash = bool(svc("dashboard"))
+    except Exception as e:  # noqa: BLE001
+        return False, f"could not inspect containers ({type(e).__name__})"
+    problems = ([f"OTEL_SDK_DISABLED is not true on: {', '.join(bad)}"] if bad else []) + (["jaeger is running"] if jaeger else []) +                ([f"app containers not running: {', '.join(missing)}"] if missing else [])
+    note = f"; INFO dashboard {'running (documented difference from the evaluated condition)' if dash else 'not running (as in the evaluated condition)'}"
+    return (not problems), ("condition T3 holds" if not problems else "; ".join(problems)) + note
+
+
 def check_scorecard_empty(http_get):
     try:
         n = http_get("http://localhost:8200/scorecard")["runs"]
@@ -82,7 +111,7 @@ def check_tag(tag, run=None):
     return (r.returncode == 0 and not changed), ("benchmark code paths identical to tag" if not changed else f"differs from tag: {', '.join(changed[:5])}")
 
 
-def run_all(require_llm=False, tag="benchmark-system-v1", client_factory=_client, http_get=None, loader=None, run=None):
+def run_all(require_llm=False, tag="benchmark-system-v2", client_factory=_client, http_get=None, loader=None, run=None):
     if http_get is None:
         import httpx
         http_get = lambda url: httpx.get(url, timeout=5).json()  # noqa: E731
@@ -95,6 +124,7 @@ def run_all(require_llm=False, tag="benchmark-system-v1", client_factory=_client
         except Exception:  # noqa: BLE001
             env = None
     results += [("approval token", check_token(env)), ("llm key variables", check_llm_keys(env, require_llm)),
+                ("telemetry condition T3", check_telemetry_condition(client_factory)),
                 ("scorecard empty", check_scorecard_empty(http_get)), ("benchmark tag", check_tag(tag, run))]
     return results
 
@@ -102,7 +132,7 @@ def run_all(require_llm=False, tag="benchmark-system-v1", client_factory=_client
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--require-llm-key", action="store_true")
-    ap.add_argument("--tag", default="benchmark-system-v1")
+    ap.add_argument("--tag", default="benchmark-system-v2")
     a = ap.parse_args()
     res = run_all(a.require_llm_key, a.tag)
     for name, (ok, detail) in res:

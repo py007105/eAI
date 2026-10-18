@@ -76,3 +76,6 @@ Rehearse the whole script once on the real stack before presenting: a step that 
 ## Reset between rehearsals
 
 `docker compose down && docker compose up -d`. To remove demo state entirely, `docker compose down -v` (this also deletes the shop's data and the evaluator's records).
+
+## Dashboard rehearsal under T3 (planned; result not yet recorded)
+The evaluated condition (T3) had no dashboard. The demo launcher starts it. Before the demo, one short rehearsal with the dashboard on runs a healthy `traffic_surge` and one supported fault under `scripts/demo.ps1` and compares incidents opened and actions executed with what the evaluation arms did on the same scenarios. Result: {{dashboard_rehearsal_result}}.
