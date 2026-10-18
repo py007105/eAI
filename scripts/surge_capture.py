@@ -57,7 +57,9 @@ def collect(a):
                        "start": prom_range(f'app_start_time_seconds{{service="{s}"}}', t0 - 60, t_end + 5)}
         row = {"seed": seed, "truth": truth, "score": score, "incidents": httpx.get(f"{EAI}/incidents", timeout=10).json(), "prom": prom,
                "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
-        f.write_text(json.dumps(row))
+        tmp = f.with_name(f.name + ".tmp")        # atomic: a kill leaves no half-written run
+        tmp.write_text(json.dumps(row))
+        tmp.replace(f)
         print(f"surge seed {seed} level {truth['params'].get('extra_rps_per_thread')}: saved", flush=True)
 
 
