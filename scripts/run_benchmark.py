@@ -26,6 +26,8 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "models"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import memguard  # noqa: E402
 from collect_runs import SCENARIOS, scenario_order  # noqa: E402
 
 EV = os.getenv("EVALUATOR_URL", "http://localhost:8200")
@@ -154,6 +156,7 @@ def main():
     ap.add_argument("--scenarios", nargs="*", default=SCENARIOS)
     ap.add_argument("--manage-stack", action="store_true", help="(re)start / stop the brain container for this arm")
     ap.add_argument("--models-label", default="models-v1 (frozen; see docs/MODEL_CARD.md)", help="recorded with every row")
+    ap.add_argument("--min-free-gb", type=float, default=1.0, help="v2: wait (and log) instead of starting a run while free RAM is below this; 0 disables")
     ap.add_argument("--no-reset", action="store_true", help="v1 behaviour: do not reset the brain's per-run state between runs")
     ap.add_argument("--smoke", action="store_true", help="plumbing check on seeds that are in neither the training (1000-1707) "
                     "nor the benchmark (<1000) range; results go to docs/results/benchmark_smoke.jsonl and are not reported")
@@ -197,6 +200,7 @@ def main():
                 seed = a.seed0 + rep * 10 + SCENARIOS.index(scen)
                 if (a.arm, scen, seed) in done:
                     continue
+                memguard.wait_for_memory(a.min_free_gb)
                 reset_res = reset_brain(token) if brain is not None and not a.no_reset else None
                 r = httpx.post(f"{EV}/runs", json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT),
                                                    "healthy_s": 60}, timeout=20)
