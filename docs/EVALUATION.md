@@ -1,8 +1,29 @@
 # Evaluation
 
-Status: **draft with no results numbers in it.** Methods and limitations are written; every result comes from a script that renders tables from raw result
+Status: **benchmark v1 finished; this file holds methods and a short results summary.** Every result comes from a script that renders tables from raw result
 files (`scripts/render_results.py` for the benchmark, the training and evaluation scripts for the rest). This file links to those generated files and never retypes
 their numbers. Rules for the held-out benchmark are fixed in `docs/EVALUATION_PLAN.md`, which predates the results.
+
+> **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
+> 1. **The ask-first arm is invalid.** A pending approval never expires and blocks all later detection; after its third run the arm detected nothing (42 of 45 runs), so its 0 of 30 recoveries say nothing about ask-first operation (`docs/postmortems/ask-first-arm-stuck-incident-v1.md`). Why the simulated operator did not approve is still unexplained.
+> 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
+> 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
+>
+> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. v2 is a proposal only (`docs/V2_PROPOSAL.md`).
+
+## Results summary (benchmark v1)
+
+| arm (v1) | self-reported recovery, 30 supported runs | failed-request % (mean) | seconds to self-reported recovery (mean) | healthy runs with a false alert (of 10) | harmful interventions on healthy runs |
+|---|---|---|---|---|---|
+| no_action | 0 | 32.17 | - | 0 | 0 |
+| threshold_restart | 12 | 26.60 | 68.2 | 5 | 0 |
+| prototype_rules | 9 | 26.29 | 69.4 | 8 | 0 |
+| eternalai_ask_first (invalid, see finding 1) | 0 | 31.99 | - | 0 (detection blocked) | 0 |
+| eternalai_autopilot | 27 | 18.39 | 50.0 | 8 | 4 |
+
+Source: `docs/results/benchmark.md`, sections 1b and 4 (rendered from `results/benchmark-v1/benchmark_raw.jsonl`). Where the autopilot does **not** beat the baselines: threshold_restart recovered `crash` in 4 of 5 runs against the autopilot's 2 of 5 (both orders crashes abstained); on `latency` the autopilot's failed-request % (8.1) is higher than threshold_restart's (4.0), and on `memory_leak` it is higher than no_action's (11.2 against 0.4) because its own container recreation fails requests; its false-alert count on healthy runs is worse than threshold_restart's and equal to prototype_rules'; and the pooled failed-request % and detection-time differences against threshold_restart and prototype_rules have intervals that include zero, so they are not distinguishable at n = 5 per cell.
+
+Offline root-cause baselines on the 72 training runs (labelled offline, not a live arm): `docs/results/offline_rca_baseline.md`. Post-mortems and the triage of all 72 non-recoveries: `docs/postmortems/`. Forecast check: attempted, stopped by low memory, not completed; two smoke runs could not measure lead time because runs ended before the limit, so forecasting is stated everywhere as "implemented and unit-tested; live lead time not demonstrated".
 
 ## 1. What is evaluated, and on what
 
