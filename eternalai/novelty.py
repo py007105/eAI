@@ -18,7 +18,7 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 # Signals that describe how a window looks; masks (_obs) are appended internally.
-NOVELTY_FEATURES = ["lat_ratio", "cpu_per_req_ratio", "error_ratio", "dep_fail_rate", "error_log_rate", "mem_share",
+NOVELTY_FEATURES = ["lat_ratio", "cpu_per_req_ratio", "error_ratio", "dep_fail_rate", "error_log_rate", "mem_rel_growth",
                     "mem_slope_share_per_min", "scratch_mb", "scratch_slope_mb_per_min", "up_frac", "deploys_3m",
                     "restarts_in_window"]
 
