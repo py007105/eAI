@@ -201,6 +201,29 @@ class Engine:
         if not open_inc:
             self._predictive(feats, now)
 
+    def reset_run_state(self) -> dict:
+        """v2 (harness independence): forget per-run state so the next benchmark run starts clean. v1 carried a cooldown from one run into the
+        next (a restart was blocked 'last action 85 s ago' by the previous run's action). Incident history is kept; open or pending incidents are
+        escalated and closed. Refused while an action is executing or being verified."""
+        with self.lock:
+            busy = [i.id for i in self.incidents if i.status in ("executing", "verifying")]
+            if busy:
+                raise ValueError(f"action in flight for incident(s) {busy}; try again when they finish")
+            now, closed = time.time(), []
+            for inc in self.incidents:
+                if inc.status in ("open", "awaiting_approval"):
+                    inc.status, inc.closed_t = "escalated", now
+                    inc.log("reset between runs: incident closed")
+                    self._preserve(inc)
+                    closed.append(inc.id)
+            cleared = {"cooldown_services": sorted(self.policy.history), "breakers": sorted(self.policy.breaker_open)}
+            self.policy.history.clear()
+            self.policy.breaker_open.clear()
+            self.suppress, self.persist = Suppressor(), Persistence(3)
+            self.first_anom.clear()
+            self.last_closed = {}
+            return {"reset": True, "closed_incidents": closed, "cleared": cleared}
+
     def _expire_pending(self, now: float):
         """v2: escalate a proposal that was not approved within APPROVAL_TTL_S, and close a watch-only observation after the
         same time. Called with the lock held. In v1 neither ever expired, so one unapproved proposal blocked all detection."""
