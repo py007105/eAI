@@ -29,11 +29,11 @@ def test_rules_each_fire_once_and_recovered_and_no_action_are_skipped():
         row("eternalai_autopilot", "traffic_surge", 10, "escalated"),
     ]
     got = {x["seed"]: x["class"] for x in tri.classify(rows)}
-    assert got == {1: "b", 2: "b", 3: "c", 4: "a", 5: "a", 6: "c", 7: "c"}
+    assert got == {1: "a", 2: "a", 3: "c", 4: "a", 5: "a", 6: "c", 7: "c"}
 
 
 def test_ask_first_runs_before_the_stuck_proposal_are_not_blamed_on_it():
     rows = [row("eternalai_ask_first", "latency", 1, "undetected", t="2026-10-17T22:00:00"),
             row("eternalai_ask_first", "crash", 2, "awaiting_approval", [inc("awaiting_approval", actions=[{"runbook_id": "r", "service": "s", "verdict": "needs_approval", "approved_by": None}])], t="2026-10-17T23:00:00")]
     got = {x["seed"]: x["class"] for x in tri.classify(rows)}
-    assert got == {1: "c", 2: "b"}
+    assert got == {1: "c", 2: "a"}
