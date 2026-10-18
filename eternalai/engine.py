@@ -175,8 +175,18 @@ class Engine:
         self.suppress.update(anom)
         confirmed = self.suppress.filter(confirmed)
         with self.lock:
-            open_inc = next((i for i in self.incidents if i.status in ("open", "awaiting_approval")), None)
-            active = [i for i in self.incidents if i.status in ("open", "awaiting_approval", "verifying", "executing")]
+            self._expire_pending(now)
+            # v2: an incident waiting for approval does not block detection. Services it already covers are not re-opened
+            # (no duplicate proposal for the same ongoing anomaly); anomalies elsewhere open their own incident.
+            covered, stack = set(), [s for i in self.incidents if i.status == "awaiting_approval" for s in i.services]
+            while stack:  # a pending incident also explains the callers of its services (they fail because of it)
+                s = stack.pop()
+                if s not in covered:
+                    covered.add(s)
+                    stack.extend(config.CALLERS.get(s, []))
+            confirmed = confirmed - covered
+            open_inc = next((i for i in self.incidents if i.status == "open"), None)
+            active = [i for i in self.incidents if i.status in ("open", "verifying", "executing")]
             if confirmed and not active and now - self.last_closed.get("t", 0) > 8:
                 inc = Incident(uuid.uuid4().hex[:8], now)
                 inc.log(f"anomaly confirmed on {sorted(confirmed)}")
@@ -190,6 +200,24 @@ class Engine:
                     self._try_diagnose(open_inc, feats, scores, anom)
         if not open_inc:
             self._predictive(feats, now)
+
+    def _expire_pending(self, now: float):
+        """v2: escalate a proposal that was not approved within APPROVAL_TTL_S, and close a watch-only observation after the
+        same time. Called with the lock held. In v1 neither ever expired, so one unapproved proposal blocked all detection."""
+        for inc in self.incidents:
+            if not inc.actions:
+                continue
+            act = inc.actions[-1]
+            waiting = inc.status == "awaiting_approval" or (inc.status == "open" and inc.diagnosed and act.get("verdict") == "observe_only")
+            if not waiting or now - act["t"] < config.APPROVAL_TTL_S:
+                continue
+            watch = act.get("verdict") == "observe_only"
+            if not watch:
+                act["verdict"] = "expired_unapproved"
+            inc.status, inc.closed_t = "escalated", now
+            inc.log("watch-only: observation window ended; escalated with evidence preserved" if watch else
+                    f"no approval within {config.APPROVAL_TTL_S:.0f} s: proposal expired, escalated to a human with evidence preserved")
+            self._preserve(inc)
 
     # ------------------------------------------------------------ diagnosis
     def _try_diagnose(self, inc: Incident, feats, scores, anom):
