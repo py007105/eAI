@@ -153,3 +153,13 @@ def test_v2_side_by_side_section_appears_only_with_a_v2_file(fixture_file, tmp_p
     import re
     assert "## 8. v1 and v2 side by side" in with_v2
     assert re.search(r"\| v1\s+\|", with_v2) and re.search(r"\| v2\s+\|", with_v2)   # markdown pads the cells
+
+
+def test_headline_comparison_lists_every_arm_and_healthy_behaviour(fixture_file, tmp_path):
+    out = render(fixture_file, tmp_path)
+    sec = out[out.index("## 1b. Headline comparison"):out.index("## 2. The independent measure first")]
+    for arm in rr.ARMS:
+        assert f"| {arm}" in sec
+    assert "healthy runs with a false alert" in sec and "harmful interventions on healthy runs" in sec
+    line = next(x for x in sec.splitlines() if x.startswith("| eternalai_autopilot"))
+    assert "29/30" in line                                  # fixture: 29 of 30 supported runs recovered
