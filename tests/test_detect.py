@@ -6,7 +6,7 @@ from eternalai.detect import FEATURES, Persistence, fit_service
 def healthy(n, rng):
     cols = {"lat_ratio": rng.normal(1, 0.05, n), "cpu_per_req_ratio": rng.normal(1, 0.1, n),
             "error_ratio": np.abs(rng.normal(0, 0.002, n)), "dep_fail_rate": np.abs(rng.normal(0, 0.01, n)),
-            "error_log_rate": np.abs(rng.normal(0, 0.01, n)), "mem_share": rng.normal(0.25, 0.01, n),
+            "error_log_rate": np.abs(rng.normal(0, 0.01, n)), "mem_rel_growth": rng.normal(0.0, 0.002, n),
             "mem_slope_share_per_min": rng.normal(0, 0.001, n), "scratch_mb": np.zeros(n),
             "scratch_slope_mb_per_min": np.zeros(n), "up_frac": np.ones(n)}
     return np.column_stack([cols[f] for f in FEATURES])
