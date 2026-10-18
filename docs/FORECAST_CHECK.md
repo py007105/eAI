@@ -1,6 +1,8 @@
 # Forecast check: design (not yet run)
 
-Status: **design only, no result exists.** Written while the benchmark runs; run only after the benchmark is finished, exported and checksummed (`docs/EVALUATION_PLAN.md`, Amendments 1 and 2). The v1 benchmark rows do not store forecasts, so early-warning lead time is
+Status: **attempted, stopped by low memory, not completed; two smoke runs could not measure lead time because runs ended before the limit.** No result exists. The 20-run version is not to be retried as designed. Why: the evaluator ends a run as soon as every incident the brain opened is closed (`evaluator/main.py`, the early-exit check in `_execute`), and in both smoke runs (seeds 3900 `memory_leak`, 3901 `disk_fill`) the brain's first reactive incident was escalated within seconds, so the runs ended about 26-31 s after injection with memory at 131 of 268 MB and scratch disk at 204 of 300 MB; no predicted incident was opened (the engine only runs the forecast path when no incident is open, and the reactive detector opened one first). A longer `timeout_s` does not help, because the early exit ignores it; a longer observation therefore needs an evaluator change (a system change, v2 only), not just scripts. Forecasting is described everywhere as "implemented and unit-tested; live lead time not demonstrated". To be revisited only after v2, as an exploratory run of at most 3 runs with no pass/fail claim.
+
+The original design follows, kept for the record. (Original status line: design only, no result exists.) Written while the benchmark runs; run only after the benchmark is finished, exported and checksummed (`docs/EVALUATION_PLAN.md`, Amendments 1 and 2). The v1 benchmark rows do not store forecasts, so early-warning lead time is
 "not measured in benchmark v1"; this check is the only place it gets measured. Its results go in `docs/results/forecast_check.md`, never into benchmark tables.
 
 ## Question
