@@ -122,3 +122,14 @@ def test_annotate_changes_only_the_target_row(tmp_path):
     rows = [json.loads(x) for x in p.read_text().splitlines()]
     assert "stock" not in rows[0] and rows[1]["stock"]["before"]["sku-mug"] == 5
     assert rr.finished(p) == {("x", "crash", 1), ("x", "crash", 2)}
+
+
+def test_combine_drops_only_listed_originals_and_rejects_duplicates():
+    cb = load("v2_combine")
+    a = json.dumps({"arm": "x", "scenario": "crash", "seed": 1, "score": {"t_end": 5.0}})
+    b = json.dumps({"arm": "x", "scenario": "crash", "seed": 2, "score": {"t_end": 6.0}})
+    new = json.dumps({"arm": "x", "scenario": "crash", "seed": 2, "score": {"t_end": 99.0}})
+    out, dropped = cb.combine([a, b], [new], [{"arm": "x", "scenario": "crash", "seed": 2, "t_end": 6.0}])
+    assert out == [a, new] and dropped == 1
+    with pytest.raises(ValueError):
+        cb.combine([a, b], [new], [])          # same (arm, scenario, seed) twice without an invalid marker
