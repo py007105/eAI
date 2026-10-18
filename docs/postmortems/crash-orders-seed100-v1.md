@@ -44,3 +44,31 @@ The evaluator killed the `orders` container. The scorer recorded: detected, inje
 ## Consequence
 
 None for v1: the result stands as recorded. Observability gap to close in v2 regardless of the class: store the classifier confidence, the abstention reason and the novelty distance in the incident row and in the runner's raw rows.
+
+---
+
+## Findings after the benchmark (2026-10-18; evidence file read, models replayed offline)
+
+Sources: `results/benchmark-v1/truth_and_evidence.zip` (evidence copy, checksummed), `eternalai/classify.py`, `eternalai/engine.py`, `docs/postmortems/crash-classifier-by-target.md`, and the 225 raw rows.
+
+**From the evidence file `evidence/e5267f50.json`:**
+
+- `ranking`: orders 0.984, payments 0.007, web 0.005, inventory 0.004. The injected service was ranked first with high margin.
+- `abstained: true`, `likely_cause: insufficient_evidence`, stored `confidence: 0.99999839`.
+- `evidence`: orders container exited with code 137 (`oom_killed=False`), `up_frac=0.0`, `lat_ratio=1.88`, `web->orders` calls failing at 1.6 per second. That is the textbook picture of a crash.
+- `report_meta.provider: template`; report `missing_information`: "fault pattern not seen in training".
+- **Not stored:** the top class name, the abstention reason, the novelty distance. The abstain threshold in force is 0.4 (`abstain_below`, from the model metadata) and the novelty threshold is 1.0 (`gate.threshold_`).
+
+**What can be deduced, and what cannot.** The stored confidence (0.99999839) is far above the 0.4 threshold, so the abstention was **not** the low-confidence path. By `classify.py` that leaves two mechanisms: the novelty gate (`reason = "novel"`), or a top class of `healthy`, which the engine turns into an abstention. The row does not say which. The evidence points at the novelty gate (the report text "not seen in training"
+is the template's wording for any abstention, so it does not discriminate), but this is a deduction, not a record.
+
+**Training coverage versus the benchmark** ((fault, target) pairs, from `data/runs/*.json` and the rows; full table in the triage notes below): `crash` on `orders` occurs in **1** training run and in **2** benchmark seeds (100 and 120); `crash` on `inventory` 2 and 2, `web` 2 and 1, `payments` 3 and 0. The target was therefore not absent from training.
+Both benchmark orders crashes (seeds 100 and 120) abstained at the first incident; the 3 other crash runs in the autopilot arm (inventory, inventory, web) were answered `down` at the first incident.
+
+**Offline replay (proxy, in-sample).** `docs/postmortems/crash-classifier-by-target.md` applies the frozen classifier to the training crash runs. In the 10-20 s window after injection (when the live brain diagnoses, about 7 s after the incident opens) the orders crash had the highest median novelty distance of any training crash run (0.893 against the threshold 1.0) and 1 of 5 windows was abstained as novel; every window 20 s and later was answered `down`.
+That is the same direction as the benchmark behaviour, but these windows are in the models' own training data, the benchmark crash windows themselves cannot be replayed (the rows keep no feature windows), and one orders training crash is a very thin neighbourhood for a nearest-neighbour novelty gate. This supports, but does not prove, the explanation.
+
+**Clustering of abstentions by target** (autopilot arm, supported faults; abstained incidents of any position): inventory 3 of 10 runs, orders 3 of 9, payments 2 of 5, web 2 of 6. By that count there is no clustering on `orders`. Distinguishing the *first* incident (the one that decides recovery): the only first-incident abstentions are the two orders crashes. All other abstentions are later follow-on incidents opened after a recovery, which is a separate behaviour.
+
+**Triage: (c) design limitation** (rule R2 in `scripts/triage_nonrecoveries.py`), with these stated limits: the abstention reason was not recorded, so "novelty gate" is a deduction; the sample is two runs on one target; and a v2 that records the reason and the novelty distance would turn the deduction into a measurement. No bug in the code path was found: the ranking was right, the policy was never consulted because the classifier abstained, and the abstain path did what the design says (no action, evidence preserved, escalated).
+It is still a missed recovery on a supported fault, and the design cost of the novelty gate on thinly covered targets.
