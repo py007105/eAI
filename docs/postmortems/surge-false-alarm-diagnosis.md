@@ -39,3 +39,20 @@ This points to a weakness in how the detector's healthy limits are learned: for 
 1. Run the read-only capture (H1-H3, H6) on fresh non-benchmark seeds at both surge levels with the brain only logging (watch-only), recording memory against the learned limit. Script-only measurement.
 2. Add the onset-window replay (H5) to `scripts/diag_surge.py`.
 3. Pre-register v2 (Amendment 4) with this diagnosis as its stated motivation; any retraining uses fresh runs only (rules G3b).
+
+---
+
+## Addendum: read-only capture, 6 of 12 runs (surge level 25 only; stopped by low memory, not restarted)
+
+Source: `results/surge-capture/raw/` (6 runs, seeds 3600, 3601, 3602, 3603, 3605, 3606), rendered in `docs/results/surge_capture.md`. The brain was the v2 build in watch-only mode, so it logged what it saw and never acted. These are non-benchmark seeds.
+
+**Observed (facts):**
+- An incident opened in **6 of 6** surge runs. In every one the v2 diagnosis record lists `limits_exceeded` containing **`mem_share`** (one also `mem_slope_share_per_min`, one also `cpu_per_req_ratio`). That is direct evidence that the memory limit is what trips the detector (hypothesis H1), not something inferred from another brain.
+- During the surge `web` memory rose from about 67 MB to about 77 MB (0.285-0.289 of its limit, against a learned limit of 0.2794), and `inventory` rose from 66-73 MB to about 76 MB (0.283-0.286, against 0.2603). In the training surges the same services rose by about 1 MB (`web`) and 2.4 MB (`inventory`) and stayed under their limits. So the live surge raises memory by several times what the training surges did.
+- At rest, **before** the surge, `orders` already sat at 73.6 MB (0.2742 of its limit) against a learned limit of 0.2738 (about 73.5 MB), and against a training median of about 69.9 MB. `orders` exceeded its learned limit in all 6 runs without any surge on it, and `inventory` was at 66.5-72.6 MB before the surge. Healthy memory in the live stack is higher than it was in the training runs, by a few MB per service, which is as large as the headroom the limits leave.
+- With the answered label `healthy` plus a memory-limit exceedance, the engine abstains rather than guesses (5 of 6 incidents ended `insufficient_evidence`; 1 diagnosed `memory_leak` and stayed open). In v1 the same situation was diagnosed `memory_leak` and acted on in 4 of 5 autopilot runs.
+
+**What this changes:**
+- **H1 is now supported by direct evidence** (limits exceeded in 6 of 6 incidents); H6 (the stack's healthy memory differs from training) is supported for `orders` and `inventory`; H3/H2 (intensity and normalisation) are not separable yet because the level-40 runs were not made.
+- The cause of the higher live memory (state growth in the persistent SQLite volumes after many hours of load, container age, or something else) is **not established** here; it was not measured.
+- The detector's healthy limits are tied to absolute memory levels learned over one short collection window. Any drift of a few MB, or a transient load-driven rise of several MB, moves a healthy service outside them. That is the design weakness stated earlier, and the capture shows it is not rare: it happens in every surge run and at rest for `orders`.
