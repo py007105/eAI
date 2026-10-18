@@ -6,7 +6,7 @@ x-app: &app
   networks: [eai]
   environment: &appenv
     OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-    OTEL_SDK_DISABLED: "false"
+    OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}      # v2: the telemetry condition is chosen by the pre-registered Stage 0 rule (Amendment 4)
     CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
 
 services:
@@ -118,7 +118,9 @@ services:
     mem_limit: 512m
     networks: [eai]
     ports: ["16686:16686"]
-    environment: {COLLECTOR_OTLP_ENABLED: "true"}
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      MEMORY_MAX_TRACES: ${JAEGER_MAX_TRACES:-1000}   # v2: cap the in-memory store; v1 ran it unbounded and it was OOM-killed at its 512 MB limit
 
 networks:
   eai: {}
