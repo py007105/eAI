@@ -107,6 +107,34 @@ def pooled(d, arm):
             "unseen fault: self-reported recovery": f"{int(u.recovered.fillna(False).astype(bool).sum())}/{len(u)}"}
 
 
+def headline(d, arms):
+    """Compact all-arms comparison: pooled over supported faults, healthy-run behaviour, and one row per supported scenario."""
+    R, rows = [], []
+    for a in arms:
+        x = d[d.arm == a]
+        f, h = x[x.scenario.isin(SUPPORTED)], x[x.scenario.isin(HEALTHY)]
+        rec = f.recovered.fillna(False).astype(bool)
+        rows.append({"arm": a, "failed-request % (mean, 30 supported runs)": f"{f.failed_pct.mean():.2f}",
+                     "self-reported recovery": f"{int(rec.sum())}/{len(f)}",
+                     "seconds to self-reported recovery (mean, recovered runs)": f"{f.ttvr_s[rec].mean():.1f}" if rec.any() else "-",
+                     "healthy runs with a false alert": f"{int((h.false_alerts.fillna(0) > 0).sum())}/{len(h)}",
+                     "harmful interventions on healthy runs": int(h.harmful.fillna(0).sum()),
+                     "harmful interventions, all runs": int(x.harmful.fillna(0).sum())})
+    R.append(pd.DataFrame(rows).to_markdown(index=False))
+    R.append("\nPer supported scenario (5 runs per cell): self-reported recovery k/5, mean failed-request %, mean seconds to self-reported recovery.\n")
+    cells = []
+    for sc in SUPPORTED:
+        row = {"scenario": sc}
+        for a in arms:
+            c = d[(d.arm == a) & (d.scenario == sc)]
+            rec = c.recovered.fillna(False).astype(bool)
+            ttr = f"{c.ttvr_s[rec].mean():.0f}s" if rec.any() else "-"
+            row[a] = f"{int(rec.sum())}/{len(c)}; {c.failed_pct.mean():.1f}%; {ttr}"
+        cells.append(row)
+    R.append(pd.DataFrame(cells).to_markdown(index=False))
+    return R
+
+
 READING_GUIDE = [
     "**How to read this document**\n",
     "1. The **failed-request %** (section 2) is the independent measure: the evaluator reads it from the load generator, not from the system under test.",
@@ -195,6 +223,9 @@ def render(d, d2, triage, fails, fixture):
              "for significance; intervals are bootstrap 95% over runs and are shown only for pooled metrics.\n")
     R += READING_GUIDE
     R += accounting(d, fails)
+
+    R.append("\n## 1b. Headline comparison, all arms side by side\n")
+    R += headline(d, arms)
 
     R.append("\n## 2. The independent measure first: failed-request %\n")
     R.append("Computed by the evaluator from the load generator's counters between injection and the end of the observation window. It does not depend on what "
