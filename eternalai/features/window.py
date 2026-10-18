@@ -92,6 +92,12 @@ def window_features(df: pd.DataFrame, baseline: dict, window_s: float = 30.0) ->
     mem_s = df["mem_bytes"].tail(slope_n) if "mem_bytes" in df else pd.Series(dtype=float)
     slope = _slope_per_min(mem_s)
     f["mem_slope_share_per_min"] = _ratio(slope, limit) if np.isfinite(slope) and np.isfinite(limit) and limit > 0 else np.nan
+    # v2 (Amendment 4, E2): memory growth relative to the service's OWN recent past, in share of its limit. The absolute level (mem_ratio, mem_z,
+    # mem_share) depends on how long the container has lived and on what load it has seen (v1: a few MB of drift put healthy services outside tight
+    # learned limits); growth against the same container's earlier history does not. Baseline = median memory 150 s to 60 s ago.
+    mem_hist = df["mem_bytes"] if "mem_bytes" in df else pd.Series(dtype=float)
+    past = mem_hist[(mem_hist.index > df.index.max() - 150.0) & (mem_hist.index <= df.index.max() - 60.0)].dropna()
+    f["mem_rel_growth"] = ((mem - float(past.median())) / limit) if len(past) >= 10 and np.isfinite(mem) and np.isfinite(limit) and limit > 0 else np.nan
     # scratch-disk usage (MB) and its growth: the signature of a filling disk (absent from attempt 1-2 features)
     f["scratch_mb"] = mean("scratch_bytes") / 1e6 if np.isfinite(mean("scratch_bytes")) else np.nan
     sc_s = df["scratch_bytes"].tail(slope_n) if "scratch_bytes" in df else pd.Series(dtype=float)
