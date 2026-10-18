@@ -143,6 +143,17 @@ def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
     return {"mode": m.mode}
 
 
+@app.post("/admin/reset")
+def admin_reset(x_approval_token: str | None = Header(None)):
+    """v2 (harness independence): clear cooldowns, breakers, de-duplication state and any open or pending incident between benchmark runs.
+    Refused while an action is executing or being verified. Uses the same token as the approval API."""
+    _auth(x_approval_token)
+    try:
+        return engine.reset_run_state()
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
 @app.get("/audit")
 def audit():
     return engine.executor.audit[-100:]
