@@ -67,3 +67,6 @@ No code. Patterns were taken from the projects listed in `docs/REFERENCES.md` (s
 
 **What would you do next?**
 Test on a second application; add an evaluator-side recovery probe with retained raw logs; store the abstention reason and confidence in every incident row; compare real LLM reports with template reports over many incidents; and run the shuffled-label control on the live data.
+
+## Is v2 better than v1? Which change fixed what?
+We cannot say, and we do not claim it. v2 changed four things at once: the retrained models, the memory features, the approval-queue fix and the telemetry condition (T3: trace exporter off, no collector). The evaluation cannot separate them, and v1 and v2 used different seeds with different sample sizes (v2 is a reduced plan), so the two tables are not paired. What v2 shows is whether the specific failures v1 exposed (blocked ask-first runs, incidents and actions on healthy runs, a container recreated during a surge) recur on fresh seeds, judged by criteria fixed before collection (Amendment 4). Whether the dead trace collector in the v1 benchmark caused its memory shift is a hypothesis supported by a small diagnostic, not a finding.
