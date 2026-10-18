@@ -116,3 +116,11 @@ def test_threshold_restart_comparison_and_incomplete_runs():
     assert run(full(m_both))[0][2] == "PASS"
     v, ok, text = run(full(lambda rows: rows.__delitem__(slice(0, 5))))
     assert "INCOMPLETE" in v.values() and not ok and "not decidable" in text
+
+
+def test_load_counts_each_arm_scenario_seed_once(tmp_path):
+    import json
+    rows = full()
+    f = tmp_path / "raw.jsonl"
+    f.write_text("\n".join(json.dumps(r) for r in rows + [rows[0], rows[5]]))
+    assert len(c.load(f)) == len(rows)

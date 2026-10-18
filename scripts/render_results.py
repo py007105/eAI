@@ -40,7 +40,8 @@ def load(path):
                      "incidents": s.get("incidents_opened"), "actions": s.get("actions_executed"), "final": s.get("final_status"),
                      "commit": r.get("system_commit"),
                      "llm_lines": sum("report by " in json.dumps(i.get("timeline")) for i in (r.get("incidents") or []))})
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    return df.drop_duplicates(["arm", "scenario", "seed"], keep="last").reset_index(drop=True)      # each seed counted once per arm
 
 
 def boot_ci(values, n=2000, seed=0):

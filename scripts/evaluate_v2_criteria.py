@@ -22,7 +22,13 @@ EXPECTED = {"autopilot healthy": 24, "threshold healthy": 24, "ask-first healthy
 
 
 def load(path):
-    return [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()]
+    """Rows from the raw file, each (arm, scenario, seed) counted once (the last row wins; orphan evaluator runs have no row at all)."""
+    rows = {}
+    for x in Path(path).read_text(encoding="utf-8").splitlines():
+        if x.strip():
+            r = json.loads(x)
+            rows[(r["arm"], r["scenario"], r["seed"])] = r
+    return list(rows.values())
 
 
 def pick(rows, arm, scenarios):
