@@ -1,0 +1,27 @@
+[23:36:24] guard watching D:\eAI\eAI-workspace\eAI\results\benchmark-v2\benchmark_v2_raw.jsonl
+[23:36:24] ask-first row eternalai_ask_first good_deploy seed 208: ok
+[23:36:24] ask-first row eternalai_ask_first traffic_surge seed 207: ok
+[23:36:24] ask-first row eternalai_ask_first good_deploy seed 218: ok
+[23:36:24] ask-first row eternalai_ask_first traffic_surge seed 217: ok
+[23:36:24] ask-first row eternalai_ask_first good_deploy seed 228: ok
+[23:36:24] ask-first row eternalai_ask_first traffic_surge seed 227: ok
+[23:36:24] ask-first row eternalai_ask_first traffic_surge seed 237: ok
+[23:36:24] ask-first row eternalai_ask_first good_deploy seed 238: ok
+[23:36:24] ask-first row eternalai_ask_first error_spike seed 202: ok
+[23:36:24] ask-first row eternalai_ask_first bad_deploy seed 205: ok
+[23:36:24] ask-first row eternalai_ask_first crash seed 200: ok
+[23:39:44] ask-first row eternalai_ask_first disk_fill seed 204: ok
+[23:41:44] ask-first row eternalai_ask_first memory_leak seed 203: ok
+[23:43:24] ask-first row eternalai_ask_first latency seed 201: ok
+[23:45:24] ask-first row eternalai_ask_first memory_leak seed 213: ok
+[23:47:04] ask-first row eternalai_ask_first crash seed 210: ok
+[23:49:04] ask-first row eternalai_ask_first bad_deploy seed 215: ok
+[23:53:44] ask-first row eternalai_ask_first error_spike seed 212: ok
+[23:55:24] ask-first row eternalai_ask_first latency seed 211: ok
+[23:57:04] ask-first row eternalai_ask_first disk_fill seed 214: ok
+[23:59:04] ask-first row eternalai_ask_first bad_deploy seed 225: ok
+[00:03:24] ask-first row eternalai_ask_first memory_leak seed 223: ok
+[00:05:24] ask-first row eternalai_ask_first crash seed 220: ok
+[00:07:04] ask-first row eternalai_ask_first error_spike seed 222: ok
+[00:08:44] ask-first row eternalai_ask_first disk_fill seed 224: ok
+[00:10:44] ask-first row eternalai_ask_first latency seed 221: ok

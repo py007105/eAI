@@ -1,0 +1,123 @@
+﻿== P1: --arm eternalai_autopilot --manage-stack --reps 12 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+eternalai_autopilot good_deploy seed 208: detected=False recovered=None failed%=1.66
+eternalai_autopilot traffic_surge seed 207: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 218: detected=False recovered=None failed%=0.83
+eternalai_autopilot traffic_surge seed 217: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 228: detected=False recovered=None failed%=2.2
+eternalai_autopilot traffic_surge seed 227: detected=False recovered=None failed%=0.0
+eternalai_autopilot traffic_surge seed 237: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 238: detected=False recovered=None failed%=0.51
+eternalai_autopilot good_deploy seed 248: detected=False recovered=None failed%=1.35
+eternalai_autopilot traffic_surge seed 247: detected=False recovered=None failed%=0.0
+eternalai_autopilot traffic_surge seed 257: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 258: detected=False recovered=None failed%=4.42
+eternalai_autopilot traffic_surge seed 267: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 268: detected=False recovered=None failed%=0.28
+eternalai_autopilot good_deploy seed 278: detected=False recovered=None failed%=0.57
+eternalai_autopilot traffic_surge seed 277: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 288: detected=False recovered=None failed%=0.58
+eternalai_autopilot traffic_surge seed 287: detected=False recovered=None failed%=0.0
+eternalai_autopilot traffic_surge seed 297: detected=False recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 298: detected=False recovered=None failed%=0.53
+eternalai_autopilot traffic_surge seed 307: detected=True recovered=None failed%=0.0
+eternalai_autopilot good_deploy seed 308: detected=False recovered=None failed%=1.25
+eternalai_autopilot good_deploy seed 318: detected=False recovered=None failed%=2.71
+eternalai_autopilot traffic_surge seed 317: detected=False recovered=None failed%=0.0
+== P1: --arm threshold_restart --manage-stack --reps 12 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+threshold_restart good_deploy seed 208: detected=True recovered=None failed%=0.54
+threshold_restart traffic_surge seed 207: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 218: detected=True recovered=None failed%=0.54
+threshold_restart traffic_surge seed 217: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 228: detected=False recovered=None failed%=1.13
+threshold_restart traffic_surge seed 227: detected=False recovered=None failed%=0.0
+threshold_restart traffic_surge seed 237: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 238: detected=False recovered=None failed%=1.12
+threshold_restart good_deploy seed 248: detected=True recovered=None failed%=1.37
+threshold_restart traffic_surge seed 247: detected=False recovered=None failed%=0.0
+threshold_restart traffic_surge seed 257: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 258: detected=False recovered=None failed%=1.48
+threshold_restart traffic_surge seed 267: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 268: detected=True recovered=None failed%=1.05
+threshold_restart good_deploy seed 278: detected=True recovered=None failed%=0.56
+threshold_restart traffic_surge seed 277: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 288: detected=True recovered=None failed%=1.03
+threshold_restart traffic_surge seed 287: detected=False recovered=None failed%=0.0
+threshold_restart traffic_surge seed 297: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 298: detected=False recovered=None failed%=1.76
+threshold_restart traffic_surge seed 307: detected=False recovered=None failed%=0.0
+threshold_restart good_deploy seed 308: detected=False recovered=None failed%=0.31
+threshold_restart good_deploy seed 318: detected=False recovered=None failed%=1.78
+threshold_restart traffic_surge seed 317: detected=False recovered=None failed%=0.0
+== P1/P2: --arm eternalai_ask_first --manage-stack --reps 4 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+eternalai_ask_first good_deploy seed 208: detected=False recovered=None failed%=0.79
+eternalai_ask_first traffic_surge seed 207: detected=False recovered=None failed%=0.0
+eternalai_ask_first good_deploy seed 218: detected=False recovered=None failed%=0.57
+eternalai_ask_first traffic_surge seed 217: detected=False recovered=None failed%=0.0
+eternalai_ask_first good_deploy seed 228: detected=False recovered=None failed%=0.25
+eternalai_ask_first traffic_surge seed 227: detected=False recovered=None failed%=0.0
+eternalai_ask_first traffic_surge seed 237: detected=False recovered=None failed%=0.0
+eternalai_ask_first good_deploy seed 238: detected=False recovered=None failed%=0.0
+== P2: --arm eternalai_ask_first --manage-stack --reps 3 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios crash latency error_spike memory_leak disk_fill bad_deploy
+APPROVER approved 3b1e3025 (restart_service on inventory) after 5.2s
+eternalai_ask_first error_spike seed 202: detected=True recovered=True failed%=29.54
+APPROVER approved 0c3edd72 (rollback_release on inventory) after 5.2s
+eternalai_ask_first bad_deploy seed 205: detected=True recovered=True failed%=47.42
+APPROVER approved d363d29b (restart_service on web) after 5.3s
+eternalai_ask_first crash seed 200: detected=True recovered=True failed%=41.9
+== P1: --arm eternalai_autopilot --manage-stack --reps 12 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+== P1: --arm threshold_restart --manage-stack --reps 12 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+== P1/P2: --arm eternalai_ask_first --manage-stack --reps 4 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios traffic_surge good_deploy
+== P2: --arm eternalai_ask_first --manage-stack --reps 3 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios crash latency error_spike memory_leak disk_fill bad_deploy
+APPROVER approved 096d0737 (clear_temp_path on inventory) after 5.2s
+eternalai_ask_first disk_fill seed 204: detected=True recovered=False failed%=6.33
+APPROVER approved 20da32c7 (recreate_container on web) after 5.3s
+eternalai_ask_first memory_leak seed 203: detected=True recovered=False failed%=10.45
+APPROVER approved ce4ad3cf (restart_service on web) after 5.3s
+eternalai_ask_first latency seed 201: detected=True recovered=False failed%=8.93
+APPROVER approved 7632d253 (recreate_container on orders) after 5.4s
+eternalai_ask_first memory_leak seed 213: detected=True recovered=False failed%=6.91
+APPROVER approved fa5cae31 (restart_service on inventory) after 5.2s
+eternalai_ask_first crash seed 210: detected=True recovered=False failed%=52.37
+APPROVER approved 923fc57d (rollback_release on web) after 5.3s
+eternalai_ask_first bad_deploy seed 215: detected=True recovered=False failed%=46.58
+APPROVER approved c5b9c6f9 (restart_service on inventory) after 5.2s
+eternalai_ask_first error_spike seed 212: detected=True recovered=False failed%=35.88
+APPROVER approved 9b07484f (restart_service on payments) after 5.2s
+eternalai_ask_first latency seed 211: detected=True recovered=False failed%=7.41
+APPROVER approved a2adc526 (clear_temp_path on payments) after 5.2s
+eternalai_ask_first disk_fill seed 214: detected=True recovered=False failed%=7.89
+APPROVER approved 2ee5aeb7 (rollback_release on orders) after 5.2s
+eternalai_ask_first bad_deploy seed 225: detected=True recovered=False failed%=18.05
+APPROVER approved e4bac217 (recreate_container on payments) after 5.3s
+eternalai_ask_first memory_leak seed 223: detected=True recovered=False failed%=8.64
+APPROVER approved 4eb256a4 (restart_service on orders) after 5.2s
+eternalai_ask_first crash seed 220: detected=True recovered=False failed%=18.73
+APPROVER approved 71a84003 (restart_service on web) after 5.2s
+eternalai_ask_first error_spike seed 222: detected=True recovered=False failed%=23.75
+APPROVER approved 9f0a311e (clear_temp_path on web) after 5.3s
+eternalai_ask_first disk_fill seed 224: detected=True recovered=False failed%=5.94
+APPROVER approved 5f868dfb (restart_service on orders) after 5.2s
+eternalai_ask_first latency seed 221: detected=True recovered=False failed%=8.91
+== P3: --arm eternalai_autopilot --manage-stack --reps 3 --seed0 200 --raw results/benchmark-v2/benchmark_v2_raw.jsonl --models-label models-v2 (frozen; see docs/MODEL_CARD.md) --scenarios crash latency error_spike memory_leak disk_fill bad_deploy cpu_burn
+eternalai_autopilot crash seed 200: detected=True recovered=False failed%=41.95
+eternalai_autopilot disk_fill seed 204: detected=True recovered=False failed%=7.87
+eternalai_autopilot error_spike seed 202: detected=True recovered=False failed%=29.07
+eternalai_autopilot cpu_burn seed 206: detected=True recovered=False failed%=94.79
+eternalai_autopilot bad_deploy seed 205: detected=True recovered=False failed%=48.41
+eternalai_autopilot memory_leak seed 203: detected=True recovered=False failed%=10.2
+eternalai_autopilot latency seed 201: detected=True recovered=False failed%=12.14
+eternalai_autopilot memory_leak seed 213: detected=True recovered=False failed%=9.89
+eternalai_autopilot crash seed 210: detected=True recovered=False failed%=41.83
+eternalai_autopilot bad_deploy seed 215: detected=True recovered=False failed%=40.89
+eternalai_autopilot error_spike seed 212: detected=True recovered=False failed%=35.0
+eternalai_autopilot cpu_burn seed 216: detected=True recovered=False failed%=27.79
+eternalai_autopilot latency seed 211: detected=True recovered=False failed%=21.96
+eternalai_autopilot disk_fill seed 214: detected=True recovered=False failed%=23.3
+eternalai_autopilot cpu_burn seed 226: detected=True recovered=False failed%=46.03
+eternalai_autopilot memory_leak seed 223: detected=True recovered=False failed%=24.58
+eternalai_autopilot crash seed 220: detected=True recovered=False failed%=30.04
+eternalai_autopilot error_spike seed 222: detected=True recovered=False failed%=37.29
+eternalai_autopilot disk_fill seed 224: detected=True recovered=False failed%=35.29
+eternalai_autopilot bad_deploy seed 225: detected=True recovered=False failed%=28.69
+eternalai_autopilot latency seed 221: detected=True recovered=False failed%=32.73
+stage 3 complete
