@@ -1,0 +1,506 @@
+[
+ {
+  "arm": "eternalai_autopilot",
+  "scenario": "crash",
+  "seed": 100,
+  "class": "c",
+  "evidence": "R2 first incident abstained (insufficient_evidence) on a crash of orders; orders has 1 crash run in training; final=escalated; actions=[]; incidents=[('escalated', 'insufficient_evidence', True), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "eternalai_autopilot",
+  "scenario": "crash",
+  "seed": 120,
+  "class": "c",
+  "evidence": "R2 first incident abstained (insufficient_evidence) on a crash of orders; orders has 1 crash run in training; final=escalated; actions=[]; incidents=[('escalated', 'insufficient_evidence', True), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "eternalai_autopilot",
+  "scenario": "crash",
+  "seed": 130,
+  "class": "a",
+  "evidence": "R3 restart blocked by a cooldown left by an action in an earlier run (the brain is not reset between runs); final=escalated; actions=['restart_service@inventory:blocked']; incidents=[('escalated', 'down', False)]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "disk_fill",
+  "seed": 104,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=[]; incidents=[('escalated', 'insufficient_evidence', True)]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "crash",
+  "seed": 100,
+  "class": "c",
+  "evidence": "R2 first incident abstained (insufficient_evidence) on a crash of orders; orders has 1 crash run in training; final=escalated; actions=[]; incidents=[('escalated', 'insufficient_evidence', True), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "bad_deploy",
+  "seed": 105,
+  "class": "b",
+  "evidence": "R1 stuck incident: an ask-first proposal stayed awaiting_approval (never approved) and, with no expiry, blocked every later detection in the arm; final=awaiting_approval; actions=['rollback_release@payments:needs_approval']; incidents=[('awaiting_approval', 'bad_deploy', False)]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "latency",
+  "seed": 101,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "memory_leak",
+  "seed": 103,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "error_spike",
+  "seed": 102,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "error_spike",
+  "seed": 112,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "latency",
+  "seed": 111,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "disk_fill",
+  "seed": 114,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "crash",
+  "seed": 110,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "bad_deploy",
+  "seed": 115,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "memory_leak",
+  "seed": 113,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "crash",
+  "seed": 120,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "memory_leak",
+  "seed": 123,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "disk_fill",
+  "seed": 124,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "latency",
+  "seed": 121,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "bad_deploy",
+  "seed": 125,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "error_spike",
+  "seed": 122,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "latency",
+  "seed": 131,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "error_spike",
+  "seed": 132,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "disk_fill",
+  "seed": 134,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "crash",
+  "seed": 130,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "bad_deploy",
+  "seed": 135,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "memory_leak",
+  "seed": 133,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "disk_fill",
+  "seed": 144,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "error_spike",
+  "seed": 142,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "latency",
+  "seed": 141,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "bad_deploy",
+  "seed": 145,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "memory_leak",
+  "seed": 143,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "eternalai_ask_first",
+  "scenario": "crash",
+  "seed": 140,
+  "class": "b",
+  "evidence": "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "disk_fill",
+  "seed": 104,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[('open', 'pending', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "bad_deploy",
+  "seed": 105,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@payments:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "memory_leak",
+  "seed": 103,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "disk_fill",
+  "seed": 114,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "bad_deploy",
+  "seed": 115,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@payments:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "memory_leak",
+  "seed": 113,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "memory_leak",
+  "seed": 123,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "disk_fill",
+  "seed": 124,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@payments:blocked']; incidents=[('escalated', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "bad_deploy",
+  "seed": 125,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@orders:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "disk_fill",
+  "seed": 134,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@web:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "bad_deploy",
+  "seed": 135,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@payments:blocked']; incidents=[('escalated', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "memory_leak",
+  "seed": 133,
+  "class": "a",
+  "evidence": "R4 the run window ended while the incident was still 'open'; final=open; actions=[]; incidents=[('escalated', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "disk_fill",
+  "seed": 144,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@web:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "error_spike",
+  "seed": 142,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@orders:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "latency",
+  "seed": 141,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "bad_deploy",
+  "seed": 145,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@inventory:execute']; incidents=[('unresolved', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "memory_leak",
+  "seed": 143,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "threshold_restart",
+  "scenario": "crash",
+  "seed": 140,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'insufficient_evidence', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "bad_deploy",
+  "seed": 105,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "latency",
+  "seed": 101,
+  "class": "a",
+  "evidence": "R4 the run window ended while the incident was still 'verifying'; final=verifying; actions=['restart_service@orders:execute']; incidents=[('recovered', 'memory_leak', False), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "error_spike",
+  "seed": 112,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=unresolved; actions=['restart_service@orders:execute']; incidents=[('unresolved', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "latency",
+  "seed": 111,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "bad_deploy",
+  "seed": 115,
+  "class": "a",
+  "evidence": "R4 the run window ended while the incident was still 'executing'; final=executing; actions=['restart_service@orders:execute']; incidents=[('recovered', 'memory_leak', False), ('open', 'pending', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "memory_leak",
+  "seed": 113,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "crash",
+  "seed": 120,
+  "class": "a",
+  "evidence": "R3 restart blocked by a cooldown left by an action in an earlier run (the brain is not reset between runs); final=escalated; actions=['restart_service@orders:blocked']; incidents=[('escalated', 'down', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "memory_leak",
+  "seed": 123,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "disk_fill",
+  "seed": 124,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "latency",
+  "seed": 121,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "error_spike",
+  "seed": 122,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "latency",
+  "seed": 131,
+  "class": "a",
+  "evidence": "R4 the run window ended while the incident was still 'open'; final=open; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "error_spike",
+  "seed": 132,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "disk_fill",
+  "seed": 134,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "memory_leak",
+  "seed": 133,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "disk_fill",
+  "seed": 144,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "error_spike",
+  "seed": 142,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "latency",
+  "seed": 141,
+  "class": "c",
+  "evidence": "R5 no incident was ever opened by this arm's detector; final=undetected; actions=[]; incidents=[]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "bad_deploy",
+  "seed": 145,
+  "class": "a",
+  "evidence": "R3 restart blocked by a cooldown left by an action in an earlier run (the brain is not reset between runs); final=escalated; actions=['rollback_release@inventory:blocked']; incidents=[('escalated', 'bad_deploy', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "memory_leak",
+  "seed": 143,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'memory_leak', False)]"
+ },
+ {
+  "arm": "prototype_rules",
+  "scenario": "crash",
+  "seed": 140,
+  "class": "c",
+  "evidence": "R6 the arm acted or escalated and the fault was not reported recovered; final=escalated; actions=['restart_service@web:blocked']; incidents=[('escalated', 'down', False), ('open', 'pending', False)]"
+ }
+]
