@@ -56,7 +56,7 @@ class Investigator:
     def metrics(self, service, feats: dict):
         if not self._once(f"metrics:{service}"):
             return None
-        keys = ("lat_ratio", "error_ratio", "cpu_per_req_ratio", "mem_share", "mem_slope_share_per_min",
+        keys = ("lat_ratio", "error_ratio", "cpu_per_req_ratio", "mem_share", "mem_rel_growth", "mem_slope_share_per_min",
                 "up_frac", "dep_fail_rate", "error_log_rate", "deploys_3m", "restarts_in_window")
         d = {k: (None if not np.isfinite(feats.get(k, np.nan)) else round(float(feats[k]), 4)) for k in keys}
         shown = ", ".join(f"{k}={v}" for k, v in d.items() if v is not None)
