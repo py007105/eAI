@@ -4,7 +4,7 @@ v1 (tag `benchmark-system-v1`, 225 rows in `results/benchmark-v1/`) stays as rec
 
 ## Time against the budget
 
-- v2 started at about 13:10 IST on 2026-10-18 (the user's v2 instruction, right after the forecast check was killed). At the time of this plan it is about 14:55 IST: **about 1 h 45 min elapsed** of the 30 h v2 budget (and of the 48 h horizon). Everything done so far was code, tests, diagnosis and pre-registration; the only Docker work was the reproduction runs and the 6 capture runs.
+- v2 started at about 13:10 IST on 2026-10-18 (the user's v2 instruction, right after the forecast check was killed). At the time of this plan it is about 14:45 IST: **about 1 h 35 min elapsed** of the 30 h v2 budget (and of the 48 h horizon). Everything done so far was code, tests, diagnosis and pre-registration; the only Docker work was the reproduction runs and the 6 capture runs.
 - Nothing starts until the user says "memory fixed". The 12 h buffer and the 14 h system freeze (from about 23:10 IST on 2026-10-19, T+34 h) are unchanged.
 
 ## What changed in the plan, and why
