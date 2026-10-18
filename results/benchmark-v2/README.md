@@ -7,3 +7,7 @@
 - `health_log.tsv`: external container health log from 2026-10-19 00:29:31 IST (not covering earlier runs; Amendment 7).
 - `truth_and_evidence.zip`: `truth/` = full contents of the evaluator volume (also earlier training, smoke and v1 records) and `evidence/` = the brain's `/srv/runtime/evidence` as left by the last brain container.
 - `SHA256SUMS`: checksums of the files above. `SHA256SUMS-archive-contents`: checksum of every file inside the zip.
+
+## Amendment 8 re-run export (2026-10-19)
+
+Files under rerun/ with checksums in SHA256SUMS-rerun (the original SHA256SUMS is unchanged and still verifies). benchmark_v2_evaluated.jsonl is derived by scripts/v2_combine.py (valid original rows + re-run rows). invalid_rows.json lists the original rows marked invalid (class a). health_log_full.tsv is the complete external health log including the re-run period; truth_and_evidence_after_rerun.zip is the evaluator volume after the re-run.

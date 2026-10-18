@@ -1,0 +1,775 @@
+{
+ "rule": "invalid if score.t_end > cutoff; cutoff = time of the last probe that completed a checkout (Amendment 8)",
+ "cutoff_t": 1792346436.3536348,
+ "cutoff_ist": "2026-10-18 23:30:36",
+ "first_409_t": 1792346968.1118743,
+ "invalid": [
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "seed": 215,
+   "t_end": 1792347538.2025237,
+   "finished_at": "2026-10-18T23:49:03",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "seed": 225,
+   "t_end": 1792348137.4926379,
+   "finished_at": "2026-10-18T23:59:03",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 200,
+   "t_end": 1792346444.7285953,
+   "finished_at": "2026-10-18T23:30:48",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 210,
+   "t_end": 1792347414.0944898,
+   "finished_at": "2026-10-18T23:46:58",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 220,
+   "t_end": 1792348504.8695872,
+   "finished_at": "2026-10-19T00:05:10",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 204,
+   "t_end": 1792346977.1527998,
+   "finished_at": "2026-10-18T23:39:41",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 214,
+   "t_end": 1792348014.6705961,
+   "finished_at": "2026-10-18T23:56:59",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 224,
+   "t_end": 1792348715.3034573,
+   "finished_at": "2026-10-19T00:08:40",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "seed": 212,
+   "t_end": 1792347800.9407341,
+   "finished_at": "2026-10-18T23:53:27",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "seed": 222,
+   "t_end": 1792348613.0395863,
+   "finished_at": "2026-10-19T00:06:57",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 201,
+   "t_end": 1792347200.5781014,
+   "finished_at": "2026-10-18T23:43:23",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 211,
+   "t_end": 1792347911.6095085,
+   "finished_at": "2026-10-18T23:55:16",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 221,
+   "t_end": 1792348825.7857575,
+   "finished_at": "2026-10-19T00:10:29",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 203,
+   "t_end": 1792347088.219013,
+   "finished_at": "2026-10-18T23:41:34",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 213,
+   "t_end": 1792347307.4975502,
+   "finished_at": "2026-10-18T23:45:12",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 223,
+   "t_end": 1792348400.843169,
+   "finished_at": "2026-10-19T00:03:24",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 205,
+   "t_end": 1792349345.705347,
+   "finished_at": "2026-10-19T00:19:11",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 215,
+   "t_end": 1792350037.046153,
+   "finished_at": "2026-10-19T00:30:41",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 225,
+   "t_end": 1792351213.7944815,
+   "finished_at": "2026-10-19T00:50:18",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 206,
+   "t_end": 1792349220.8061833,
+   "finished_at": "2026-10-19T00:17:10",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 216,
+   "t_end": 1792350398.7453856,
+   "finished_at": "2026-10-19T00:36:49",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 226,
+   "t_end": 1792350690.4846115,
+   "finished_at": "2026-10-19T00:41:39",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 200,
+   "t_end": 1792348948.1709156,
+   "finished_at": "2026-10-19T00:12:33",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 210,
+   "t_end": 1792349917.980486,
+   "finished_at": "2026-10-19T00:28:43",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 220,
+   "t_end": 1792350894.6136458,
+   "finished_at": "2026-10-19T00:44:59",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 204,
+   "t_end": 1792349046.2265768,
+   "finished_at": "2026-10-19T00:14:11",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 214,
+   "t_end": 1792350614.0427883,
+   "finished_at": "2026-10-19T00:40:20",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 224,
+   "t_end": 1792351095.224344,
+   "finished_at": "2026-10-19T00:48:20",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 202,
+   "t_end": 1792349147.468596,
+   "finished_at": "2026-10-19T00:15:51",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 212,
+   "t_end": 1792350292.2238662,
+   "finished_at": "2026-10-19T00:34:56",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 222,
+   "t_end": 1792350996.6557765,
+   "finished_at": "2026-10-19T00:46:42",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 201,
+   "t_end": 1792349710.8658063,
+   "finished_at": "2026-10-19T00:25:16",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 211,
+   "t_end": 1792350538.84941,
+   "finished_at": "2026-10-19T00:39:04",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 221,
+   "t_end": 1792351474.0518816,
+   "finished_at": "2026-10-19T00:54:39",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 203,
+   "t_end": 1792349606.8913503,
+   "finished_at": "2026-10-19T00:23:30",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 213,
+   "t_end": 1792349816.9207444,
+   "finished_at": "2026-10-19T00:27:02",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 223,
+   "t_end": 1792350795.7179337,
+   "finished_at": "2026-10-19T00:43:19",
+   "class": "a (harness/environment artifact: inventory stock exhausted)"
+  }
+ ],
+ "jobs": [
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 400,
+   "kind": "fresh",
+   "replaces_seed": 200
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 401,
+   "kind": "fresh",
+   "replaces_seed": 201
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "seed": 402,
+   "kind": "fresh",
+   "replaces_seed": 212
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 403,
+   "kind": "fresh",
+   "replaces_seed": 203
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 404,
+   "kind": "fresh",
+   "replaces_seed": 204
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "seed": 405,
+   "kind": "fresh",
+   "replaces_seed": 215
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 410,
+   "kind": "fresh",
+   "replaces_seed": 210
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 411,
+   "kind": "fresh",
+   "replaces_seed": 211
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "seed": 412,
+   "kind": "fresh",
+   "replaces_seed": 222
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 413,
+   "kind": "fresh",
+   "replaces_seed": 213
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 414,
+   "kind": "fresh",
+   "replaces_seed": 214
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "seed": 415,
+   "kind": "fresh",
+   "replaces_seed": 225
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "seed": 420,
+   "kind": "fresh",
+   "replaces_seed": 220
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "seed": 421,
+   "kind": "fresh",
+   "replaces_seed": 221
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "seed": 423,
+   "kind": "fresh",
+   "replaces_seed": 223
+  },
+  {
+   "segment": "P2",
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "seed": 424,
+   "kind": "fresh",
+   "replaces_seed": 224
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 202,
+   "kind": "same-seed",
+   "replaces_seed": 202
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 205,
+   "kind": "same-seed",
+   "replaces_seed": 205
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 400,
+   "kind": "fresh",
+   "replaces_seed": 200
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 401,
+   "kind": "fresh",
+   "replaces_seed": 201
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 402,
+   "kind": "fresh",
+   "replaces_seed": 212
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 403,
+   "kind": "fresh",
+   "replaces_seed": 203
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 404,
+   "kind": "fresh",
+   "replaces_seed": 204
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 405,
+   "kind": "fresh",
+   "replaces_seed": 215
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 406,
+   "kind": "fresh",
+   "replaces_seed": 206
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 410,
+   "kind": "fresh",
+   "replaces_seed": 210
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 411,
+   "kind": "fresh",
+   "replaces_seed": 211
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "seed": 412,
+   "kind": "fresh",
+   "replaces_seed": 222
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 413,
+   "kind": "fresh",
+   "replaces_seed": 213
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 414,
+   "kind": "fresh",
+   "replaces_seed": 214
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "seed": 415,
+   "kind": "fresh",
+   "replaces_seed": 225
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 416,
+   "kind": "fresh",
+   "replaces_seed": 216
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "seed": 420,
+   "kind": "fresh",
+   "replaces_seed": 220
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "seed": 421,
+   "kind": "fresh",
+   "replaces_seed": 221
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "seed": 423,
+   "kind": "fresh",
+   "replaces_seed": 223
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "seed": 424,
+   "kind": "fresh",
+   "replaces_seed": 224
+  },
+  {
+   "segment": "P3",
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "seed": 426,
+   "kind": "fresh",
+   "replaces_seed": 226
+  }
+ ],
+ "cells": [
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "planned": 12,
+   "found": 12,
+   "valid": 12,
+   "invalid": 0,
+   "rerun": 0
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "planned": 12,
+   "found": 12,
+   "valid": 12,
+   "invalid": 0,
+   "rerun": 0
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "planned": 12,
+   "found": 12,
+   "valid": 12,
+   "invalid": 0,
+   "rerun": 0
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "planned": 12,
+   "found": 12,
+   "valid": 12,
+   "invalid": 0,
+   "rerun": 0
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "planned": 3,
+   "found": 3,
+   "valid": 1,
+   "invalid": 2,
+   "rerun": 2
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "planned": 3,
+   "found": 3,
+   "valid": 0,
+   "invalid": 3,
+   "rerun": 3
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "planned": 3,
+   "found": 3,
+   "valid": 1,
+   "invalid": 2,
+   "rerun": 2
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "traffic_surge",
+   "planned": 4,
+   "found": 4,
+   "valid": 4,
+   "invalid": 0,
+   "rerun": 0
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "good_deploy",
+   "planned": 4,
+   "found": 4,
+   "valid": 4,
+   "invalid": 0,
+   "rerun": 0
+  }
+ ]
+}
