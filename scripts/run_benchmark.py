@@ -63,6 +63,27 @@ def start_brain(brain, mode, token):
     sys.exit("the brain did not come up in the expected brain/mode")
 
 
+def benchmark_token():
+    """The approval token for the brain under test and for the simulated operator.
+
+    v1 read ETERNALAI_APPROVAL_TOKEN here. But this module imports models/collect_runs.py, which imports eternalai/config.py, which calls
+    load_dotenv(); that put the .env value ("change-me", copied from .env.example) into the environment before main() ran. The harness then started the
+    brain with "change-me", which the brain treats as "approval API disabled" (HTTP 503), and the operator sent the same value and ignored the 503. So no
+    ask-first proposal could ever be approved (docs/postmortems/ask-first-arm-stuck-incident-v1.md). The token now comes from its own variable and is
+    never taken from ETERNALAI_APPROVAL_TOKEN.
+    """
+    return os.environ.get("EAI_BENCH_TOKEN") or "benchmark-token-not-a-secret"
+
+
+def verify_approval_api(token):
+    """Abort unless the running brain accepts this token. A probe approve for an incident that does not exist must be answered 409 (no pending
+    approval); 503 means the approval API is disabled (placeholder token) and 403 means a different token."""
+    r = httpx.post(f"{EAI}/approvals/__probe__/approve", json={"approver": "benchmark-preflight"}, headers={"X-Approval-Token": token}, timeout=10)
+    if r.status_code != 409:
+        sys.exit(f"the brain does not accept the benchmark approval token (probe answered HTTP {r.status_code}: {r.text[:120]}); ask-first cannot work")
+    return True
+
+
 def stop_brain():
     sh("docker compose stop eternalai")
 
@@ -143,7 +164,7 @@ def main():
     else:
         assert a.seed0 + a.reps * 10 + 9 < 1000, "benchmark seeds must stay below the training seeds (1000+)"
     brain, mode = ARMS[a.arm]
-    token = os.getenv("ETERNALAI_APPROVAL_TOKEN", "benchmark-token-not-a-secret")
+    token = benchmark_token()
     meta = {}
     if a.manage_stack:
         if brain is None:
@@ -164,6 +185,8 @@ def main():
         for line in RAW.read_text().splitlines():
             r = json.loads(line)
             done.add((r["arm"], r["scenario"], r["seed"]))
+    if a.arm == "eternalai_ask_first":
+        verify_approval_api(token)
     stop = threading.Event()
     astats = {}
     if a.arm == "eternalai_ask_first":
