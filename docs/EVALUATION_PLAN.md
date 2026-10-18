@@ -239,3 +239,142 @@ v2 differs from v1 in four things at once: the retrained models (72 original + 3
 ## Amendment 7 (2026-10-19 00:29 IST, tooling only, during Stage 3): external health log
 
 No per-run container-state record in v2. An external health log exists from 2026-10-19 00:29:31 IST onward (`results/benchmark-v2/health_log.tsv`, written by `scripts/health_watch.py`, once a minute, read-only). Runs before that are not covered, including the P1 runs and the first ask-first fault runs. Triage checks each later run's time window against this log and marks any run during which a required container was unhealthy or restarted unexpectedly. A required container down or repeatedly restarting outside a runbook action (not running in 3 consecutive samples, unhealthy in 3, or a RestartCount rise) is a stop trigger: the driver is left as it is and the user is alerted. No system code changed. Stage 3 also had one memory kill (see `results/benchmark-v2/stage3_events.log`) with an orphan evaluator run (`orphans.json`) excluded from all results.
+
+## Amendment 8 (2026-10-19 02:53 IST, BEFORE any restock and BEFORE any re-run): inventory stock-out, exclusion rule, restock as a harness action, re-run plan
+
+Nothing in this amendment has been run yet. Criteria (Amendment 4 section N) and the demo rule (section P) are **unchanged**. No system code changes (`app/`, `eternalai/`, `evaluator/`, `models/`, `docker-compose.yml`, `prometheus.yml`, `scripts/run_benchmark.py`); the system paths are identical to tag `benchmark-system-v2` (checked with `git diff`).
+
+**What happened and how it was found (honestly).** The stack's inventory stock reached zero partway through Stage 3. It was **first noticed from the result pattern** (0 of 18 autopilot supported-fault runs recovered, every verification probe answered HTTP 409 "cannot reserve stock"), and **then confirmed against stock records**: `GET /items` shows stock 0 for all four SKUs, the orders table holds the whole-volume consumption, and the volume was created 2026-10-16T17:31:30Z and never reset. The cause is cumulative: the service only subtracts stock, so training, the v1 benchmark, Stage 1 and Stage 3 together exhausted 4 x 100000 units (details and the dataset-by-dataset check: `docs/postmortems/v2-stock-exhaustion.md`, `docs/results/stock_validity.md`). It is a class (a) harness/environment artifact under plan section 9.
+
+**Deviation from the instruction "restock through the inventory service's own API".** The service has no add-stock endpoint (`app/inventory/main.py` offers `GET /items` and `POST /reserve`, and `/reserve` only subtracts). Adding an endpoint would change `app/` and is therefore a v3 change under Amendment 4. The restock is instead a **direct SQL update by the harness**, run inside the existing inventory container; reading and verifying the stock uses the service's own `GET /items`. Exact SQL (one transaction, write lock taken first):
+
+```
+BEGIN IMMEDIATE;  UPDATE items SET stock = 100000;  COMMIT;
+```
+
+executed by `scripts/stock_gate.py` as `docker exec eai-inventory-1 python -c "<sqlite3 BEGIN IMMEDIATE / UPDATE / COMMIT>" 100000`. **The value 100000** is what a freshly created stack seeds: `app/inventory/main.py` lines 26-27 insert `100000` for each of `sku-lamp`, `sku-mug`, `sku-bag`, `sku-book` when the items table is empty (the file has not changed since its first commit `5eeedc1`; `stock_gate.seed_value_in_source()` reads it and returns `[100000]`).
+
+**Restock safety.** Runs only between runs (the driver executes one run at a time and the gate runs before the next run starts); never while a fault or run is active; never restarts the inventory container; never touches a volume; one transaction; verified afterwards through `GET /items` (every SKU must read at least 99% of the seeded level, the remainder being purchases by the running load generator); if the restock or the check fails, the run is **not started** and the driver stops. The brain's incident list is read for the restock window and recorded (an incident in that window would be a finding). The same gate runs before every re-run, for every arm.
+
+**Stock gate (tooling only).** Before every re-run the driver reads the per-SKU stock; if any SKU is below 50000 it restocks to 100000 and verifies. Every re-run result row carries `stock`: per-SKU stock before the gate, after the restock, and after the run (also appended to `results/benchmark-v2/stock_log.jsonl`). `scripts/preflight.py` has the same check (refuses below the threshold) and `scripts/demo.ps1` restocks to the seeded level at start.
+
+**Exclusion rule (fixed now, by timestamp, before any row is classified; stock records, not outcomes).** Cutoff = the time of the last verification probe in the v2 file that completed a checkout (a confirmed order). Stock only falls, so sku-mug had stock until then. A v2 row is **invalid** if its run ends after the cutoff (`score.t_end` later than the cutoff): this includes runs that start before and end after it, and all runs between the cutoff and the first HTTP 409 probe (conservative). It is applied mechanically by `scripts/v2_validity_mark.py`, also to rows that look clean (for example the ask-first `disk_fill` seed 204 and the ask-first `crash` seed 200, which recovered but ended 8.4 s after the cutoff). The other three SKUs have no log-proven timeline (see Limitations in `docs/EVALUATION.md`). Script output:
+
+- last probe that completed a checkout (cutoff): 2026-10-18 23:30:36 IST (epoch 1792346436.354)
+- first probe answered HTTP 409: 2026-10-18 23:39:28 IST
+- rows in the raw file: 95; invalid by the rule (run end after the cutoff): 37; valid: 58
+
+Invalid rows, every one listed (originals stay in `benchmark_v2_raw.jsonl`, which is unchanged: its SHA-256 equals the exported one; they are marked invalid, class (a), in the sidecar `results/benchmark-v2/invalid_rows.json` and excluded from every count):
+
+| arm | scenario | seed | run end (IST) | seconds after cutoff | recovered | verification |
+|---|---|---|---|---|---|---|
+| eternalai_ask_first | crash | 200 | 2026-10-18 23:30:44 | 8.4 | True | HTTP 200 |
+| eternalai_ask_first | disk_fill | 204 | 2026-10-18 23:39:37 | 540.8 | False | HTTP 409 |
+| eternalai_ask_first | memory_leak | 203 | 2026-10-18 23:41:28 | 651.9 | False | HTTP 409 |
+| eternalai_ask_first | latency | 201 | 2026-10-18 23:43:20 | 764.2 | False | HTTP 409 |
+| eternalai_ask_first | memory_leak | 213 | 2026-10-18 23:45:07 | 871.1 | False | HTTP 409 |
+| eternalai_ask_first | crash | 210 | 2026-10-18 23:46:54 | 977.7 | False | HTTP 409 |
+| eternalai_ask_first | bad_deploy | 215 | 2026-10-18 23:48:58 | 1101.8 | False | HTTP 409 |
+| eternalai_ask_first | error_spike | 212 | 2026-10-18 23:53:20 | 1364.6 | False | HTTP 409 |
+| eternalai_ask_first | latency | 211 | 2026-10-18 23:55:11 | 1475.3 | False | HTTP 409 |
+| eternalai_ask_first | disk_fill | 214 | 2026-10-18 23:56:54 | 1578.3 | False | HTTP 409 |
+| eternalai_ask_first | bad_deploy | 225 | 2026-10-18 23:58:57 | 1701.1 | False | HTTP 409 |
+| eternalai_ask_first | memory_leak | 223 | 2026-10-19 00:03:20 | 1964.5 | False | HTTP 409 |
+| eternalai_ask_first | crash | 220 | 2026-10-19 00:05:04 | 2068.5 | False | HTTP 409 |
+| eternalai_ask_first | error_spike | 222 | 2026-10-19 00:06:53 | 2176.7 | False | HTTP 409 |
+| eternalai_ask_first | disk_fill | 224 | 2026-10-19 00:08:35 | 2278.9 | False | HTTP 409 |
+| eternalai_ask_first | latency | 221 | 2026-10-19 00:10:25 | 2389.4 | False | HTTP 409 |
+| eternalai_autopilot | crash | 200 | 2026-10-19 00:12:28 | 2511.8 | False | HTTP 409 |
+| eternalai_autopilot | disk_fill | 204 | 2026-10-19 00:14:06 | 2609.9 | False | HTTP 409; None |
+| eternalai_autopilot | error_spike | 202 | 2026-10-19 00:15:47 | 2711.1 | False | HTTP 409 |
+| eternalai_autopilot | cpu_burn | 206 | 2026-10-19 00:17:00 | 2784.5 | False | None |
+| eternalai_autopilot | bad_deploy | 205 | 2026-10-19 00:19:05 | 2909.4 | False | HTTP 409 |
+| eternalai_autopilot | memory_leak | 203 | 2026-10-19 00:23:26 | 3170.5 | False | HTTP 409 |
+| eternalai_autopilot | latency | 201 | 2026-10-19 00:25:10 | 3274.5 | False | HTTP 409 |
+| eternalai_autopilot | memory_leak | 213 | 2026-10-19 00:26:56 | 3380.6 | False | HTTP 409 |
+| eternalai_autopilot | crash | 210 | 2026-10-19 00:28:37 | 3481.6 | False | HTTP 409 |
+| eternalai_autopilot | bad_deploy | 215 | 2026-10-19 00:30:37 | 3600.7 | False | HTTP 409 |
+| eternalai_autopilot | error_spike | 212 | 2026-10-19 00:34:52 | 3855.9 | False | HTTP 409 |
+| eternalai_autopilot | cpu_burn | 216 | 2026-10-19 00:36:38 | 3962.4 | False | ReadTimeout; None |
+| eternalai_autopilot | latency | 211 | 2026-10-19 00:38:58 | 4102.5 | False | HTTP 409 |
+| eternalai_autopilot | disk_fill | 214 | 2026-10-19 00:40:14 | 4177.7 | False | None |
+| eternalai_autopilot | cpu_burn | 226 | 2026-10-19 00:41:30 | 4254.1 | False | None |
+| eternalai_autopilot | memory_leak | 223 | 2026-10-19 00:43:15 | 4359.4 | False | HTTP 409 |
+| eternalai_autopilot | crash | 220 | 2026-10-19 00:44:54 | 4458.3 | False | HTTP 409 |
+| eternalai_autopilot | error_spike | 222 | 2026-10-19 00:46:36 | 4560.3 | False | HTTP 409 |
+| eternalai_autopilot | disk_fill | 224 | 2026-10-19 00:48:15 | 4658.9 | False | HTTP 409 |
+| eternalai_autopilot | bad_deploy | 225 | 2026-10-19 00:50:13 | 4777.4 | False | HTTP 409 |
+| eternalai_autopilot | latency | 221 | 2026-10-19 00:54:34 | 5037.7 | False | HTTP 409 |
+
+**Re-run plan, cell by cell (script output; planned / found / valid / invalid / re-run).** Valid rows are kept. Pairing as in Amendment 4: arms share seeds. Where some arms of a (scenario, seed) group stay valid and others are invalid, the invalid arms are re-run on the **same seed**; where every arm of the group is invalid, the whole group gets **one fresh seed** (400 + 10 x k + scenario index, block 400-429). Seed check (`docs/results/seed_check_v2_rerun.md`, line for this block): Planned: forecast check 3000-3004 (5 seeds); forecast smoke 3900-3901 (2 seeds); live LLM check 3500-3504 (5 seeds); v2 re-run block (Amendment 8) 400-429 (30 seeds) The checker also lists forecast-check and smoke seeds that the evaluator volume already contains; they are unrelated to this block.
+
+| arm | scenario | planned | found | valid | invalid | re-run |
+|---|---|---|---|---|---|---|
+| eternalai_autopilot | crash | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | latency | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | error_spike | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | memory_leak | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | disk_fill | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | bad_deploy | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | cpu_burn | 3 | 3 | 0 | 3 | 3 |
+| eternalai_autopilot | traffic_surge | 12 | 12 | 12 | 0 | 0 |
+| eternalai_autopilot | good_deploy | 12 | 12 | 12 | 0 | 0 |
+| threshold_restart | traffic_surge | 12 | 12 | 12 | 0 | 0 |
+| threshold_restart | good_deploy | 12 | 12 | 12 | 0 | 0 |
+| eternalai_ask_first | crash | 3 | 3 | 0 | 3 | 3 |
+| eternalai_ask_first | latency | 3 | 3 | 0 | 3 | 3 |
+| eternalai_ask_first | error_spike | 3 | 3 | 1 | 2 | 2 |
+| eternalai_ask_first | memory_leak | 3 | 3 | 0 | 3 | 3 |
+| eternalai_ask_first | disk_fill | 3 | 3 | 0 | 3 | 3 |
+| eternalai_ask_first | bad_deploy | 3 | 3 | 1 | 2 | 2 |
+| eternalai_ask_first | traffic_surge | 4 | 4 | 4 | 0 | 0 |
+| eternalai_ask_first | good_deploy | 4 | 4 | 4 | 0 | 0 |
+| **total** | | 95 | 95 | 58 | 37 | 37 |
+
+Re-run jobs in the pre-registered run order (P2 ask-first before P3 autopilot):
+
+| # | segment | arm | scenario | seed | kind | replaces seed |
+|---|---|---|---|---|---|---|
+| 1 | P2 | eternalai_ask_first | crash | 400 | fresh | 200 |
+| 2 | P2 | eternalai_ask_first | latency | 401 | fresh | 201 |
+| 3 | P2 | eternalai_ask_first | error_spike | 402 | fresh | 212 |
+| 4 | P2 | eternalai_ask_first | memory_leak | 403 | fresh | 203 |
+| 5 | P2 | eternalai_ask_first | disk_fill | 404 | fresh | 204 |
+| 6 | P2 | eternalai_ask_first | bad_deploy | 405 | fresh | 215 |
+| 7 | P2 | eternalai_ask_first | crash | 410 | fresh | 210 |
+| 8 | P2 | eternalai_ask_first | latency | 411 | fresh | 211 |
+| 9 | P2 | eternalai_ask_first | error_spike | 412 | fresh | 222 |
+| 10 | P2 | eternalai_ask_first | memory_leak | 413 | fresh | 213 |
+| 11 | P2 | eternalai_ask_first | disk_fill | 414 | fresh | 214 |
+| 12 | P2 | eternalai_ask_first | bad_deploy | 415 | fresh | 225 |
+| 13 | P2 | eternalai_ask_first | crash | 420 | fresh | 220 |
+| 14 | P2 | eternalai_ask_first | latency | 421 | fresh | 221 |
+| 15 | P2 | eternalai_ask_first | memory_leak | 423 | fresh | 223 |
+| 16 | P2 | eternalai_ask_first | disk_fill | 424 | fresh | 224 |
+| 17 | P3 | eternalai_autopilot | error_spike | 202 | same-seed | 202 |
+| 18 | P3 | eternalai_autopilot | bad_deploy | 205 | same-seed | 205 |
+| 19 | P3 | eternalai_autopilot | crash | 400 | fresh | 200 |
+| 20 | P3 | eternalai_autopilot | latency | 401 | fresh | 201 |
+| 21 | P3 | eternalai_autopilot | error_spike | 402 | fresh | 212 |
+| 22 | P3 | eternalai_autopilot | memory_leak | 403 | fresh | 203 |
+| 23 | P3 | eternalai_autopilot | disk_fill | 404 | fresh | 204 |
+| 24 | P3 | eternalai_autopilot | bad_deploy | 405 | fresh | 215 |
+| 25 | P3 | eternalai_autopilot | cpu_burn | 406 | fresh | 206 |
+| 26 | P3 | eternalai_autopilot | crash | 410 | fresh | 210 |
+| 27 | P3 | eternalai_autopilot | latency | 411 | fresh | 211 |
+| 28 | P3 | eternalai_autopilot | error_spike | 412 | fresh | 222 |
+| 29 | P3 | eternalai_autopilot | memory_leak | 413 | fresh | 213 |
+| 30 | P3 | eternalai_autopilot | disk_fill | 414 | fresh | 214 |
+| 31 | P3 | eternalai_autopilot | bad_deploy | 415 | fresh | 225 |
+| 32 | P3 | eternalai_autopilot | cpu_burn | 416 | fresh | 216 |
+| 33 | P3 | eternalai_autopilot | crash | 420 | fresh | 220 |
+| 34 | P3 | eternalai_autopilot | latency | 421 | fresh | 221 |
+| 35 | P3 | eternalai_autopilot | memory_leak | 423 | fresh | 223 |
+| 36 | P3 | eternalai_autopilot | disk_fill | 424 | fresh | 224 |
+| 37 | P3 | eternalai_autopilot | cpu_burn | 426 | fresh | 226 |
+
+Total re-run jobs: 37; same-seed 2; fresh-seed 35
+
+**Harness differences (stated, not hidden).** (1) The stock gate exists only for the re-runs; the original valid rows had no gate and no per-run stock record. (2) Each re-run is one `run_benchmark.py` invocation for exactly one (arm, scenario, seed); the brain is started once per arm segment as before and the per-run brain reset is unchanged, but the shuffled scenario order inside a repetition is replaced by ascending seed order, and the `rep` field of re-run rows is 0 (the seed identifies the row). (3) Re-run rows are written to `results/benchmark-v2/benchmark_v2_rerun_raw.jsonl`; the evaluated set is the valid original rows plus the re-run rows. (4) The telemetry condition (T3), the models, the arms and the scoring are unchanged. (5) The external health log was restarted for the re-runs; its `WATCHER_START` lines in `results/benchmark-v2/health_log.tsv` give the times.
+
+**Standing rules continue.** Memory-kill rule (resumes used 1 of 3), quiet mode, the criteria script and rule P applied as written, no rescue of a failed criterion, wording rule of Amendment 6. After the re-runs: export with SHA-256 checksums, apply the criteria script, triage every non-recovery against the health log, the orphan list and the stock log, and stop for the user before any documentation is written.

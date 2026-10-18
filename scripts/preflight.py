@@ -8,6 +8,7 @@ the evaluator scorecard is empty; the code paths the benchmark ran are identical
 v2 adds the telemetry condition check (Amendment 4, Stage 0 chose T3): every app container must run with OTEL_SDK_DISABLED=true and no Jaeger container may be
 running. The dashboard is NOT part of the evaluated condition (it was not running during any v2 collection or evaluation run); if it is running that is reported as
 a documented difference (INFO), never a failure, and a short rehearsal with it on must confirm it does not change the brain's behaviour (docs/DEMO.md).
+Amendment 8 adds the inventory stock check: every SKU at or above scripts/stock_gate.THRESHOLD (the service only subtracts stock, so a long run exhausts it).
 Each check is a function returning (ok, detail) so tests can replace the Docker, HTTP and git calls with mocks.
 """
 import argparse
@@ -16,6 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 PLACEHOLDER_TOKENS = {"", "change-me"}
 MODEL_ARTIFACTS = ("baselines", "detectors", "classifier", "ranker")
 BENCHMARK_PATHS = ["eternalai", "evaluator", "app", "models", "loadgen", "telemetry", "docker-compose.yml",
@@ -102,6 +104,20 @@ def check_scorecard_empty(http_get):
     return n == 0, f"scorecard holds {n} run(s)"
 
 
+def check_inventory_stock(stock_reader=None, threshold=None):
+    """Every SKU must have at least `threshold` units (the inventory service only subtracts stock; docs/postmortems/v2-stock-exhaustion.md).
+    Refuses below it; `python scripts/stock_gate.py --restock` restocks to the seeded level (Amendment 8)."""
+    try:
+        import stock_gate
+        stock = (stock_reader or stock_gate.read_stock)()
+        threshold = stock_gate.THRESHOLD if threshold is None else threshold
+    except Exception as e:  # noqa: BLE001
+        return False, f"stock unreadable ({type(e).__name__})"
+    low = {k: v for k, v in stock.items() if v < threshold}
+    return (not low and bool(stock)), (f"lowest SKU stock {min(stock.values())} (threshold {threshold})" if stock else "no SKUs returned") + \
+        (f"; below threshold: {sorted(low)}: run scripts/stock_gate.py --restock" if low else "")
+
+
 def check_tag(tag, run=None):
     run = run or (lambda args: subprocess.run(args, cwd=ROOT, capture_output=True, text=True))
     if run(["git", "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}"]).returncode != 0:
@@ -111,7 +127,7 @@ def check_tag(tag, run=None):
     return (r.returncode == 0 and not changed), ("benchmark code paths identical to tag" if not changed else f"differs from tag: {', '.join(changed[:5])}")
 
 
-def run_all(require_llm=False, tag="benchmark-system-v2", client_factory=_client, http_get=None, loader=None, run=None):
+def run_all(require_llm=False, tag="benchmark-system-v2", client_factory=_client, http_get=None, loader=None, run=None, stock_reader=None):
     if http_get is None:
         import httpx
         http_get = lambda url: httpx.get(url, timeout=5).json()  # noqa: E731
@@ -125,7 +141,8 @@ def run_all(require_llm=False, tag="benchmark-system-v2", client_factory=_client
             env = None
     results += [("approval token", check_token(env)), ("llm key variables", check_llm_keys(env, require_llm)),
                 ("telemetry condition T3", check_telemetry_condition(client_factory)),
-                ("scorecard empty", check_scorecard_empty(http_get)), ("benchmark tag", check_tag(tag, run))]
+                ("scorecard empty", check_scorecard_empty(http_get)), ("benchmark tag", check_tag(tag, run)),
+                ("inventory stock", check_inventory_stock(stock_reader))]
     return results
 
 

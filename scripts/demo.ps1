@@ -9,7 +9,7 @@ param([switch]$ConfirmReset, [string]$Project = "eai", [string]$ExportDir = "res
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
-if (Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "run_benchmark|run_all_arms|stage3_eval|ask_first_guard" }) {
+if (Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "run_benchmark|run_all_arms|stage3_eval|stage3_rerun|ask_first_guard" }) {
     throw "a benchmark process is running; refusing to touch the stack"
 }
 
@@ -38,7 +38,12 @@ $services = docker compose -p $Project config --services | Where-Object { $_ -ne
 docker compose -p $Project up -d $services
 Write-Host "waiting 60 s for services"; Start-Sleep 60
 
-# 4. preflight (non-zero exit stops the launcher)
+# 3b. inventory stock (Amendment 8): the inventory service only subtracts stock and its volume survives the reset above, so a long evaluation or earlier demo
+# leaves it low or at zero. Restock to the seeded level (direct SQL, harness action; see scripts/stock_gate.py) and verify through GET /items. Refuses on failure.
+python scripts/stock_gate.py --restock --force
+if ($LASTEXITCODE -ne 0) { throw "inventory restock failed; do not demo" }
+
+# 4. preflight (non-zero exit stops the launcher; includes the inventory stock check)
 python scripts/preflight.py --require-llm-key
 if ($LASTEXITCODE -ne 0) { throw "preflight failed; do not demo" }
 

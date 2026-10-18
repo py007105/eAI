@@ -70,10 +70,19 @@ def main():
     ap.add_argument("--smoke", default="docs/results/benchmark_smoke.jsonl")
     ap.add_argument("--plan-json", help="docs/v2_seed_plan.json: also check every fresh training seed and every v2 evaluation seed")
     ap.add_argument("--truth-zip", help="results/benchmark-v1/truth_and_evidence.zip: seeds of every run the evaluator ever recorded")
+    ap.add_argument("--extra", nargs=3, action="append", metavar=("NAME", "FIRST", "LAST"), default=[],
+                    help="also check this inclusive seed range (Amendment 8 re-run block); repeatable")
+    ap.add_argument("--also-used-raw", action="append", default=[], help="a results .jsonl whose seeds count as used")
     ap.add_argument("--out")
     a = ap.parse_args()
     used = used_seeds(a.runs, a.smoke, a.truth_zip)
+    for p in a.also_used_raw:
+        for line in Path(p).read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                used.setdefault(json.loads(line)["seed"], []).append(f"results file {Path(p).name}")
     planned = dict(PLANNED)
+    for name, first, last in a.extra:
+        planned[name] = range(int(first), int(last) + 1)
     reserved = dict(RESERVED)
     if a.plan_json:
         plan = json.loads(Path(a.plan_json).read_text())
