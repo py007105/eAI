@@ -62,7 +62,9 @@ def main():
         counts = [len(cells.get((arm, s), ())) for s in SCENARIOS]
         if a.plan == "v2" and not any(k[0] == arm for k in plan):
             continue
-        print(f"{arm:22s} " + " ".join(f"{c:>3d}/{plan.get((arm, s), 0):<3d}" for c, s in zip(counts, SCENARIOS)) + f"   {sum(counts)}/{sum(v for k, v in plan.items() if k[0] == arm)}")
+        short = [f"{s}" for c, s in zip(counts, SCENARIOS) if plan.get((arm, s), 0) and c < plan[(arm, s)]]
+        print(f"{arm:22s} " + " ".join(f"{c:>3d}/{plan.get((arm, s), 0):<3d}" for c, s in zip(counts, SCENARIOS)) + f"   {sum(counts)}/{sum(v for k, v in plan.items() if k[0] == arm)}"
+              + (f"   INCOMPLETE: {', '.join(short)}" if short else ""))
     print(f"\nheartbeat: raw results last written {age(raw)}; progress log last written {age(log)}")
     try:   # last progress line, if the log is not momentarily locked by its writer
         lines = log.read_text(errors="replace").splitlines()
