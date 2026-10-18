@@ -19,9 +19,9 @@ from sklearn.ensemble import IsolationForest
 
 # Traffic-normalised signals only: a healthy surge must not look anomalous.
 FEATURES = ["lat_ratio", "cpu_per_req_ratio", "error_ratio", "dep_fail_rate", "error_log_rate",
-            "mem_share", "mem_slope_share_per_min", "scratch_mb", "scratch_slope_mb_per_min", "up_frac"]
+            "mem_rel_growth", "mem_slope_share_per_min", "scratch_mb", "scratch_slope_mb_per_min", "up_frac"]
 # Direction in which a feature indicates trouble. up_frac is handled by the caller's "not scraped" rule.
-UPPER = {"lat_ratio", "error_ratio", "dep_fail_rate", "error_log_rate", "mem_share", "mem_slope_share_per_min",
+UPPER = {"lat_ratio", "error_ratio", "dep_fail_rate", "error_log_rate", "mem_rel_growth", "mem_slope_share_per_min",
          "scratch_mb", "scratch_slope_mb_per_min"}
 TWO_SIDED = {"cpu_per_req_ratio"}   # busy loops and failing-fast services both move CPU per request
 LIMIT_FEATURES = sorted(UPPER | TWO_SIDED)
