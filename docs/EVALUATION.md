@@ -89,6 +89,8 @@ Not yet written. The benchmark tables will be rendered into `docs/results/benchm
 
 ## 5. Limitations
 
+- **v2: No per-run container-state record in v2. An external health log exists from 2026-10-19 00:29:31 IST onward (`results/benchmark-v2/health_log.tsv`, written by `scripts/health_watch.py`, once a minute, read-only). Runs before that are not covered, including the P1 runs and the first ask-first fault runs. Triage checks each later run's time window against this log and marks any run during which a required container was unhealthy or restarted unexpectedly.**
+
 - **Small training set.** 72 live runs were collected (71 used after one was excluded as corrupted): 8 per scenario for a handful of fault types.
 - **One application, controlled faults.** Four Python services, one machine, one workload generator, faults injected by a script. Nothing here was tested on a different application.
 - **RE1 is laboratory telemetry,** not production data, and its disk fault is I/O stress rather than a full disk, its memory fault is stress rather than a leak.
