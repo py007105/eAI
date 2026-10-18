@@ -44,7 +44,7 @@ ABSOLUTE_MEM = {"mem_ratio", "mem_z", "mem_share", "mem_ratio_obs", "mem_z_obs",
 CLS_FEATURES = [f for f in FEATURE_NAMES if f not in ABSOLUTE_MEM]
 MEM_FEATURES = {"mem_ratio", "mem_z", "mem_ratio_obs", "mem_z_obs"}   # ablation: baseline of `orders` memory drifts
 TAUS = np.round(np.arange(0.40, 0.96, 0.05), 2)
-SEEDS = "fold split seeds 0 (main CV) and 1 (nested threshold CV); model seeds 0..4 by fold index; run seeds 1000-1707"
+SEEDS = "fold split seeds 0 (main CV) and 1 (nested threshold CV); model seeds 0..4 by fold index; run seeds 1000-1707 (v1) and 1800-1842 (v2 fresh)"
 
 
 # ------------------------------------------------------------------ data
@@ -576,7 +576,7 @@ def main():
         ranker_model = SafeHGB(max_depth=3, max_iter=80, learning_rate=0.08, min_samples_leaf=10, l2_regularization=1.0,
                                random_state=0).fit(ranking[EVIDENCE].values, ranking.is_root)
         det_final = fit_detectors(df)
-        desc = (f"{len(runs)} no-action live runs (training seeds 1000-1707, {len(excluded)} corrupted runs excluded), "
+        desc = (f"{len(runs)} no-action live runs (training seeds 1000-1707 and 1800-1842, {len(excluded)} corrupted runs excluded), "
                 f"scenarios {sorted(set(df.scenario))}")
         meta = {"data_hash": envinfo.data_hash(a.runs, excluded), "n_runs": len(runs), "excluded_runs": sorted(excluded),
                 "abstain_below": tau, "ece_oof": round(ece_cal, 4), "ece_fault_predictions": round(float(ece_fault), 4),
