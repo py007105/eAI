@@ -33,3 +33,9 @@ def test_eval_seeds_disjoint_from_training_v1_and_smoke_blocks_and_have_both_sur
     lv = [e["surge_level"] for e in ev if e["scenario"] == "traffic_surge"]
     assert len(lv) == 10 and set(lv) == {25, 40}
     assert sum(1 for e in ev if e["scenario"] in p.HEALTHY) == 20
+
+
+def test_capture_seeds_give_six_of_each_level_inside_the_block():
+    s = p.capture_seeds()
+    assert len(s) == 12 and all(3600 <= x <= 3699 for x in s)
+    assert sorted(p.sim_surge_level(x) for x in s) == [25] * 6 + [40] * 6
