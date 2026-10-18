@@ -11,7 +11,7 @@ MB = 1024 * 1024
 
 def run(scn, seed, warn_at=None, limit_at=None, executed=0, wrong=False, extra_incidents=(), start_changes_at=None):
     mem = [(T0 + i, (100 + i * 2) * MB) for i in range(-30, 120)]
-    scratch = [(T0 + i, (10 + i * 4) * MB if scn == "disk_fill" else 0.0) for i in range(-30, 120)]
+    scratch = [(T0 + i, 10 * MB if scn == "disk_fill" else 0.0) for i in range(-30, 120)]
     if scn == "memory_leak" and limit_at:
         mem = [(t, (0.96 * 256 * MB if t >= T0 + limit_at else 50 * MB)) for t, _ in mem]
     if scn == "disk_fill" and limit_at:
