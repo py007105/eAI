@@ -74,3 +74,42 @@ def test_missing_signal_stays_nan_with_mask():
 def test_feature_names_are_stable():
     f = window_features(_frame(), fit_baseline(_frame()))
     assert sorted(f) == FEATURE_NAMES
+
+
+# ---- v2 (Amendment 4, E2): memory growth against the service's own past, not an absolute level
+def _mem_frame(levels_mb, limit_mb=256.0, step=2.0):
+    idx = np.arange(len(levels_mb)) * step
+    return pd.DataFrame({"mem_bytes": np.array(levels_mb) * 1e6, "mem_limit_bytes": limit_mb * 1e6 * np.ones(len(idx)),
+                         "req_rate": 5.0, "err_rate": 0.0, "p95_s": 0.05, "cpu_cores": 0.05, "up": 1.0}, index=idx)
+
+
+def test_mem_rel_growth_is_zero_for_flat_memory_and_ignores_the_absolute_level():
+    from eternalai.features.window import window_features
+    flat_low = window_features(_mem_frame([65.0] * 76), {}, 10.0)["mem_rel_growth"]
+    flat_high = window_features(_mem_frame([73.6] * 76), {}, 10.0)["mem_rel_growth"]
+    assert flat_low == 0.0 and flat_high == 0.0               # v1's mem_share would differ by 0.03 between these two healthy services
+
+
+def test_mem_rel_growth_sees_a_rise_in_the_last_window_as_a_share_of_the_limit():
+    from eternalai.features.window import window_features
+    levels = [67.0] * 70 + [75.0] * 6                          # +8 MB in the last 12 s
+    g = window_features(_mem_frame(levels), {}, 10.0)["mem_rel_growth"]
+    assert abs(g - 8.0 / 256.0) < 0.004                         # the window mean sits a little below the final level
+
+
+def test_mem_rel_growth_is_missing_without_enough_history_or_limit():
+    from eternalai.features.window import window_features
+    assert np.isnan(window_features(_mem_frame([65.0] * 20), {}, 10.0)["mem_rel_growth"])          # only 40 s of history
+    f = _mem_frame([65.0] * 76)
+    f["mem_limit_bytes"] = np.nan
+    assert np.isnan(window_features(f, {}, 10.0)["mem_rel_growth"])
+
+
+def test_absolute_memory_inputs_leave_the_v2_classifier_but_not_the_forecaster_inputs():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "models"))
+    import train_models as tm
+    from eternalai.features.window import FEATURE_NAMES
+    assert "mem_rel_growth" in tm.CLS_FEATURES and "mem_slope_share_per_min" in tm.CLS_FEATURES
+    assert not (tm.ABSOLUTE_MEM & set(tm.CLS_FEATURES)) and {"mem_ratio", "mem_z", "mem_share"} <= set(FEATURE_NAMES)   # still computed (forecast, evidence)
