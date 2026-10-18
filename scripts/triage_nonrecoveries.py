@@ -3,7 +3,7 @@
     python scripts/triage_nonrecoveries.py --raw results/benchmark-v1/benchmark_raw.jsonl --out-json docs/postmortems/triage.json --out-md docs/postmortems/benchmark-v1-triage.md
 
 Rules (docs/EVALUATION_PLAN.md section 9), applied in this order to each supported-fault run with recovered != True, arm != no_action:
- R1 (eternalai_ask_first) a proposal was left awaiting approval and never approved, and this run is that run or a later one in the arm  -> (b) stuck incident
+ R1 (eternalai_ask_first) a proposal was left awaiting approval and never approved, and this run is that run or a later one in the arm  -> (a) harness artifact (the approval token never worked), amplified by (b) a pending approval that never expires
  R2 (eternalai) the first incident abstained and the target is `orders` with scenario `crash`                                           -> (c) thin coverage
  R3 any arm: a policy-blocked action whose reason is a cooldown from an earlier run                                                    -> (a) brain state carried across runs
  R4 any arm: final status executing / verifying / open (an action or incident was still in flight when the run window ended)           -> (a) run ended in flight
@@ -41,8 +41,8 @@ def classify(rows):
             continue
         f, inc = facts(r), r.get("incidents") or []
         if r["arm"] == "eternalai_ask_first" and stuck_from and r["finished_at"] >= stuck_from:
-            cls, why = "b", ("R1 stuck incident: an ask-first proposal stayed awaiting_approval (never approved) and, with no expiry, blocked every later detection in the arm"
-                             if f["final"] != "undetected" else "R1 stuck incident: undetected because an earlier proposal stayed awaiting_approval and blocked new incidents")
+            cls, why = "a", ("R1 harness artifact: an ask-first proposal stayed awaiting_approval because the harness token was refused by the brain (HTTP 503, placeholder token); amplifier (b): no expiry, so it blocked every later detection in the arm"
+                             if f["final"] != "undetected" else "R1 harness artifact: undetected because an earlier proposal stayed awaiting_approval (the harness token was refused by the brain) and, with no expiry (b), blocked new incidents")
         elif r["arm"].startswith("eternalai") and r["scenario"] == "crash" and r["target"] == "orders" and inc and inc[0]["abstained"]:
             cls, why = "c", "R2 first incident abstained (insufficient_evidence) on a crash of orders; orders has 1 crash run in training"
         elif blocked_by_cooldown(r):
