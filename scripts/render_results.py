@@ -211,6 +211,40 @@ def incomplete_banner(n_runs, tab):
             "Nothing here is the final result.\n", "Runs present per cell:\n", tab, ""]
 
 
+V2_BANNER = ("> **v1 and v2 are UNPAIRED and use DIFFERENT SEEDS** (v1 100-148, v2 200-318). v2 differs from v1 in four things at once: the retrained models, the memory "
+             "features, the approval-queue fix and the telemetry condition (T3: trace exporter off, no collector; the v1 benchmark ran with the exporter on and the collector dead). "
+             "**No difference below can be attributed to any single change**; v2 is described only as fixes for the failures v1 exposed, tested on fresh seeds. "
+             "Recovery is self-reported in both. v2 is a reduced plan: the run counts are shown with every figure; with these sample sizes small differences, per-scenario "
+             "effects and any comparison on faults with the `no_action` / `prototype_rules` baselines (not run in v2) cannot be shown.\n")
+
+
+def _side(x):
+    f, h, u = x[x.scenario.isin(SUPPORTED)], x[x.scenario.isin(HEALTHY)], x[x.scenario.isin(UNSEEN)]
+    rec = f.recovered.fillna(False).astype(bool)
+    det = f.detect_s[f.detected == True]
+    return {"supported runs": len(f), "recovered (self-reported)": f"{int(rec.sum())}/{len(f)}" if len(f) else "-",
+            "detected": f"{int((f.detected == True).sum())}/{len(f)}" if len(f) else "-",
+            "mean detection s": f"{det.mean():.1f}" if len(det) else "-",
+            "mean failed-request %": f"{f.failed_pct.mean():.2f}" if len(f) else "-",
+            "healthy runs": len(h),
+            "healthy runs with an incident": f"{int((h.incidents.fillna(0) > 0).sum())}/{len(h)}" if len(h) else "-",
+            "healthy runs with an executed action": f"{int((h.actions.fillna(0) > 0).sum())}/{len(h)}" if len(h) else "-",
+            "cpu_burn abstained correctly": f"{int(u.abstained_ok.fillna(False).astype(bool).sum())}/{len(u)}" if len(u) else "-"}
+
+
+def v2_section(d, d2):
+    R = ["\n## 8. v1 and v2 side by side\n", V2_BANNER,
+         "v1 rows above are never replaced. Same definitions for both versions; counts are k/n over the runs that exist for that arm and version.\n"]
+    both = []
+    for a in ARMS:
+        for ver, x in (("v1", d), ("v2", d2)):
+            xa = x[x.arm == a]
+            if len(xa):
+                both.append({"arm": a, "version": ver, **_side(xa)})
+    R.append(pd.DataFrame(both).to_markdown(index=False))
+    return R
+
+
 def render(d, d2, triage, fails, fixture):
     arms = [a for a in ARMS if a in set(d.arm)]
     R = ["# Held-out benchmark results" + (" (FIXTURE)" if fixture else ""), ""]
@@ -295,14 +329,7 @@ def render(d, d2, triage, fails, fixture):
     R.append(f"\n- non-recoveries: {len(bad)}; classified: {sum(1 for r in bad.itertuples() if (r.arm, r.scenario, r.seed) in tri)}")
 
     if d2 is not None:
-        R.append("\n## 8. v1 and v2 side by side\n")
-        R.append("v2 is a new system version on fresh seeds. v1 rows above are never replaced.\n")
-        both = []
-        for a in arms:
-            if a in set(d2.arm):
-                p1, p2 = pooled(d, a), pooled(d2, a)
-                both += [{"version": "v1", **p1}, {"version": "v2", **p2}]
-        R.append(pd.DataFrame(both).to_markdown(index=False))
+        R += v2_section(d, d2)
     return "\n".join(R) + "\n"
 
 

@@ -163,3 +163,13 @@ def test_headline_comparison_lists_every_arm_and_healthy_behaviour(fixture_file,
     assert "healthy runs with a false alert" in sec and "harmful interventions on healthy runs" in sec
     line = next(x for x in sec.splitlines() if x.startswith("| eternalai_autopilot"))
     assert "29/30" in line                                  # fixture: 29 of 30 supported runs recovered
+
+
+def test_v2_section_has_attribution_banner_unpaired_label_and_counts(tmp_path):
+    rows = [row(a, s, r) for a in ("eternalai_autopilot", "threshold_restart") for s in rr.SCENARIOS for r in range(2)]
+    p1, p2 = tmp_path / "v1.jsonl", tmp_path / "v2.jsonl"
+    p1.write_text("\n".join(json.dumps(x) for x in rows))
+    p2.write_text("\n".join(json.dumps(dict(x, seed=x["seed"] + 100)) for x in rows))
+    out = "\n".join(rr.v2_section(rr.load(p1), rr.load(p2)))
+    assert "UNPAIRED" in out and "DIFFERENT SEEDS" in out and "No difference below can be attributed to any single change" in out
+    assert "healthy runs with an executed action" in out and "| v2 " in out
