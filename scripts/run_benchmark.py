@@ -157,11 +157,14 @@ def main():
     ap.add_argument("--manage-stack", action="store_true", help="(re)start / stop the brain container for this arm")
     ap.add_argument("--models-label", default="models-v1 (frozen; see docs/MODEL_CARD.md)", help="recorded with every row")
     ap.add_argument("--min-free-gb", type=float, default=1.0, help="v2: wait (and log) instead of starting a run while free RAM is below this; 0 disables")
+    ap.add_argument("--raw", help="v2: results file (default docs/results/benchmark_raw.jsonl, the v1 file; v2 runs must use their own file)")
     ap.add_argument("--no-reset", action="store_true", help="v1 behaviour: do not reset the brain's per-run state between runs")
     ap.add_argument("--smoke", action="store_true", help="plumbing check on seeds that are in neither the training (1000-1707) "
                     "nor the benchmark (<1000) range; results go to docs/results/benchmark_smoke.jsonl and are not reported")
     a = ap.parse_args()
     global RAW
+    if a.raw:
+        RAW = Path(a.raw)
     if a.smoke:
         a.seed0, RAW = max(a.seed0, 2000), Path("docs/results/benchmark_smoke.jsonl")
     else:
