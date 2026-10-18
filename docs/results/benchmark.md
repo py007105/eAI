@@ -18,6 +18,27 @@ Rendered by `scripts/render_results.py` from the raw rows. Method and rules: `do
 - no run was dropped: every row enters every table below. Rows are never filtered.
 - harness failures recorded: none listed in the failures file
 
+## 1b. Headline comparison, all arms side by side
+
+| arm                 |   failed-request % (mean, 30 supported runs) | self-reported recovery   | seconds to self-reported recovery (mean, recovered runs)   | healthy runs with a false alert   |   harmful interventions on healthy runs |   harmful interventions, all runs |
+|:--------------------|---------------------------------------------:|:-------------------------|:-----------------------------------------------------------|:----------------------------------|----------------------------------------:|----------------------------------:|
+| no_action           |                                        32.17 | 0/30                     | -                                                          | 0/10                              |                                       0 |                                 0 |
+| threshold_restart   |                                        26.6  | 12/30                    | 68.2                                                       | 5/10                              |                                       0 |                                 5 |
+| prototype_rules     |                                        26.29 | 9/30                     | 69.4                                                       | 8/10                              |                                       0 |                                 4 |
+| eternalai_ask_first |                                        31.99 | 0/30                     | -                                                          | 0/10                              |                                       0 |                                 0 |
+| eternalai_autopilot |                                        18.39 | 27/30                    | 50.0                                                       | 8/10                              |                                       4 |                                 4 |
+
+Per supported scenario (5 runs per cell): self-reported recovery k/5, mean failed-request %, mean seconds to self-reported recovery.
+
+| scenario    | no_action     | threshold_restart   | prototype_rules   | eternalai_ask_first   | eternalai_autopilot   |
+|:------------|:--------------|:--------------------|:------------------|:----------------------|:----------------------|
+| crash       | 0/5; 71.8%; - | 4/5; 49.4%; 65s     | 3/5; 50.3%; 71s   | 0/5; 70.5%; -         | 2/5; 45.9%; 40s       |
+| latency     | 0/5; 0.0%; -  | 4/5; 4.0%; 71s      | 0/5; 1.0%; -      | 0/5; 0.0%; -          | 5/5; 8.1%; 55s        |
+| error_spike | 0/5; 51.5%; - | 4/5; 38.4%; 69s     | 1/5; 50.0%; 71s   | 0/5; 52.0%; -         | 5/5; 25.2%; 48s       |
+| memory_leak | 0/5; 0.4%; -  | 0/5; 0.1%; -        | 1/5; 0.4%; 62s    | 0/5; 0.0%; -          | 5/5; 11.2%; 49s       |
+| disk_fill   | 0/5; 35.9%; - | 0/5; 33.9%; -       | 2/5; 28.8%; 79s   | 0/5; 35.1%; -         | 5/5; 0.0%; 39s        |
+| bad_deploy  | 0/5; 33.5%; - | 0/5; 33.8%; -       | 2/5; 27.4%; 60s   | 0/5; 34.3%; -         | 5/5; 20.0%; 64s       |
+
 ## 2. The independent measure first: failed-request %
 
 Computed by the evaluator from the load generator's counters between injection and the end of the observation window. It does not depend on what the system under test reports.
