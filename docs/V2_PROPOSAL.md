@@ -8,7 +8,7 @@ v1 (tag `benchmark-system-v1`, 225 rows in `results/benchmark-v1/`) stays as rec
 |---|---|---|---|---|
 | **A** (G1) | A pending approval expires after a TTL (proposal: 120 s): the incident is escalated with its evidence preserved, and a pending approval never blocks detection of a new incident; unit tests | 2 | `eternalai/engine.py`, `eternalai/config.py`, `tests/test_approval_ttl.py` | none |
 | **B** | Every incident row (and benchmark row) records top class, confidence, abstention reason, novelty distance, exceeded limit features, report provider and latency, forecasts | 2 | `eternalai/engine.py`, `eternalai/classify.py`, `scripts/run_benchmark.py`, tests | none |
-| **C** (G1) | Harness operator logs every approve call's status and any exception and fails loudly; plus a reproduction that explains why it did not approve in v1 | 1.5 | `scripts/run_benchmark.py`, `scripts/diag_approver.py`, tests | none |
+| **C** (G1) | Harness token no longer read from the dotenv-polluted variable; a preflight aborts if the approval API rejects the token; the operator logs every approve call's status and any exception (reproduction and explanation done) | 1.5 | `scripts/run_benchmark.py`, `scripts/diag_approver.py`, tests | none |
 | **D** | The harness resets the brain's policy state (cooldowns, breakers, suppressor, open incidents) between runs through an authenticated admin call, so runs are independent | 2 | `eternalai/api.py`, `eternalai/engine.py`, `scripts/run_benchmark.py`, tests | none |
 
 Dependent on the surge diagnosis (`docs/postmortems/surge-false-alarm-diagnosis.md`; hypotheses H1-H3 lead):
