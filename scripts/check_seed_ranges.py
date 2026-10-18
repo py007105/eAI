@@ -68,13 +68,22 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default="data/runs")
     ap.add_argument("--smoke", default="docs/results/benchmark_smoke.jsonl")
+    ap.add_argument("--plan-json", help="docs/v2_seed_plan.json: also check every fresh training seed and every v2 evaluation seed")
     ap.add_argument("--truth-zip", help="results/benchmark-v1/truth_and_evidence.zip: seeds of every run the evaluator ever recorded")
     ap.add_argument("--out")
     a = ap.parse_args()
     used = used_seeds(a.runs, a.smoke, a.truth_zip)
-    problems = check(used)
+    planned = dict(PLANNED)
+    reserved = dict(RESERVED)
+    if a.plan_json:
+        plan = json.loads(Path(a.plan_json).read_text())
+        planned["v2 fresh training seeds"] = [j["seed"] for j in plan["training_jobs"]]
+        planned["v2 evaluation seeds"] = [e["seed"] for e in plan["evaluation_seeds"]]
+        reserved.pop("training block (collect_runs default 1000+)")        # the fresh training seeds are SUPPOSED to be in the unused part of that block
+        reserved["used training seeds 1000-1799 (v1)"] = range(1000, 1800)
+    problems = check(used, planned, reserved)
     lines = ["# Seed range check", "", f"Seeds already used: {len(used)} distinct (min {min(used)}, max {max(used)}).", "",
-             "Planned: " + "; ".join(f"{k} {r.start}-{r.stop - 1}" for k, r in PLANNED.items()), "",
+             "Planned: " + "; ".join(f"{k} {min(r)}-{max(r)} ({len(list(r))} seeds)" for k, r in planned.items()), "",
              "Overlaps: " + ("none" if not problems else ""), *[f"- {p}" for p in problems]]
     out = "\n".join(lines) + "\n"
     print(out)
