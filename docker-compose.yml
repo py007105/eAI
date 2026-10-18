@@ -68,7 +68,7 @@ services:
   # but NOT the truth volume. Approve/reject/mode endpoints are refused until a real token is set in .env.
   eternalai:
     build: {context: ., dockerfile: eternalai/Dockerfile}
-    image: eai/eternalai:v1
+    image: eai/eternalai:v2
     networks: [eai]
     ports: ["8000:8000"]
     mem_limit: 512m
