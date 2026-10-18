@@ -28,3 +28,6 @@ SCRATCH_LIMIT_BYTES = int(os.getenv("SCRATCH_LIMIT_MB", "300")) * 1024 * 1024  #
 PREDICT_HORIZON_S = 90     # act on a forecast when earliest exhaustion is closer than this
 OBSERVATION_S = 20        # how long checkout must stay healthy before "recovered"
 DEPLOY_GRACE_S = 15.0     # ignore anomalies this long after a release change (a normal rolling release restarts the service)
+# v2: a proposal that nobody approves must not stop detection forever. After this long a pending approval (or a watch-only
+# observation) is escalated with its evidence preserved, and the incident is closed.
+APPROVAL_TTL_S = float(os.getenv("ETERNALAI_APPROVAL_TTL_S", "120"))
