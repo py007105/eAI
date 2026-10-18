@@ -66,8 +66,9 @@ def main():
         n = 0
         for scen, seed in batch:
             n += sc.collect_one(scen, seed, out, prom, config.SERVICES, a.min_free_gb)
-        state[f"batch{i}_done"] = now_s()
-        save()
+        if f"batch{i}_done" not in state:        # a resume must not move the original completion time (the gap is measured from it)
+            state[f"batch{i}_done"] = now_s()
+            save()
         print(f"[{time.strftime('%H:%M:%S')}] batch {i} done ({n} new runs)", flush=True)
     print("stage 1 collection complete", flush=True)
 

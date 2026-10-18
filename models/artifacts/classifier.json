@@ -1,6 +1,6 @@
 {
   "name": "classifier",
-  "training_data": "71 no-action live runs (training seeds 1000-1707, 1 corrupted runs excluded), scenarios ['bad_deploy', 'cpu_burn', 'crash', 'disk_fill', 'error_spike', 'good_deploy', 'latency', 'memory_leak', 'traffic_surge']",
+  "training_data": "105 no-action live runs (training seeds 1000-1707 and 1800-1842, 1 corrupted runs excluded), scenarios ['bad_deploy', 'cpu_burn', 'crash', 'disk_fill', 'error_spike', 'good_deploy', 'latency', 'memory_leak', 'traffic_surge']",
   "features": [
     "cpu_per_req_ratio",
     "cpu_per_req_ratio_obs",
@@ -26,14 +26,10 @@
     "lat_ratio_obs",
     "lat_z",
     "lat_z_obs",
-    "mem_ratio",
-    "mem_ratio_obs",
-    "mem_share",
-    "mem_share_obs",
+    "mem_rel_growth",
+    "mem_rel_growth_obs",
     "mem_slope_share_per_min",
     "mem_slope_share_per_min_obs",
-    "mem_z",
-    "mem_z_obs",
     "restarts_in_window",
     "restarts_in_window_obs",
     "rps_ratio",
@@ -47,17 +43,17 @@
     "up_frac",
     "up_frac_obs"
   ],
-  "git_commit": "a8810a5",
-  "trained_at_utc": "2026-10-17T13:38:41Z",
-  "data_hash": "de7253cbdf0fd1462e50cc29ef7628e4b871d126fd5fb1f4a84d634fc2a18313",
-  "n_runs": 71,
+  "git_commit": "981cc66",
+  "trained_at_utc": "2026-10-18T14:52:16Z",
+  "data_hash": "2f14ce107a0c514a36da2042c3fce893ee0c27e26327bdd5372e740abc165e39",
+  "n_runs": 105,
   "excluded_runs": [
     "cpu_burn_1406"
   ],
   "abstain_below": 0.4,
-  "ece_oof": 0.0016,
-  "ece_fault_predictions": 0.0099,
+  "ece_oof": 0.0026,
+  "ece_fault_predictions": 0.013,
   "show_probability_in_ui": true,
   "window_s": 10.0,
-  "seeds": "fold split seeds 0 (main CV) and 1 (nested threshold CV); model seeds 0..4 by fold index; run seeds 1000-1707"
+  "seeds": "fold split seeds 0 (main CV) and 1 (nested threshold CV); model seeds 0..4 by fold index; run seeds 1000-1707 (v1) and 1800-1842 (v2 fresh)"
 }
