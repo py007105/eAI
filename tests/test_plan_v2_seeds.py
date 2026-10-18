@@ -26,13 +26,20 @@ def test_training_plan_is_unique_inside_the_block_covers_the_wishlist_and_never_
     assert all(p.sim_target(j["scenario"], j["seed"]) == j["target"] for j in jobs)
 
 
-def test_eval_seeds_disjoint_from_training_v1_and_smoke_blocks_and_have_both_surge_levels():
+def test_reduced_eval_plan_counts_pairing_and_both_surge_levels():
     ev = p.eval_seeds()
-    seeds = [e["seed"] for e in ev]
-    assert len(set(seeds)) == len(seeds) and not (set(seeds) & set(range(100, 149))) and all(s < 1000 for s in seeds)
-    lv = [e["surge_level"] for e in ev if e["scenario"] == "traffic_surge"]
-    assert len(lv) == 10 and set(lv) == {25, 40}
-    assert sum(1 for e in ev if e["scenario"] in p.HEALTHY) == 20
+    by = {}
+    for e in ev:
+        by.setdefault(e["arm"], []).append(e)
+    assert {a: len(v) for a, v in by.items()} == {"eternalai_autopilot": 45, "threshold_restart": 24, "eternalai_ask_first": 26} and len(ev) == 95
+    seeds = {e["seed"] for e in ev}
+    assert not (seeds & set(range(100, 149))) and all(200 <= s < 1000 for s in seeds)
+    key = lambda arm, scen: {e["seed"] for e in by[arm] if e["scenario"] == scen}                      # noqa: E731
+    assert key("threshold_restart", "traffic_surge") == key("eternalai_autopilot", "traffic_surge")      # paired on the same 12 surge seeds
+    assert key("eternalai_ask_first", "good_deploy") <= key("eternalai_autopilot", "good_deploy")
+    assert all(e["scenario"] != "cpu_burn" for e in by["eternalai_ask_first"])
+    lv = [e["surge_level"] for e in by["eternalai_autopilot"] if e["scenario"] == "traffic_surge"]
+    assert len(lv) == 12 and set(lv) == {25, 40} and min(lv.count(25), lv.count(40)) >= 4
 
 
 def test_capture_seeds_give_six_of_each_level_inside_the_block():
