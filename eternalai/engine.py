@@ -51,6 +51,7 @@ class Incident:
     verification: dict | None = None
     timeline: list = field(default_factory=list)
     forecasts: list = field(default_factory=list)
+    diagnosis: dict | None = None   # v2: top class, abstention reason, novelty, limits exceeded (see _diagnose)
     diagnosed: bool = False
     before: dict | None = None      # measured when the incident was diagnosed
     after: dict | None = None       # measured after the verification window
@@ -61,7 +62,7 @@ class Incident:
     def public(self) -> dict:
         d = {k: getattr(self, k) for k in ("id", "opened_t", "closed_t", "kind", "status", "services", "ranking",
                                           "likely_cause", "confidence", "abstained", "report", "report_meta",
-                                          "actions", "verification", "timeline", "forecasts", "before", "after")}
+                                          "actions", "verification", "timeline", "forecasts", "diagnosis", "before", "after")}
         d["evidence"] = [{"id": e.id, "tool": e.tool, "service": e.service, "summary": e.summary} for e in self.evidence]
         return d
 
@@ -255,6 +256,18 @@ class Engine:
             inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
             self._preserve(inc)
 
+    def _diagnosis_record(self, root: str, p, feats_root: dict) -> dict:
+        """v2 item B: keep what v1 threw away (the top class behind an abstention, why it abstained, how novel the window was,
+        which learned healthy limits were exceeded), so a run can be explained from its own row."""
+        top = max(p.probs, key=p.probs.get) if p.probs else None
+        det = (self.detectors or {}).get(root)
+        return {"root": root, "top_class": top, "top_probability": round(p.probs[top], 6) if top else None,
+                "answered_label": p.label, "abstain_reason": p.reason or None,
+                "novelty": None if p.novelty is None else round(float(p.novelty), 4),
+                "novelty_threshold": getattr(getattr(self.classifier, "gate", None), "threshold_", None),
+                "abstain_below": self.classifier.abstain_below,
+                "limits_exceeded": det.out_of_range(feats_root) if det is not None else None}
+
     def _diagnose(self, inc: Incident, feats, scores, anom):
         depfail = self._depfail()
         onset = {s: self.first_anom.get(s) for s in config.SERVICES}
@@ -275,8 +288,10 @@ class Engine:
         if self.classifier:
             p = self.classifier.predict(feats[root])
             label, conf, abst, probs = p.label, p.confidence, p.abstained, p.probs
+            inc.diagnosis = self._diagnosis_record(root, p, feats[root])
         else:
             label, conf, abst, probs = rule_diagnose(feats[root]), None, False, {}
+            inc.diagnosis = {"root": root, "rule_label": label}
         if st is not None and not st.running and st.oom_killed:
             label, abst = "memory_leak", False  # container was OOM-killed: direct evidence
         if label == "healthy":                  # anomalous but classified healthy => do not guess
