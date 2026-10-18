@@ -38,7 +38,10 @@ from eternalai.safe_model import SafeHGB  # noqa: E402
 
 warnings.filterwarnings("ignore")
 HEALTHY_SCEN = {"traffic_surge", "good_deploy"}
-CLS_FEATURES = list(FEATURE_NAMES)
+# v2 (Amendment 4, E2): absolute memory levels depend on container age and prior load; the classifier gets memory growth relative to the service's own past
+# (`mem_rel_growth`) and the memory slope instead.
+ABSOLUTE_MEM = {"mem_ratio", "mem_z", "mem_share", "mem_ratio_obs", "mem_z_obs", "mem_share_obs"}
+CLS_FEATURES = [f for f in FEATURE_NAMES if f not in ABSOLUTE_MEM]
 MEM_FEATURES = {"mem_ratio", "mem_z", "mem_ratio_obs", "mem_z_obs"}   # ablation: baseline of `orders` memory drifts
 TAUS = np.round(np.arange(0.40, 0.96, 0.05), 2)
 SEEDS = "fold split seeds 0 (main CV) and 1 (nested threshold CV); model seeds 0..4 by fold index; run seeds 1000-1707"
