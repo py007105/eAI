@@ -63,7 +63,8 @@ def inject_to_card(log, r, truth_dir):
         return "-"
     prev = log[i - 1]
     t_start_min = prev["t"] + (20 if prev.get("event") == "draw_without_proposal" else 0)
-    return f"at least {t_start_min + r['s_start_to_card'] - json.loads(tf.read_text(encoding='utf-8'))['t_inject']:.1f}"
+    return (f"at least {t_start_min + r['s_start_to_card'] - json.loads(tf.read_text(encoding='utf-8'))['t_inject']:.1f} (a LOWER BOUND, not an exact measurement: "
+            "the driver did not record the absolute start time)")
 
 
 def r3b(d, truth_dir):

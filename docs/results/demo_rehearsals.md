@@ -66,7 +66,7 @@ Token handling (mode change from the dashboard):
 
 - card read from the page: `low riskrestart_service → orders | ask-first: low-risk action requires approval | orders shows signs of down (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes. | ApproveReject`
 - anomalous services when the card appeared: orders
-- s from fault injection to card: at least 12.3; s from card to click: 0.6; message after click: `Done.`
+- s from fault injection to card: at least 12.3 (a LOWER BOUND, not an exact measurement: the driver did not record the absolute start time); s from card to click: 0.6; message after click: `Done.`
 - s from the challenge start to card: 213.1 (includes the evaluator's settle wait before injecting: 45 s, or 200 s after a release change)
 - verification banner: `The service recovered, and EternalAI proved the application works again.`; s from click to banner: 30.0 (after R3b the banner text was changed to "Verified by EternalAI's own synthetic checkout" and the tagline to "Detect. Diagnose. Recover. Verify."; the R3b screenshots show the old wording)
 - reveal: {'scenario': 'crash', 'target': 'orders', 'detected': True, 'time_to_detect_s': 4.8, 'recovered': True, 'time_to_verified_recovery_s': 41.6, 'failed_request_pct': 10.81, 'incidents_opened': 1, 'actions_executed': 1, 'abstained_correctly': None, 'harmful_interventions': 0}
@@ -77,7 +77,7 @@ Token handling (mode change from the dashboard):
 
 - card read from the page: `low riskclear_temp_path → orders | ask-first: low-risk action requires approval | orders shows signs of disk fill (classifier confidence 1.00). Proposed runbook: clear_temp_path. Recovery is only confirmed after the synthetic checkout passes. | ApproveReject`
 - anomalous services when the card appeared: orders
-- s from fault injection to card: at least 18.6; s from card to click: 0.6; message after click: `Done.`
+- s from fault injection to card: at least 18.6 (a LOWER BOUND, not an exact measurement: the driver did not record the absolute start time); s from card to click: 0.6; message after click: `Done.`
 - s from the challenge start to card: 64.6 (includes the evaluator's settle wait before injecting: 45 s, or 200 s after a release change)
 - incident status after reject: escalated; actions: [{'runbook_id': 'clear_temp_path', 'service': 'orders', 'verdict': 'rejected_by_dashboard', 'executed': False}]
 - reveal: {'scenario': 'disk_fill', 'target': 'orders', 'detected': True, 'time_to_detect_s': 8.7, 'recovered': False, 'time_to_verified_recovery_s': None, 'failed_request_pct': 8.7, 'incidents_opened': 1, 'actions_executed': 0, 'abstained_correctly': None, 'harmful_interventions': 0}

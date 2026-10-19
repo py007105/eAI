@@ -92,6 +92,9 @@ def test_tagline_and_banner_claim_only_internal_verification():
     assert t("recovered_banner") == "Verified by EternalAI's own synthetic checkout"
     for lang in ("en", "hi"):
         assert "prov" not in t("recovered_banner", lang).lower() and "Predict" not in t("app_tagline", lang)
+    assert t("panel_proof") == "Before / after recovery verification" and "प्रमाण" not in t("panel_proof", "hi")
+    assert "every synthetic checkout" in t("not_verified") and "internal check" in t("not_verified")
+    assert t("not_verified", "hi") != t("not_verified", "en")
 
 
 def test_forecast_panel_carries_the_caveat():
