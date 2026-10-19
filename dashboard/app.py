@@ -179,7 +179,8 @@ def refresh(_, lang):
     note = (f"{t('eta', lang)}: {f[-1]['eta_earliest_s']:.0f}-{f[-1]['eta_latest_s']:.0f}{t('seconds', lang)}" if f else "")
     p, pcls = views.recovery_check(inc, lang)
     fallback = status.get("fallbacks_in_use") or []
-    bar = [views.pill(status["mode"], "info"),
+    state, text = views.status_line(incs, poller.get("approvals") or [], time.time(), lang)
+    bar = [views.status_view(state, text), views.pill(status["mode"], "info"),
            views.pill(t("models_ok", lang) if not fallback else f"{t('models_fallback', lang)}: {', '.join(fallback)}",
                       "ok" if not fallback else "warn")]
     if status["breakers_open"]:

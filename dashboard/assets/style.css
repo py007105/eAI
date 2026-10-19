@@ -63,4 +63,10 @@ body { background:
 .dash-options-list, .dash-options-list * { color: var(--text); }
 .dash-options-list label:hover, .dash-options-list [role=option]:hover { background: rgba(255,178,30,.14); }
 .muted { color: var(--muted); font-size:.85rem; }
+
+/* plain-language status line above the pills */
+.status-line { font-size: 1.05rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; margin-bottom: 6px; border: 1px solid var(--line); }
+.status-line.ok { color: var(--ok); border-color: rgba(46,230,166,.45); background: rgba(46,230,166,.07); }
+.status-line.warn { color: var(--gold); border-color: rgba(255,178,30,.55); background: rgba(255,178,30,.09); }
+.status-line.bad { color: var(--bad); border-color: rgba(255,77,109,.5); background: rgba(255,77,109,.08); }
 .form-control, .Select-control, .form-select { background: var(--panel2) !important; color: var(--text) !important; border-color: var(--line) !important; }

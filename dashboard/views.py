@@ -180,6 +180,36 @@ def recovery_check(inc: dict | None, lang="en"):
         ("ok" if ok else "bad")
 
 
+RECENT_S = 300   # a closed incident colours the status line for 5 minutes, then the line returns to "healthy"
+
+
+def status_line(incidents: list, approvals_: list, now: float, lang="en"):
+    """One plain-language line from existing API fields only (/incidents, /approvals): (state, text).
+    States, checked in this order: waiting, open, recovered or escalated (closed within RECENT_S), healthy."""
+    if approvals_:
+        a = approvals_[0]
+        return "waiting", t("status_waiting", lang).format(what=f"{a['runbook_id']} → {a['service']}")
+    active = [i for i in incidents if i["status"] in ("open", "executing", "verifying")]
+    if active:
+        i = active[-1]
+        return "open", t("status_open", lang).format(svc=", ".join(i.get("services") or []) or "?", phase=t(f"phase_{i['status']}", lang))
+    last = incidents[-1] if incidents else None
+    if last and last.get("closed_t") and now - last["closed_t"] < RECENT_S:
+        svc = ", ".join(last.get("services") or []) or "?"
+        if last["status"] == "recovered":
+            return "recovered", t("status_recovered", lang).format(svc=svc)
+        if last["status"] in ("escalated", "unresolved", "partially_recovered"):
+            return "escalated", t("status_escalated", lang).format(svc=svc, cause=(last.get("likely_cause") or "?").replace("_", " "))
+    return "healthy", t("status_healthy", lang)
+
+
+STATUS_CLS = {"waiting": "warn", "open": "bad", "escalated": "bad", "recovered": "ok", "healthy": "ok"}
+
+
+def status_view(state: str, text: str):
+    return html.Div(text, id="status_line", className=f"status-line {STATUS_CLS[state]}")
+
+
 def approvals(items: list, lang="en"):
     if not items:
         return muted(t("no_approvals", lang))
