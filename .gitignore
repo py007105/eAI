@@ -23,3 +23,5 @@ data/processed/
 runtime/
 data/runs/
 docs/results/benchmark_smoke.jsonl
+results/demo-export/
+results/rehearsals/*.tmp
