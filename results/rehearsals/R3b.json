@@ -1,0 +1,478 @@
+{
+ "started": "2026-10-19T17:30:12",
+ "free_ram_gb_start": 3.07,
+ "msg_wrong_token": "Mode not changed (403): invalid approval token",
+ "msg_non_latin1_token": "Mode not changed (0): Token contains invalid characters (spaces, line breaks or symbols). Clear the field and retype it by hand.",
+ "msg_correct_token": "",
+ "brain_mode_after": "ask-first",
+ "approve": {
+  "path": "approve",
+  "draw": 5,
+  "run_id": "a64f04a594",
+  "card_text": "low riskrestart_service \u2192 orders\nask-first: low-risk action requires approval\norders shows signs of down (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes.\nApproveReject",
+  "anomalous_at_card": [
+   "orders"
+  ],
+  "click_message": "Done.",
+  "s_start_to_card": 213.1,
+  "s_card_to_click": 0.6,
+  "banner": "The service recovered, and EternalAI proved the application works again.",
+  "s_click_to_banner": 30.0,
+  "screenshots": [
+   "r3b_approve_1_card_full.png",
+   "r3b_approve_1_card.png",
+   "r3b_approve_1_causes.png",
+   "r3b_approve_2_banner_full.png",
+   "r3b_approve_2_banner.png"
+  ],
+  "reveal": {
+   "scenario": "crash",
+   "target": "orders",
+   "detected": true,
+   "time_to_detect_s": 4.8,
+   "recovered": true,
+   "time_to_verified_recovery_s": 41.6,
+   "failed_request_pct": 10.81,
+   "incidents_opened": 1,
+   "actions_executed": 1,
+   "abstained_correctly": null,
+   "harmful_interventions": 0
+  },
+  "free_ram_gb": 2.88
+ },
+ "reject": {
+  "path": "reject",
+  "draw": 1,
+  "run_id": "42c1c7887c",
+  "card_text": "low riskclear_temp_path \u2192 orders\nask-first: low-risk action requires approval\norders shows signs of disk fill (classifier confidence 1.00). Proposed runbook: clear_temp_path. Recovery is only confirmed after the synthetic checkout passes.\nApproveReject",
+  "anomalous_at_card": [
+   "orders"
+  ],
+  "click_message": "Done.",
+  "s_start_to_card": 64.6,
+  "s_card_to_click": 0.6,
+  "incident_status_after_reject": "escalated",
+  "actions_after_reject": [
+   {
+    "runbook_id": "clear_temp_path",
+    "service": "orders",
+    "verdict": "rejected_by_dashboard",
+    "executed": false
+   }
+  ],
+  "screenshots": [
+   "r3b_reject_1_card_full.png",
+   "r3b_reject_1_card.png",
+   "r3b_reject_1_causes.png",
+   "r3b_reject_2_after_full.png"
+  ],
+  "reveal": {
+   "scenario": "disk_fill",
+   "target": "orders",
+   "detected": true,
+   "time_to_detect_s": 8.7,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "failed_request_pct": 8.7,
+   "incidents_opened": 1,
+   "actions_executed": 0,
+   "abstained_correctly": null,
+   "harmful_interventions": 0
+  },
+  "free_ram_gb": 2.8
+ },
+ "unseen": {
+  "run_id": "49e3ecaccf",
+  "card_text": null,
+  "report_text": "ReactiveescalatedInsufficient evidence: no automatic action proposed.\n\nThe inventory service exhibits significant latency with a latency ratio of 233.6, while other metrics remain stable. There are no associated error logs or memory issues for the inventory service.\n\nLikely cause: insufficient evidence (no probability shown: the system abstained)\nProposed runbook: -\nReport written by: gemini (LLM disagreed; engine diagnosis kept)",
+  "margin_text": "Margin between top two causes: 0.93",
+  "incidents": [
+   {
+    "id": "94fd1639",
+    "status": "escalated",
+    "likely_cause": "disk_fill",
+    "abstained": false,
+    "services": [
+     "orders"
+    ],
+    "ranking": [
+     {
+      "service": "orders",
+      "score": 0.9904171432807137
+     },
+     {
+      "service": "web",
+      "score": 0.0036765614029487465
+     },
+     {
+      "service": "inventory",
+      "score": 0.0029531476581688143
+     },
+     {
+      "service": "payments",
+      "score": 0.0029531476581688143
+     }
+    ]
+   },
+   {
+    "id": "6cfd9b6e",
+    "status": "escalated",
+    "likely_cause": "insufficient_evidence",
+    "abstained": true,
+    "services": [
+     "web"
+    ],
+    "ranking": [
+     {
+      "service": "orders",
+      "score": 0.9829679198150526
+     },
+     {
+      "service": "web",
+      "score": 0.009222803130952277
+     },
+     {
+      "service": "inventory",
+      "score": 0.004471225860530808
+     },
+     {
+      "service": "payments",
+      "score": 0.0033380511934643395
+     }
+    ]
+   },
+   {
+    "id": "539eaa7e",
+    "status": "escalated",
+    "likely_cause": "insufficient_evidence",
+    "abstained": true,
+    "services": [
+     "inventory",
+     "orders",
+     "web"
+    ],
+    "ranking": [
+     {
+      "service": "inventory",
+      "score": 0.9572569803457646
+     },
+     {
+      "service": "orders",
+      "score": 0.031629711407819616
+     },
+     {
+      "service": "web",
+      "score": 0.008241245286087079
+     },
+     {
+      "service": "payments",
+      "score": 0.0028720629603286433
+     }
+    ]
+   }
+  ],
+  "screenshots": [
+   "r3b_unseen_1_full.png",
+   "r3b_unseen_1_report.png",
+   "r3b_unseen_1_causes.png",
+   "r3b_unseen_1_map.png"
+  ],
+  "reveal": {
+   "scenario": "cpu_burn",
+   "target": "inventory",
+   "detected": true,
+   "time_to_detect_s": 6.8,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "failed_request_pct": 0.0,
+   "incidents_opened": 1,
+   "actions_executed": 0,
+   "abstained_correctly": true,
+   "harmful_interventions": 0
+  },
+  "free_ram_gb": 2.82
+ },
+ "log": [
+  {
+   "event": "token_tests",
+   "msg_wrong_token": "Mode not changed (403): invalid approval token",
+   "msg_non_latin1_token": "Mode not changed (0): Token contains invalid characters (spaces, line breaks or symbols). Clear the field and retype it by hand.",
+   "msg_correct_token": "",
+   "brain_mode_after": "ask-first",
+   "t": 1792411237.1
+  },
+  {
+   "event": "draw_without_proposal",
+   "path": "approve",
+   "draw": 1,
+   "run_id": "7f0c2ccb6b",
+   "reveal": {
+    "scenario": "traffic_surge",
+    "target": "web",
+    "detected": false,
+    "time_to_detect_s": null,
+    "recovered": null,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 0.0,
+    "incidents_opened": 0,
+    "actions_executed": 0,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "t": 1792411346.9
+  },
+  {
+   "event": "draw_without_proposal",
+   "path": "approve",
+   "draw": 2,
+   "run_id": "0d3a11eba0",
+   "reveal": {
+    "scenario": "traffic_surge",
+    "target": "web",
+    "detected": false,
+    "time_to_detect_s": null,
+    "recovered": null,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 0.0,
+    "incidents_opened": 0,
+    "actions_executed": 0,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "t": 1792411476.8
+  },
+  {
+   "event": "draw_without_proposal",
+   "path": "approve",
+   "draw": 3,
+   "run_id": "5e0adfaa10",
+   "reveal": {
+    "scenario": "good_deploy",
+    "target": "web",
+    "detected": false,
+    "time_to_detect_s": null,
+    "recovered": null,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 0.57,
+    "incidents_opened": 0,
+    "actions_executed": 0,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "t": 1792411608.7
+  },
+  {
+   "event": "draw_without_proposal",
+   "path": "approve",
+   "draw": 4,
+   "run_id": "a45b0bdc6a",
+   "reveal": {
+    "scenario": "good_deploy",
+    "target": "inventory",
+    "detected": false,
+    "time_to_detect_s": null,
+    "recovered": null,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 2.22,
+    "incidents_opened": 0,
+    "actions_executed": 0,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "t": 1792411894.7
+  },
+  {
+   "event": "approve_path",
+   "path": "approve",
+   "draw": 5,
+   "run_id": "a64f04a594",
+   "card_text": "low riskrestart_service \u2192 orders\nask-first: low-risk action requires approval\norders shows signs of down (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes.\nApproveReject",
+   "anomalous_at_card": [
+    "orders"
+   ],
+   "click_message": "Done.",
+   "s_start_to_card": 213.1,
+   "s_card_to_click": 0.6,
+   "banner": "The service recovered, and EternalAI proved the application works again.",
+   "s_click_to_banner": 30.0,
+   "screenshots": [
+    "r3b_approve_1_card_full.png",
+    "r3b_approve_1_card.png",
+    "r3b_approve_1_causes.png",
+    "r3b_approve_2_banner_full.png",
+    "r3b_approve_2_banner.png"
+   ],
+   "reveal": {
+    "scenario": "crash",
+    "target": "orders",
+    "detected": true,
+    "time_to_detect_s": 4.8,
+    "recovered": true,
+    "time_to_verified_recovery_s": 41.6,
+    "failed_request_pct": 10.81,
+    "incidents_opened": 1,
+    "actions_executed": 1,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "free_ram_gb": 2.88,
+   "t": 1792412171.6
+  },
+  {
+   "event": "reject_path",
+   "path": "reject",
+   "draw": 1,
+   "run_id": "42c1c7887c",
+   "card_text": "low riskclear_temp_path \u2192 orders\nask-first: low-risk action requires approval\norders shows signs of disk fill (classifier confidence 1.00). Proposed runbook: clear_temp_path. Recovery is only confirmed after the synthetic checkout passes.\nApproveReject",
+   "anomalous_at_card": [
+    "orders"
+   ],
+   "click_message": "Done.",
+   "s_start_to_card": 64.6,
+   "s_card_to_click": 0.6,
+   "incident_status_after_reject": "escalated",
+   "actions_after_reject": [
+    {
+     "runbook_id": "clear_temp_path",
+     "service": "orders",
+     "verdict": "rejected_by_dashboard",
+     "executed": false
+    }
+   ],
+   "screenshots": [
+    "r3b_reject_1_card_full.png",
+    "r3b_reject_1_card.png",
+    "r3b_reject_1_causes.png",
+    "r3b_reject_2_after_full.png"
+   ],
+   "reveal": {
+    "scenario": "disk_fill",
+    "target": "orders",
+    "detected": true,
+    "time_to_detect_s": 8.7,
+    "recovered": false,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 8.7,
+    "incidents_opened": 1,
+    "actions_executed": 0,
+    "abstained_correctly": null,
+    "harmful_interventions": 0
+   },
+   "free_ram_gb": 2.8,
+   "t": 1792412251.6
+  },
+  {
+   "event": "unseen_path",
+   "run_id": "49e3ecaccf",
+   "card_text": null,
+   "report_text": "ReactiveescalatedInsufficient evidence: no automatic action proposed.\n\nThe inventory service exhibits significant latency with a latency ratio of 233.6, while other metrics remain stable. There are no associated error logs or memory issues for the inventory service.\n\nLikely cause: insufficient evidence (no probability shown: the system abstained)\nProposed runbook: -\nReport written by: gemini (LLM disagreed; engine diagnosis kept)",
+   "margin_text": "Margin between top two causes: 0.93",
+   "incidents": [
+    {
+     "id": "94fd1639",
+     "status": "escalated",
+     "likely_cause": "disk_fill",
+     "abstained": false,
+     "services": [
+      "orders"
+     ],
+     "ranking": [
+      {
+       "service": "orders",
+       "score": 0.9904171432807137
+      },
+      {
+       "service": "web",
+       "score": 0.0036765614029487465
+      },
+      {
+       "service": "inventory",
+       "score": 0.0029531476581688143
+      },
+      {
+       "service": "payments",
+       "score": 0.0029531476581688143
+      }
+     ]
+    },
+    {
+     "id": "6cfd9b6e",
+     "status": "escalated",
+     "likely_cause": "insufficient_evidence",
+     "abstained": true,
+     "services": [
+      "web"
+     ],
+     "ranking": [
+      {
+       "service": "orders",
+       "score": 0.9829679198150526
+      },
+      {
+       "service": "web",
+       "score": 0.009222803130952277
+      },
+      {
+       "service": "inventory",
+       "score": 0.004471225860530808
+      },
+      {
+       "service": "payments",
+       "score": 0.0033380511934643395
+      }
+     ]
+    },
+    {
+     "id": "539eaa7e",
+     "status": "escalated",
+     "likely_cause": "insufficient_evidence",
+     "abstained": true,
+     "services": [
+      "inventory",
+      "orders",
+      "web"
+     ],
+     "ranking": [
+      {
+       "service": "inventory",
+       "score": 0.9572569803457646
+      },
+      {
+       "service": "orders",
+       "score": 0.031629711407819616
+      },
+      {
+       "service": "web",
+       "score": 0.008241245286087079
+      },
+      {
+       "service": "payments",
+       "score": 0.0028720629603286433
+      }
+     ]
+    }
+   ],
+   "screenshots": [
+    "r3b_unseen_1_full.png",
+    "r3b_unseen_1_report.png",
+    "r3b_unseen_1_causes.png",
+    "r3b_unseen_1_map.png"
+   ],
+   "reveal": {
+    "scenario": "cpu_burn",
+    "target": "inventory",
+    "detected": true,
+    "time_to_detect_s": 6.8,
+    "recovered": false,
+    "time_to_verified_recovery_s": null,
+    "failed_request_pct": 0.0,
+    "incidents_opened": 1,
+    "actions_executed": 0,
+    "abstained_correctly": true,
+    "harmful_interventions": 0
+   },
+   "free_ram_gb": 2.82,
+   "t": 1792412330.9
+  }
+ ]
+}

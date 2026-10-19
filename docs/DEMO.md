@@ -1,8 +1,8 @@
 # Live demo script
 
-Status: **v2 version** (rule P of Amendment 4: all seven pre-registered criteria passed, so the demo shows v2). Every v2 caveat is in one place: `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2". The rehearsal results and the final startup, narration, UI and contingency sections are completed after the three rehearsals (`docs/results/demo_rehearsals.md`); until that file exists they are drafts and say so.
+Status: **final, v2** (rule P of Amendment 4: all seven pre-registered criteria passed, so the demo shows v2). Rehearsed four ways on 2026-10-19 (R1 headless with the LLM, R2 with the keys removed, R3 by the presenter in a real browser, R3b automated in the real dashboard); every rehearsal, including what went wrong, is in `docs/results/demo_rehearsals.md`. Every v2 caveat is in one place: `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2".
 
-v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better". Say this once, early. The v1 findings that motivated v2 (invalid ask-first arm, false alarms on healthy runs, self-reported recovery) are in `docs/EVALUATION.md` and `docs/results/benchmark.md`.
+v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better". Say this once, early.
 
 <!-- gen:demo_v2 -->
 **Numbers to quote (v2, filled from `docs/results/benchmark_v2.md`; caveats in `docs/EVALUATION.md`, canonical section):**
@@ -19,77 +19,80 @@ v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model
 
 **The unseen-fault segment (labelled as such, ask-first mode):** `python scripts/demo_challenge.py start --unseen`. Say before it starts: "this is a fault type EternalAI was never trained on. In our tests it abstained in 2/3 v2 runs and 4/5 v1 runs, and in one v2 run (seed 426) it chose the wrong service: it ranked the true target 3rd, did not flag the window as novel, and restarted `inventory` while the fault was on `orders`; failed requests were 27.71% and the checkout probes 0/4. We do not claim it abstains on unseen faults. That is why this segment runs in ask-first mode: it proposes, a human decides."
 
-**If a judge picks an unseen fault while the autopilot is on (honest answer):** "The autopilot may abstain, escalate and keep the evidence, which is what it did in 2/3 of our v2 runs and 4/5 of our v1 runs of one unseen fault type. It may also act on the wrong service, which it did once in v2 (seed 426). We did not measure how often on other faults, and we do not claim it knows when to stop. For an unseen fault, switch to ask-first so a human sees the proposed service and runbook before anything runs. What you see on screen is the proposal and the ranked services; whether that is enough for a human to spot a wrong target is recorded in the rehearsal log (`docs/results/demo_rehearsals.md`)."
+**If a judge picks an unseen fault while the autopilot is on (honest answer):** "The autopilot may abstain, escalate and keep the evidence, which is what it did in 2/3 of our v2 runs and 4/5 of our v1 runs of one unseen fault type. It may also act on the wrong service, which it did once in v2 (seed 426). We did not measure how often on other faults, and we do not claim it knows when to stop. For an unseen fault, switch to ask-first so a human sees the proposed service and runbook before anything runs. On screen a human sees the proposed service and runbook, the ranked-causes chart with its margin, and which services the map shows as anomalous. In our rehearsals the unseen fault was abstained on both times, so we have never seen a wrong-target proposal on the dashboard and we do not claim a human would spot one."
 <!-- /gen:demo_v2 -->
 
-**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout (an internal verification). The independent measure is the load generator's failed-request %, which the evaluator reads; show it alongside, and say it is an impact metric, not proof.
+**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact: the banner's "proved" is the system's own synthetic checkout (an internal verification). The independent measure is the load generator's failed-request %, which the evaluator reads; say it is an impact metric, not proof.
 
-## 0. Before the demo (startup; exact procedure in the rehearsal log once rehearsed)
+> **Never click the dashboard's "Start blind challenge" button. Start every challenge with `python scripts\demo_challenge.py start` (or `start --unseen`).** The button draws from all nine scenarios including the unseen fault, and in ask-first mode a proposal waits 120 s for approval and then expires (rehearsal R3: a disk_fill run started by the button was never approved and ended unrecovered). The script draws only from the six supported faults and the two healthy scenarios; the dashboard still shows everything.
 
-1. `.env` exists with `ETERNALAI_APPROVAL_TOKEN` set to a real secret (approve, reject and mode changes are refused otherwise). Optional: `GEMINI_API_KEY` for live LLM reports. Never print or commit `.env`.
-2. Verify the benchmark export before any reset: `sha256sum -c` on `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun` (0 mismatches expected).
-3. Start with the launcher: `powershell -ExecutionPolicy Bypass -File scripts\demo.ps1 -ConfirmReset`. It refuses while a benchmark process runs, exports and checksums first, resets only the scorecard volume (a copy is already in the export), starts the stack under telemetry condition T3 (trace exporter off, no Jaeger) **with the dashboard on**, restocks the inventory to the seeded level (the inventory service only subtracts stock), and runs `scripts/preflight.py`.
-4. Open http://localhost:8050. The status bar should show the mode and "Models loaded from saved artifacts"; `GET :8000/status` must show no `fallbacks_in_use`.
-5. Keep a terminal on `docker compose logs -f eternalai` as a fallback view.
-6. The dashboard was not running during the evaluation; its polling is read-only. The rehearsals check that it does not change the brain's decisions (`docs/results/demo_rehearsals.md`).
+## 0. Startup (exact procedure, as rehearsed)
 
-## 0b. Demo-day memory checklist (the machine has 16.8 GB and the demo stack ran with only 1.5 to 2.6 GB free in the rehearsals)
+1. `.env` in the checkout you demo from (`D:\eAI\eAI-release`) holds `GEMINI_API_KEY` and `ETERNALAI_APPROVAL_TOKEN` (a real secret, typed by hand; never `change-me`). Never print or commit `.env`.
+2. Memory checklist (section 0b) first.
+3. PowerShell window A:
+   ```
+   cd D:\eAI\eAI-release
+   $env:PATH = "D:\eAI\eAI-workspace\eAI\.venv\Scripts;C:\Program Files\Docker\Docker\resources\bin;" + $env:PATH
+   python scripts\memguard.py
+   powershell -ExecutionPolicy Bypass -File scripts\demo.ps1 -ConfirmReset -ExportDir results/demo-export/live
+   ```
+   The launcher refuses while a benchmark process runs, exports the scorecard with checksums, resets only the scorecard volume, rebuilds the dashboard image, starts the stack under T3 (trace exporter off, no Jaeger) with the dashboard on and `gemini-3.5-flash-lite` for reports, restocks the inventory, and runs the preflight. Wait for **8 PASS lines** (about 90 s). Any FAIL: do not demo; see the fallback plan.
+4. PowerShell window B: the same `cd` and `$env:PATH` lines. This is where challenges are started and revealed.
+5. Browser: http://localhost:8050. Type the token **by hand** into the token field (a pasted value with extra text is refused: "invalid approval token" or "Token contains invalid characters"). Choose **Ask first**; no message under the selector means it worked.
+6. Before the export is touched by any reset, the frozen benchmark checksums must verify: `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun` (0 mismatches in every rehearsal).
+
+## 0b. Demo-day memory checklist (16.8 GB machine; the rehearsals ran with 1.55 to 3.4 GB free)
 
 1. **Close everything except Docker Desktop and the one browser window for the dashboard.** No IDE, no second browser profile, no chat or video apps, no other Docker projects.
 2. **Close the Claude Code CLI session during the actual demo.** It and its background tools use memory, and a background-task reaper kills idle jobs when host RAM is low.
-3. **Free-RAM check before starting:** `python scripts/memguard.py` (prints free RAM). Start only above 2 GB free; below that, close more apps first. (In the rehearsals the minimum free RAM was 1.55 GB headless, with nothing but Docker running.)
-4. Start the stack with the launcher, wait for 8 PASS lines, then run `python scripts/stock_gate.py --check` once more right before presenting.
-5. Do not run the launcher twice in a row during the presentation: the stack restart takes about 90 s.
-6. If free RAM drops below 1 GB mid-demo or Docker stops, go to the fallback plan below (show the recording and the results tables).
+3. **Free-RAM check before starting:** `python scripts\memguard.py`. Start only above 2 GB free; below that, close more apps first.
+4. After the 8 PASS lines, run `python scripts\stock_gate.py --check` once more right before presenting.
+5. Do not run the launcher during the presentation (a restart takes about 90 s).
+6. If free RAM drops below 1 GB or Docker stops, go to the fallback plan (recording and results tables).
 
-> **Never click the dashboard's "Start blind challenge" button. Start every challenge with `python scripts\demo_challenge.py start` (or `start --unseen`).** The button draws from all nine scenarios including the unseen fault, and in ask-first mode a proposal it creates waits 120 s for approval and then expires (rehearsal R3: a disk_fill run started by the button was never approved and ended unrecovered). The script draws only from the six supported faults and the two healthy scenarios, and the dashboard still shows everything.
+## 1. Recommended 5-minute sequence (UI and commands)
 
-## 1. Introduction (1 min)
+| min | do (UI / window B) | say |
+|---|---|---|
+| 0:00-0:40 | Dashboard: point at the four green nodes, the mode pill "ask-first", "Models loaded from saved artifacts". | "EternalAI watches a four-service shop, diagnoses with trained models, acts only through four allow-listed runbooks under a policy, and checks the user journey before it calls anything recovered. The faults come from an independent evaluator we wrote; the truth is hidden from the system." |
+| 0:40-2:40 | Window B: `python scripts\demo_challenge.py start`. Watch the map turn amber, then the Approval queue card. Read the card aloud. Click **Approve**. Wait for the green banner (about 30 s after the click in R3b). Then `python scripts\demo_challenge.py reveal <RUN_ID>`. | At the card: "It proposes `<runbook> → <service>`, low risk, and shows its ranked causes with the margin. A human decides." At the banner: "EternalAI's own checkout passed again. The independent number is the failed-request percentage, which the evaluator measured." At the reveal: read the scenario and target, then failed-request %. If it was wrong, say so. If the draw was healthy: "No incident is the correct outcome for a healthy change." |
+| 2:40-3:50 | Window B: `python scripts\demo_challenge.py start --unseen` (still Ask first). Show the report panel and causes chart. If a card appears, click **Reject**. | Read the unseen-fault narration in the numbers block above, including seed 426. "It abstained here / it proposed X; we do not claim it abstains on unseen faults." |
+| 3:50-4:30 | Point at the numbers block (or `docs/results/benchmark_v2.md`). | Quote the table with the caveats in its third column. |
+| 4:30-5:00 | Close. | "One application, scripted faults, three runs per fault type, recovery checked by the system itself, no paired baseline on faults, forecast lead time not demonstrated, Groq untested. Everything is reproducible from the scripts in the repository." |
 
-- One sentence: observe, diagnose, act under policy, **verify the user journey**, escalate honestly.
-- Show the four services green and traffic flowing. Say what is real (containers, restarts, rollbacks, metrics) and what is controlled (the faults come from a script we wrote).
+Autopilot is not switched on in the live 5 minutes: the rehearsals show it works (R1, R2), but one wrong-service restart on an unseen fault (seed 426) is the honest reason to demo ask-first. If a judge asks for autopilot, switch the mode and run `demo_challenge.py start`; use the honest answer in the numbers block if they ask for an unseen fault.
 
-## 2. Hidden challenge, ask-first (4-5 min)
+## 2. Judge-facing narration, short form
 
-1. Start the hidden challenge: `python scripts/demo_challenge.py start`. It draws one of the six supported faults or the two healthy scenarios with `secrets` and does not print the choice. (The dashboard's own "Start blind challenge" button draws from all nine scenarios including the unseen fault; changing that would be a system change, so it is not used for the live challenge. The dashboard still shows the incident, the service map and the approval queue.)
-2. Watch the service map and the incident timeline. If it is a healthy scenario, the expected outcome is **no incident**; say so.
-3. When a proposal appears in the **Approval queue**, read it aloud: the ranked causes, the proposed runbook, the risk, the evidence ids, and the margin between the top two causes.
-4. **Approve** (token needed). Narrate: one allow-listed runbook, then a synthetic checkout through all four services over the observation window.
-5. When the verification banner appears: *"EternalAI's own checkout passed again; the independent measure is the failed-request percentage."*
-6. Reveal: `python scripts/demo_challenge.py reveal RUN_ID`. Read the failed-request % first, then detection time. If it was wrong, say so.
+- What it is: a recovery assistant prototype for one application, with ML for detection, diagnosis and root-cause ranking, deterministic policy and runbooks, and a synthetic-checkout verification.
+- What is measured: the v2 numbers block, from scripts, with sample sizes; v1 and v2 are unpaired; v2 is "fixes for the failures v1 exposed, tested on fresh seeds".
+- What it does not claim: production readiness, generalisation to other applications, reliable abstention on unseen faults, superiority over a restart script on faults (no paired v2 baseline), forecast lead time.
+- The LLM only writes the report text; it never chooses or runs an action (code-path analysis, 12 isolation tests, ten live incidents; `docs/results/llm_live.md`).
 
-## 3. Autopilot and the policy engine (2 min)
-
-- Switch to **Autopilot** and start another hidden challenge. Say what autopilot may and may not do (allow-listed low and medium risk runbooks, cooldown, circuit breaker after two interventions). Optional: `/audit`.
-
-## 4. A fault it has not seen (2 min, labelled, ask-first)
-
-- Switch to **Ask first**, then `python scripts/demo_challenge.py start --unseen`. Use the narration in the numbers block above. The expected outcome is **uncertain by design**: abstain and escalate (as in most of our runs), or a proposal that targets the wrong service (as in seed 426). Show the ranked causes and say that if a proposal appears, a human must check it; do not approve a proposal whose service you do not believe.
-- Whether the evidence on screen lets a human spot a wrong target is recorded in the rehearsal log. Until it is recorded, do not claim it.
-
-## 5. When recovery fails (1-2 min)
-
-- Show `docs/postmortems/cpu_burn_seed426.md` (a real wrong-service action) and the circuit breaker in the status bar if it opened.
-
-## 6. Close (1 min)
-
-- Quote the numbers block, each with its caveat. Name the limits in one breath: one application, scripted faults, n = 3 per fault type, recovery judged by the system itself, no paired baseline for supported faults, forecast lead time undemonstrated, Groq untested.
-
-## Fallback plan (draft; finalised after the rehearsals)
+## 3. Failure contingency plan
 
 | if | do |
 |---|---|
-| the dashboard does not update | refresh; check `GET :8000/status`; the dashboard shows "Backend offline" when the backend is down |
-| a challenge hangs | `GET :8200/runs/<id>/status`; wait for the evaluator to restore the stack (up to 3 min after a release change) before the next |
-| approvals are refused | the token is still the placeholder; set `ETERNALAI_APPROVAL_TOKEN` in `.env` and `docker compose up -d eternalai` |
-| checkouts fail with HTTP 409 | the inventory stock ran out: `python scripts/stock_gate.py --restock --force` |
-| a service is stuck after a failed run | `docker compose up -d --force-recreate <service>`; check `docker compose ps` |
-| nothing works | show `docs/screenshots/` (fixture data, say so) and the generated results; do not improvise numbers |
+| free RAM < 1 GB, Docker stops, or the launcher shows a FAIL | stop the live part. Show the **screen recording of the rehearsal pass (R4)** and the results tables (`docs/results/benchmark_v2.md`, `docs/results/demo_rehearsals.md`, the R3b screenshots in `docs/screenshots/r3b_*.png`). Say plainly that the live stack failed. Do not improvise numbers. |
+| the dashboard does not update | refresh the page; `GET http://localhost:8000/status`; "Backend offline" means the brain is down: `docker compose -p eai up -d eternalai` in window A |
+| no card appears within about 60 s | the draw was probably healthy: wait for the run to finish (about 2 min), reveal, start again |
+| "invalid approval token" / "Token contains invalid characters" | clear the token field and retype it by hand |
+| a card expires (120 s) before Approve | say so; reveal; start another challenge |
+| checkouts fail with HTTP 409 | the inventory stock ran out: `python scripts\stock_gate.py --restock --force` |
+| a challenge hangs | `GET http://localhost:8200/runs/<id>/status`; wait up to 3 min for the evaluator to restore the stack |
+| a service is stuck after a failed run | `docker compose -p eai up -d --force-recreate <service>` |
+| the LLM is slow or down | nothing to do: the template report is used and recovery is unaffected (R2) |
 
-## Reset between rehearsals
+Never `docker compose down -v` and never delete a volume by hand; the export in `results/benchmark-v2/` is the evidence.
 
-Use the launcher (`-ConfirmReset`) after the checksum verification. Never `docker compose down -v` and never delete a volume by hand: the export in `results/benchmark-v2/` is the evidence.
+## 4. Final readiness checklist
 
-## Dashboard rehearsal under T3
-
-Result: recorded in `docs/results/demo_rehearsals.md` (pending until the rehearsals are done).
+- [ ] frozen export checksums verify (0 mismatches)
+- [ ] memory checklist done; free RAM above 2 GB
+- [ ] launcher: 8 PASS lines; stock check passes
+- [ ] token typed by hand; Ask first set with no error message
+- [ ] window B ready with `scripts\demo_challenge.py`
+- [ ] recording of the R4 pass available offline as the fallback
+- [ ] `docs/results/benchmark_v2.md` and `docs/results/demo_rehearsals.md` open in a second tab
+- [ ] never the "Start blind challenge" button

@@ -1,0 +1,314 @@
+{
+ "name": "R1",
+ "plan": "r1",
+ "started": "2026-10-19T16:26:43",
+ "total_s": 522.9,
+ "brain": {
+  "brain": "eternalai",
+  "mode": "ask-first",
+  "fallbacks_in_use": []
+ },
+ "emulated_dashboard_polls": 973,
+ "emulated_dashboard_errors": 0,
+ "steps": [
+  {
+   "label": "supported fault, autopilot, fixed seed",
+   "mode": "autopilot",
+   "scenario_hidden_until_reveal": false,
+   "mode_set": 200,
+   "reset": 200,
+   "stock": {
+    "t": 1792407404.0406826,
+    "threshold": 50000,
+    "seed_level": 100000,
+    "before": {
+     "sku-lamp": 99975,
+     "sku-mug": 99983,
+     "sku-bag": 99985,
+     "sku-book": 99984
+    },
+    "restocked": false,
+    "after_restock": {
+     "sku-lamp": 99975,
+     "sku-mug": 99983,
+     "sku-bag": 99985,
+     "sku-book": 99984
+    }
+   },
+   "run_id": "9adb741e0b",
+   "revealed_scenario": "crash",
+   "target": "payments",
+   "supported": true,
+   "s_to_first_incident": 5.8,
+   "s_to_verified_recovery": 44.2,
+   "recovered": true,
+   "detected": true,
+   "time_to_detect_s": 5.8,
+   "failed_request_pct": 10.22,
+   "incidents_opened": 1,
+   "actions_executed": 1,
+   "abstained_correctly": null,
+   "s_start_to_run_finished": 106.2,
+   "s_start_to_scorecard": 106.3,
+   "scorecard_incremented": true,
+   "min_free_ram_gb": 1.9,
+   "gemini_requests": 1,
+   "providers": [
+    "gemini"
+   ],
+   "fallback_reasons": [],
+   "executed": [
+    "restart_service@payments"
+   ],
+   "proposals": [],
+   "diagnosis": [
+    {
+     "root": "payments",
+     "ranking": [
+      {
+       "service": "payments",
+       "score": 0.9767940621344849
+      },
+      {
+       "service": "web",
+       "score": 0.011718161890786363
+      },
+      {
+       "service": "orders",
+       "score": 0.007103568011892178
+      },
+      {
+       "service": "inventory",
+       "score": 0.004384207962836562
+      }
+     ],
+     "abstained": false,
+     "novelty": 0.3824,
+     "threshold": 1.116572955468316,
+     "confidence": 0.9999624648587068,
+     "status": "recovered"
+    }
+   ]
+  },
+  {
+   "label": "hidden supported/healthy draw, ask-first + scripted approver",
+   "mode": "ask-first",
+   "scenario_hidden_until_reveal": true,
+   "mode_set": 200,
+   "reset": 200,
+   "stock": {
+    "t": 1792407535.9569075,
+    "threshold": 50000,
+    "seed_level": 100000,
+    "before": {
+     "sku-lamp": 99865,
+     "sku-mug": 99825,
+     "sku-bag": 99844,
+     "sku-book": 99876
+    },
+    "restocked": false,
+    "after_restock": {
+     "sku-lamp": 99865,
+     "sku-mug": 99825,
+     "sku-bag": 99844,
+     "sku-book": 99876
+    }
+   },
+   "run_id": "e96d292677",
+   "approve_status": [
+    200
+   ],
+   "revealed_scenario": "latency",
+   "target": "web",
+   "supported": true,
+   "s_to_first_incident": 14.2,
+   "s_to_verified_recovery": 58.2,
+   "recovered": true,
+   "detected": true,
+   "time_to_detect_s": 14.2,
+   "failed_request_pct": 4.48,
+   "incidents_opened": 1,
+   "actions_executed": 1,
+   "abstained_correctly": null,
+   "s_start_to_run_finished": 118.8,
+   "s_start_to_scorecard": 118.9,
+   "scorecard_incremented": true,
+   "min_free_ram_gb": 1.9,
+   "gemini_requests": 1,
+   "providers": [
+    "gemini"
+   ],
+   "fallback_reasons": [],
+   "executed": [
+    "restart_service@web"
+   ],
+   "proposals": [
+    {
+     "t_s": 67.1,
+     "incident_id": "50b4494f",
+     "service": "web",
+     "runbook_id": "restart_service",
+     "risk": "low",
+     "reason": "ask-first: low-risk action requires approval",
+     "cause": "latency_spike",
+     "report_summary": "web shows signs of latency spike (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes."
+    }
+   ],
+   "diagnosis": [
+    {
+     "root": "web",
+     "ranking": [
+      {
+       "service": "web",
+       "score": 0.983414906781353
+      },
+      {
+       "service": "payments",
+       "score": 0.01061521634075758
+      },
+      {
+       "service": "orders",
+       "score": 0.0029849384389447086
+      },
+      {
+       "service": "inventory",
+       "score": 0.0029849384389447086
+      }
+     ],
+     "abstained": false,
+     "novelty": 0.0145,
+     "threshold": 1.116572955468316,
+     "confidence": 0.9999386297920223,
+     "status": "recovered"
+    }
+   ]
+  },
+  {
+   "label": "UNSEEN fault cpu_burn, ask-first, proposal recorded and rejected",
+   "mode": "ask-first",
+   "scenario_hidden_until_reveal": false,
+   "mode_set": 200,
+   "reset": 200,
+   "stock": {
+    "t": 1792407680.5689042,
+    "threshold": 50000,
+    "seed_level": 100000,
+    "before": {
+     "sku-lamp": 99689,
+     "sku-mug": 99674,
+     "sku-bag": 99691,
+     "sku-book": 99772
+    },
+    "restocked": false,
+    "after_restock": {
+     "sku-lamp": 99689,
+     "sku-mug": 99674,
+     "sku-bag": 99691,
+     "sku-book": 99772
+    }
+   },
+   "run_id": "06b28e6989",
+   "revealed_scenario": "cpu_burn",
+   "target": "web",
+   "supported": false,
+   "s_to_first_incident": 9.7,
+   "s_to_verified_recovery": null,
+   "recovered": false,
+   "detected": true,
+   "time_to_detect_s": 9.7,
+   "failed_request_pct": 93.22,
+   "incidents_opened": 1,
+   "actions_executed": 0,
+   "abstained_correctly": true,
+   "s_start_to_run_finished": 83.1,
+   "s_start_to_scorecard": 83.2,
+   "scorecard_incremented": true,
+   "min_free_ram_gb": 1.9,
+   "gemini_requests": 1,
+   "providers": [
+    "template"
+   ],
+   "fallback_reasons": [
+    "gemini: ValueError"
+   ],
+   "executed": [],
+   "proposals": [],
+   "diagnosis": [
+    {
+     "root": "web",
+     "ranking": [
+      {
+       "service": "web",
+       "score": 0.9847402137336985
+      },
+      {
+       "service": "payments",
+       "score": 0.009433610859963247
+      },
+      {
+       "service": "orders",
+       "score": 0.002913087703169036
+      },
+      {
+       "service": "inventory",
+       "score": 0.002913087703169036
+      }
+     ],
+     "abstained": true,
+     "novelty": 3.5748,
+     "threshold": 1.116572955468316,
+     "confidence": 0.9685779375527189,
+     "status": "escalated"
+    }
+   ]
+  },
+  {
+   "label": "healthy surge, ask-first",
+   "mode": "ask-first",
+   "scenario_hidden_until_reveal": false,
+   "mode_set": 200,
+   "reset": 200,
+   "stock": {
+    "t": 1792407789.337255,
+    "threshold": 50000,
+    "seed_level": 100000,
+    "before": {
+     "sku-lamp": 99630,
+     "sku-mug": 99600,
+     "sku-bag": 99622,
+     "sku-book": 99684
+    },
+    "restocked": false,
+    "after_restock": {
+     "sku-lamp": 99630,
+     "sku-mug": 99600,
+     "sku-bag": 99622,
+     "sku-book": 99684
+    }
+   },
+   "run_id": "741f136bd5",
+   "revealed_scenario": "traffic_surge",
+   "target": "web",
+   "supported": true,
+   "s_to_first_incident": null,
+   "s_to_verified_recovery": null,
+   "recovered": null,
+   "detected": false,
+   "time_to_detect_s": null,
+   "failed_request_pct": 0.0,
+   "incidents_opened": 0,
+   "actions_executed": 0,
+   "abstained_correctly": null,
+   "s_start_to_run_finished": 111.8,
+   "s_start_to_scorecard": 111.9,
+   "scorecard_incremented": true,
+   "min_free_ram_gb": 2.23,
+   "gemini_requests": 0,
+   "providers": [],
+   "fallback_reasons": [],
+   "executed": [],
+   "proposals": [],
+   "diagnosis": []
+  }
+ ]
+}

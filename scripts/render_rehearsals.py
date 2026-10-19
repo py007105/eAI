@@ -46,15 +46,57 @@ def headless(d, name, what):
     return L
 
 
+R3_WINDOW = (1792409701.9, 1792411115.0)   # from the R3 launcher's restock to just before the R3b launcher started (epoch s)
+R3_PRESENTER = ("Reported by the presenter (R3, real browser): a token pasted from terminal text gave 'Mode not changed (0): Invalid leading whitespace, reserved "
+                "character(s)...' (the message repeated the header value); in the unseen segment the amber nodes were web, orders and inventory, payments green; "
+                "no approval card, only 'escalated: insufficient evidence'; the causes chart had inventory far ahead (margin 0.95); the report said 'written by gemini "
+                "(LLM disagreed; engine diagnosis kept)'; 'Likely cause: insufficient evidence (100% calibrated)' was shown. A disk_fill run appeared that the presenter did "
+                "not start by script.")
+
+
+def r3b(d):
+    if not d:
+        return ["## R3b: automated in the real dashboard (headless Chromium, below-normal priority, throwaway token)", "", "Not recorded yet."]
+    L = ["## R3b: automated in the real dashboard (headless Chromium, below-normal priority, throwaway token)", "",
+         f"Started {d['started']}; free RAM at start {d['free_ram_gb_start']} GB." + (f" **Stopped: {d['stopped']}.**" if d.get("stopped") else ""), "",
+         "Token handling (mode change from the dashboard):", "",
+         f"- wrong token: `{d.get('msg_wrong_token')}`", f"- token with a non-Latin-1 character: `{d.get('msg_non_latin1_token')}`",
+         f"- throwaway token, Ask first: `{d.get('msg_correct_token') or '(no error)'}`; brain mode afterwards: {d.get('brain_mode_after')}", ""]
+    draws = [e for e in d.get("log", []) if e.get("event") == "draw_without_proposal"]
+    for e in draws:
+        L.append(f"- draw without a proposal ({e['path']} path, draw {e['draw']}): {e['reveal'].get('scenario')} on {e['reveal'].get('target')}, incidents {e['reveal'].get('incidents_opened')}")
+    for key in ("approve", "reject"):
+        r = d.get(key)
+        if not r:
+            L += ["", f"### {key.title()} path", "", "No proposal within the draw limit."]
+            continue
+        L += ["", f"### {key.title()} path (draw {r['draw']})", "", f"- card read from the page: `{' | '.join(r['card_text'].splitlines())}`",
+              f"- anomalous services when the card appeared: {', '.join(r['anomalous_at_card'])}",
+              f"- s from start to card: {r['s_start_to_card']}; s from card to click: {r['s_card_to_click']}; message after click: `{r['click_message']}`"]
+        if key == "approve":
+            L.append(f"- verification banner: `{r.get('banner')}`; s from click to banner: {r.get('s_click_to_banner')}")
+        else:
+            L.append(f"- incident status after reject: {r.get('incident_status_after_reject')}; actions: {r.get('actions_after_reject')}")
+        L += [f"- reveal: {r['reveal']}", f"- free RAM after: {r['free_ram_gb']} GB", f"- screenshots: {', '.join('docs/screenshots/' + s for s in r['screenshots'])}"]
+    u = d.get("unseen")
+    if u:
+        L += ["", "### Unseen fault (cpu_burn, ask-first)", "", f"- approval card: {('`' + ' | '.join(u['card_text'].splitlines()) + '` (rejected)') if u['card_text'] else 'none'}",
+              f"- report panel: `{' | '.join(u['report_text'].splitlines())}`", f"- causes margin: `{u['margin_text']}`",
+              f"- incidents: {u['incidents']}", f"- reveal: {u['reveal']}", f"- free RAM after: {u['free_ram_gb']} GB",
+              f"- screenshots: {', '.join('docs/screenshots/' + s for s in u['screenshots'])}"]
+    return L
+
+
 def r3(dir_):
     mon = Path(dir_) / "R3_monitor.jsonl"
     if not mon.exists():
         return ["## R3: human-driven, real browser", "", "Not recorded yet."]
     recs = [json.loads(x) for x in mon.read_text(encoding="utf-8").splitlines() if x.strip()]
+    recs = [r for r in recs if R3_WINDOW[0] <= r["t"] <= R3_WINDOW[1]]
     ram = [r["free_ram_gb"] for r in recs]
     t0 = recs[0]["t"]
     L = ["## R3: human-driven, real browser, dashboard open", "", f"Recorder: {len(recs)} samples over {recs[-1]['t'] - t0:.0f} s; minimum free RAM with the browser open: **{min(ram)} GB** "
-         f"(at the start {ram[0]} GB).", "", "| incident | opened (s after recorder start) | statuses seen | cause | abstained | proposal seen (service, runbook) | ranking at the time | anomalous services when the proposal was pending | final |",
+         f"(at the start {ram[0]} GB).", "", R3_PRESENTER, "", "| incident | opened (s after the R3 stack start) | statuses seen | cause | abstained | proposal seen (service, runbook) | ranking at the time | anomalous services when the proposal was pending | final |",
          "|---|---|---|---|---|---|---|---|---|"]
     seen, order = {}, []
     for r in recs:
@@ -63,6 +105,8 @@ def r3(dir_):
             continue
         pend = {a["incident_id"]: a for a in (s["approvals"] or [])}
         for i in s["incidents"]:
+            if i["opened_t"] < R3_WINDOW[0]:
+                continue
             e = seen.setdefault(i["id"], {"opened": i["opened_t"], "statuses": [], "prop": None, "anom": None, "rank": None})
             if i["id"] not in order:
                 order.append(i["id"])
@@ -100,7 +144,7 @@ def main():
         L += headless(r1, "R1", "LLM on (`gemini-3.5-flash-lite`), headless, scripted operator") + [""]
     if r2:
         L += headless(r2, "R2", "keys removed (`-NoLlm`), headless: template fallback") + [""]
-    L += r3(a.dir)
+    L += r3(a.dir) + [""] + r3b(load(Path(a.dir) / "R3b.json"))
     Path(a.out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print("\n".join(L))
 
