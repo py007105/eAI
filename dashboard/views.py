@@ -124,6 +124,15 @@ def evidence(inc: dict | None, lang="en"):
     return [html.Div([html.B(e["id"]), html.Span(e["summary"])], className="ev") for e in inc["evidence"]]
 
 
+def evidence_summary(inc: dict | None, lang="en") -> str:
+    """The one line shown while the evidence panel is collapsed."""
+    ev = (inc or {}).get("evidence") or []
+    if not ev:
+        return t("no_evidence", lang)
+    first = ev[0]["summary"]
+    return f"{len(ev)} {t('evidence_items', lang)} · {first[:80]}{'…' if len(first) > 80 else ''}  {t('evidence_expand', lang)}"
+
+
 def prob_text(inc: dict, conf, show_prob: bool, lang="en") -> str:
     """The percentage is the classifier's calibrated probability for ITS top class. When the system abstained, the label shown is 'insufficient evidence', which that
     probability does not describe (a novel window can still have a near-certain top class), so no percentage is shown for an abstained incident."""

@@ -87,3 +87,22 @@ def test_layout_has_the_title_sink_and_approvals_card():
     s = str(dash_app.layout())
     assert "approvals_card" in s and "title_sink" in s and "page_title" in s
     assert dash_app.app.config.update_title is None        # Dash's default "Updating..." would overwrite the tab title every refresh
+
+
+def test_evidence_is_collapsed_by_default_with_a_one_line_summary():
+    import app as dash_app
+    lay = dash_app.layout()
+
+    def find(n, id_):
+        if getattr(n, "id", None) == id_:
+            return n
+        kids = getattr(n, "children", None)
+        for k in (kids if isinstance(kids, (list, tuple)) else [kids]):
+            if k is not None and not isinstance(k, str) and (r := find(k, id_)) is not None:
+                return r
+    d = find(lay, "evidence_details")
+    assert d is not None and type(d).__name__ == "Details" and d.open is False
+    ev = {"evidence": [{"id": "ev1", "summary": "x" * 100}, {"id": "ev2", "summary": "y"}]}
+    s = views.evidence_summary(ev)
+    assert s.startswith("2 items · ") and "…" in s and "\n" not in s
+    assert views.evidence_summary(None) == t("no_evidence")

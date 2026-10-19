@@ -118,7 +118,11 @@ def layout():
                            html.Div(id="margin", className="muted"), html.Div(id="confnote", className="muted")])], lg=5)]),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_timeline"), html.Div(id="timeline")]), lg=4),
-            dbc.Col(card([html.Div(id="t_evidence"), html.Div(id="evidence", style={"maxHeight": "300px", "overflowY": "auto"})]), lg=4),
+            dbc.Col(card([html.Div(id="t_evidence"),
+                          # collapsed by default; only the summary and the body are updated, so an expanded panel stays open
+                          html.Details([html.Summary(id="evidence_summary", className="ev-summary"),
+                                        html.Div(id="evidence", style={"maxHeight": "300px", "overflowY": "auto", "marginTop": "8px"})],
+                                       id="evidence_details", open=False)]), lg=4),
             dbc.Col(card([html.Div(id="t_forecast"), dcc.Graph(id="forecast", config={"displayModeBar": False}),
                           html.Div(id="forecast_note", className="muted"),
                           html.Div(t("forecast_caveat"), id="forecast_caveat", className="muted", style={"fontStyle": "italic", "marginTop": "4px"})]), lg=4)]),
@@ -158,7 +162,7 @@ def titles(lang):
 
 @app.callback(
     Output("statusbar", "children"), Output("map", "figure"), Output("causes", "figure"), Output("margin", "children"),
-    Output("report", "children"), Output("timeline", "children"), Output("evidence", "children"),
+    Output("report", "children"), Output("timeline", "children"), Output("evidence", "children"), Output("evidence_summary", "children"),
     Output("forecast", "figure"), Output("forecast_note", "children"), Output("approvals", "children"),
     Output("check", "children"), Output("check_card", "className"), Output("report_card", "className"),
     Output("scorecard", "children"), Output("approvals_card", "className"), Output("page_title", "data"),
@@ -169,7 +173,7 @@ def refresh(_, lang):
     if status is None:
         return (html.Span(t("backend_offline", lang), style={"color": "#ff4d6d"}),
                 views.service_map({}, TOPOLOGY_FALLBACK, lang), views.causes_fig(None, lang), "",
-                views.report(None, lang), views.timeline(None, lang), views.evidence(None, lang),
+                views.report(None, lang), views.timeline(None, lang), views.evidence(None, lang), views.evidence_summary(None, lang),
                 views.forecast_fig(None, lang)[0], "", views.approvals([], lang), views.recovery_check(None, lang)[0],
                 "panel", "panel", views.scorecard(None, lang), "panel", "EternalAI")
     svc = poller.get("services") or {"services": {}, "topology": TOPOLOGY_FALLBACK}
@@ -192,7 +196,7 @@ def refresh(_, lang):
     return (bar, views.service_map(svc["services"], svc["topology"] or TOPOLOGY_FALLBACK, lang), views.causes_fig(inc, lang),
             views.margin_text(inc, lang),
             views.report(inc, lang, bool((status.get("calibration") or {}).get("show_probability"))),
-            views.timeline(inc, lang), views.evidence(inc, lang),
+            views.timeline(inc, lang), views.evidence(inc, lang), views.evidence_summary(inc, lang),
             fig_f, note, views.approvals(appr, lang, incs, now), p,
             f"panel glow-{pcls}" if pcls else "panel", rcls, views.scorecard(poller.get("scorecard"), lang),
             "panel glow-pending" if appr else "panel", views.page_title(appr, incs, now, lang))
