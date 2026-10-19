@@ -38,9 +38,17 @@ $services = docker compose -p $Project config --services | Where-Object { $_ -ne
 # LLM: the pinned default model (gemini-3.8-flash) answered 0 of 5 live incidents within the 20 s request limit (docs/results/llm_live.md), so the demo uses the
 # existing GEMINI_MODEL override via the tooling file docker-compose.llm.yml (the main compose file does not forward it). -NoLlm blanks both keys for the
 # template-fallback rehearsal. Neither changes any system file.
-if ($NoLlm) { $env:GEMINI_API_KEY = ""; $env:GROQ_API_KEY = "" }
+# An EMPTY shell variable does not override a key in .env (found in rehearsal R2: the preflight showed the key present), so -NoLlm hands compose a copy of .env
+# without the two key lines (--env-file). The copy lives in the temp directory only and is deleted at the end.
+$envArgs = @()
+if ($NoLlm) {
+    $noLlmEnv = Join-Path $env:TEMP "eai-nollm.env"
+    Get-Content .env | Where-Object { $_ -notmatch '^\s*(GEMINI_API_KEY|GROQ_API_KEY)\s*=' } | Set-Content $noLlmEnv
+    $envArgs = @("--env-file", $noLlmEnv)
+}
 if (-not $env:GEMINI_MODEL) { $env:GEMINI_MODEL = "gemini-3.5-flash-lite" }
-docker compose -p $Project -f docker-compose.yml -f docker-compose.llm.yml up -d $services
+docker compose @envArgs -p $Project -f docker-compose.yml -f docker-compose.llm.yml up -d $services
+if ($NoLlm) { Remove-Item $noLlmEnv -Force -ErrorAction SilentlyContinue }
 Write-Host "waiting 60 s for services"; Start-Sleep 60
 
 # 3b. inventory stock (Amendment 8): the inventory service only subtracts stock and its volume survives the reset above, so a long evaluation or earlier demo
