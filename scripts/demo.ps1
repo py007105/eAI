@@ -5,7 +5,7 @@
 # Condition: T3 (OTEL_SDK_DISABLED=true, no Jaeger), identical to the v2 collection and evaluation; the dashboard is the documented difference.
 # Steps: refuse if a benchmark is running -> export results (and checksum) -> reset the scorecard -> start the stack -> preflight -> open the dashboard.
 # The reset deletes the evaluator's volume (eai_truth). It runs only with -ConfirmReset AND only after the export has produced SHA256SUMS.
-param([switch]$ConfirmReset, [string]$Project = "eai", [string]$ExportDir = "results/benchmark-v2")
+param([switch]$ConfirmReset, [switch]$NoLlm, [string]$Project = "eai", [string]$ExportDir = "results/benchmark-v2")
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
@@ -35,7 +35,12 @@ docker volume rm "${Project}_truth"
 # from the evaluated condition (it was not running during evaluation); the rehearsal in docs/DEMO.md checks that it does not change the brain's behaviour.
 $env:OTEL_SDK_DISABLED = "true"
 $services = docker compose -p $Project config --services | Where-Object { $_ -ne "jaeger" }
-docker compose -p $Project up -d $services
+# LLM: the pinned default model (gemini-3.8-flash) answered 0 of 5 live incidents within the 20 s request limit (docs/results/llm_live.md), so the demo uses the
+# existing GEMINI_MODEL override via the tooling file docker-compose.llm.yml (the main compose file does not forward it). -NoLlm blanks both keys for the
+# template-fallback rehearsal. Neither changes any system file.
+if ($NoLlm) { $env:GEMINI_API_KEY = ""; $env:GROQ_API_KEY = "" }
+if (-not $env:GEMINI_MODEL) { $env:GEMINI_MODEL = "gemini-3.5-flash-lite" }
+docker compose -p $Project -f docker-compose.yml -f docker-compose.llm.yml up -d $services
 Write-Host "waiting 60 s for services"; Start-Sleep 60
 
 # 3b. inventory stock (Amendment 8): the inventory service only subtracts stock and its volume survives the reset above, so a long evaluation or earlier demo
@@ -44,7 +49,7 @@ python scripts/stock_gate.py --restock --force
 if ($LASTEXITCODE -ne 0) { throw "inventory restock failed; do not demo" }
 
 # 4. preflight (non-zero exit stops the launcher; includes the inventory stock check)
-python scripts/preflight.py --require-llm-key
+if ($NoLlm) { python scripts/preflight.py } else { python scripts/preflight.py --require-llm-key }
 if ($LASTEXITCODE -ne 0) { throw "preflight failed; do not demo" }
 
 # 5. open

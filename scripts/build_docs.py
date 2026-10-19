@@ -73,6 +73,20 @@ def values():
               "v1_cpu": f"{sum(1 for r in u1 if r['score'].get('abstained_correctly'))}/{len(u1)}",
               "v1_na_failed": f"{mean(r['score']['failed_request_pct'] for r in v1 if r['arm'] == 'no_action' and r['scenario'] in SUPPORTED):.2f}"})
     V["v2_det_s_ap_short"] = f"{mean(r['score']['time_to_detect_s'] for r in sel(ev, 'eternalai_autopilot', SUPPORTED) if r['score'].get('detected')):.1f}"
+    for tag, fn in (("a", "set_a_default_model"), ("b", "set_b_gemini-3.5-flash-lite")):
+        lp = ROOT / f"results/llm-live/{fn}.jsonl"
+        if not lp.exists():
+            continue
+        ms = [i.get("report_meta") or {} for r in rows(lp) for i in r["incidents"]]
+        ok = [m for m in ms if m.get("provider") not in (None, "template")]
+        rs = [x for m in ms for x in (m.get("fallback_reasons") or [])]
+        V[f"llm_{tag}_valid"] = f"{len(ok)}/{len(ms)}"
+        V[f"llm_{tag}_timeouts"] = sum("ReadTimeout" in x for x in rs)
+        V[f"llm_{tag}_other_fail"] = sum("ReadTimeout" not in x for x in rs)
+        V[f"llm_{tag}_lat_ok"] = (f"{min(m['latency_s'] for m in ok):.1f}-{max(m['latency_s'] for m in ok):.1f}" if ok else "-")
+        V[f"llm_{tag}_rec"] = f"{sum(1 for r in rows(lp) if r['score'].get('recovered'))}/{len(rows(lp))}"
+        V[f"llm_{tag}_ttvr"] = f"{min(r['score']['time_to_verified_recovery_s'] for r in rows(lp)):.1f}-{max(r['score']['time_to_verified_recovery_s'] for r in rows(lp)):.1f}"
+        V[f"llm_{tag}_same_rb"] = f"{sum(1 for r in rows(lp) for i in r['incidents'] if (i.get('report_meta') or {}).get('llm_disagreed') is False)}/{len(ms)}"
     crit = (ROOT / "docs/results/v2_criteria_final.md").read_text(encoding="utf-8").splitlines()
     V["criteria_table"] = "\n".join(l for l in crit if l.startswith("|"))
     V["wilson_lo_18"] = f"{wilson(18, 18)[0] * 100:.0f}"
