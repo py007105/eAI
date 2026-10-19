@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from dash import html
 from dash_iconify import DashIconify
 
-from labels import t
+from labels import LABELS, t
 from theme import PALETTE, TEMPLATE
 
 POS = {"web": (0.0, 0.5), "orders": (1.0, 0.5), "inventory": (2.0, 0.85), "payments": (2.0, 0.15)}
@@ -306,3 +306,33 @@ def reveal_card(rev: dict | None, lang="en"):
         html.Div([html.Span(f"{t('reveal_target', lang)}: ", className="muted"), html.B(tr["target"])]),
         html.Div(line, style={"margin": "6px 0"}),
         html.Div(pill(t("matched" if ok else "check_details", lang), "ok" if ok else "warn"))], className="ev")
+
+
+DEMO_PHASE_CLS = {"running": "warn", "starting": "warn", "restoring": "warn", "finished": "ok", "failed": "bad"}
+
+
+def demo_state(cur: dict | None, poll_error: str | None, lang="en"):
+    """The run-in-progress indicator: what the evaluator says about the run started from Demo mode, and whether a new run can start."""
+    if not cur:
+        return html.Div([pill(t("demo_idle_pill", lang), "ok"), html.Span(t("demo_idle", lang), className="muted")], id="demo_indicator")
+    ph, el = cur["phase"], f"{cur.get('elapsed_s') or 0:.0f}"
+    if ph == "finished":
+        text = t("demo_finished_revealed" if cur.get("reveal") else "demo_finished", lang)
+    else:
+        text = t(f"demo_{ph}", lang).format(s=el) if f"demo_{ph}" in LABELS["en"] else ph
+    kids = [pill(t(f"demo_pill_{ph}", lang), DEMO_PHASE_CLS.get(ph, "info")), html.Span(text)]
+    if poll_error:
+        kids.append(html.Span(f"  ({t('demo_poll_error', lang)}: {poll_error})", className="muted"))
+    return html.Div(kids, id="demo_indicator", className=f"demo-ind {ph}")
+
+
+def demo_runs(runs: list, summarise, lang="en"):
+    """One line per run started from Demo mode, newest first; a revealed run gets its plain-language summary."""
+    if not runs:
+        return None
+    out = []
+    for r in reversed(runs):
+        tag = f"[{t('demo_tag_unseen', lang)}] " if r["segment"] == "unseen" else ""
+        line = summarise(r["reveal"]) if r.get("reveal") else (t("demo_line_hidden", lang) if r["phase"] == "finished" else t("demo_line_running", lang))
+        out.append(html.Div([html.B(r["run_id"]), html.Span(f" {tag}{line}")], className="ev demo-run"))
+    return out
