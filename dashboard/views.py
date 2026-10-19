@@ -1,6 +1,9 @@
 """Pure rendering functions: backend JSON in, Plotly figures / Dash components out. No network here."""
 from __future__ import annotations
 
+import os
+import time
+
 import plotly.graph_objects as go
 from dash import html
 from dash_iconify import DashIconify
@@ -210,19 +213,51 @@ def status_view(state: str, text: str):
     return html.Div(text, id="status_line", className=f"status-line {STATUS_CLS[state]}")
 
 
-def approvals(items: list, lang="en"):
+# The brain expires an unapproved proposal after ETERNALAI_APPROVAL_TTL_S (eternalai/config.py, default 120 s). /approvals does not
+# return the deadline, so the dashboard computes it from the proposal's time in /incidents and the same setting.
+APPROVAL_TTL_S = float(os.getenv("ETERNALAI_APPROVAL_TTL_S", "120"))
+URGENT_S = 30
+
+
+def approval_remaining(item: dict, incidents: list, now: float):
+    """Seconds left before the brain expires this proposal, or None if its proposal time is not in /incidents."""
+    inc = next((i for i in incidents if i.get("id") == item["incident_id"]), None)
+    act = next((a for a in reversed((inc or {}).get("actions") or []) if a.get("verdict") == "needs_approval" and not a.get("executed")), None)
+    return None if not act else max(0.0, APPROVAL_TTL_S - (now - act["t"]))
+
+
+def page_title(items: list, incidents: list, now: float, lang="en") -> str:
+    if not items:
+        return "EternalAI"
+    rem = approval_remaining(items[0], incidents, now)
+    return (f"({rem:.0f} s) " if rem is not None else "") + f"{t('title_waiting', lang)} · EternalAI"
+
+
+def countdown(rem, lang="en"):
+    if rem is None:
+        return muted(t("expires_unknown", lang))
+    return html.Div([html.Div(t("expires_in", lang).format(s=f"{rem:.0f}"), className="countdown-text"),
+                     html.Div(html.Div(className="countdown-fill", style={"width": f"{100 * rem / APPROVAL_TTL_S:.0f}%"}),
+                              className="countdown-bar")], className="countdown")
+
+
+def approvals(items: list, lang="en", incidents=(), now=None):
     if not items:
         return muted(t("no_approvals", lang))
+    now = time.time() if now is None else now
     out = []
     for a in items:
+        rem = approval_remaining(a, list(incidents), now)
         out.append(html.Div([
+            countdown(rem, lang),
             html.Div([pill(f"{a['risk']} {t('risk', lang)}", "warn"), html.B(f"{a['runbook_id']} → {a['service']}")]),
             muted(a["reason"]),
             html.Div((a.get("report") or {}).get("summary", ""), style={"margin": "6px 0"}),
             html.Div([html.Button(t("approve", lang), id={"type": "approve", "id": a["incident_id"]},
                                   className="btn btn-gold btn-sm", n_clicks=0, style={"marginRight": "8px"}),
                       html.Button(t("reject", lang), id={"type": "reject", "id": a["incident_id"]},
-                                  className="btn btn-ghost btn-sm", n_clicks=0)])], className="ev"))
+                                  className="btn btn-ghost btn-sm", n_clicks=0)])],
+            className="ev pending-card" + (" urgent" if rem is not None and rem <= URGENT_S else "")))
     return out
 
 

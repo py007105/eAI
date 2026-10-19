@@ -52,3 +52,38 @@ def test_status_line_states_from_existing_fields_only():
 
 def test_status_line_has_hindi_text():
     assert views.status_line([], [], 0, "hi")[1] != views.status_line([], [], 0, "en")[1]
+
+
+def test_dashboard_ttl_matches_the_brain_default():
+    src = (Path(__file__).resolve().parents[1] / "eternalai" / "config.py").read_text(encoding="utf-8")   # read, not imported (no .env load)
+    m = re.search(r'APPROVAL_TTL_S = float\(os.getenv\("ETERNALAI_APPROVAL_TTL_S", "(\d+)"\)\)', src)
+    assert m and float(m.group(1)) == views.APPROVAL_TTL_S == 120
+
+
+def pending(t_prop):
+    return inc("awaiting_approval", actions=[{"t": t_prop, "verdict": "needs_approval", "executed": False}])
+
+
+def test_countdown_shows_seconds_left_and_turns_urgent():
+    card = views.approvals([APPROVAL], "en", [pending(1000.0)], now=1033.0)[0]
+    assert "Expires in 87 s" in flat(card) and "pending-card" in card.className and "urgent" not in card.className
+    card = views.approvals([APPROVAL], "en", [pending(1000.0)], now=1100.0)[0]
+    assert "Expires in 20 s" in flat(card) and "urgent" in card.className
+    assert views.approval_remaining(APPROVAL, [pending(1000.0)], 1500.0) == 0.0
+
+
+def test_countdown_says_unknown_when_proposal_time_is_missing():
+    card = views.approvals([APPROVAL], "en", [], now=1.0)[0]
+    assert t("expires_unknown") in flat(card) and "urgent" not in card.className
+
+
+def test_page_title_changes_only_while_an_approval_is_pending():
+    assert views.page_title([], [], 0) == "EternalAI"
+    assert views.page_title([APPROVAL], [pending(1000.0)], 1030.0) == "(90 s) Approval waiting · EternalAI"
+
+
+def test_layout_has_the_title_sink_and_approvals_card():
+    import app as dash_app
+    s = str(dash_app.layout())
+    assert "approvals_card" in s and "title_sink" in s and "page_title" in s
+    assert dash_app.app.config.update_title is None        # Dash's default "Updating..." would overwrite the tab title every refresh

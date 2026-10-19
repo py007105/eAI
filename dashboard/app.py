@@ -24,7 +24,8 @@ from theme import TEMPLATE  # noqa: E402, F401  (registers the Plotly template)
 
 BACKEND = os.getenv("BACKEND_URL", "http://localhost:8000")
 TOPOLOGY_FALLBACK = {"web": ["orders", "inventory"], "orders": ["inventory", "payments"], "inventory": [], "payments": []}
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG], title="EternalAI", suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG], title="EternalAI", update_title=None,
+                suppress_callback_exceptions=True)
 
 
 def fetch(path, timeout=(1.0, 3.0)):
@@ -122,7 +123,7 @@ def layout():
                           html.Div(id="forecast_note", className="muted"),
                           html.Div(t("forecast_caveat"), id="forecast_caveat", className="muted", style={"fontStyle": "italic", "marginTop": "4px"})]), lg=4)]),
         dbc.Row([
-            dbc.Col(card([html.Div(id="t_approvals"), html.Div(id="approvals"), html.Div(id="approval_msg", className="muted")]), lg=5),
+            dbc.Col(card([html.Div(id="t_approvals"), html.Div(id="approvals"), html.Div(id="approval_msg", className="muted")], id="approvals_card"), lg=5),
             dbc.Col(card([html.Div(id="t_check"), html.Div(id="check")], id="check_card"), lg=7)]),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_challenge"),
@@ -132,7 +133,7 @@ def layout():
                                    style={"margin": "10px 0"}),
                           html.Div(id="reveal_out")], cls="glow-cyan"), lg=5),
             dbc.Col(card([html.Div(id="t_score"), html.Div(id="scorecard", style={"overflowX": "auto"})]), lg=7)]),
-        dcc.Store(id="run_id"), dcc.Store(id="revealed"),
+        dcc.Store(id="run_id"), dcc.Store(id="revealed"), dcc.Store(id="page_title"), html.Div(id="title_sink", hidden=True),
         dcc.Interval(id="tick", interval=1500, n_intervals=0)])
 
 
@@ -160,7 +161,7 @@ def titles(lang):
     Output("report", "children"), Output("timeline", "children"), Output("evidence", "children"),
     Output("forecast", "figure"), Output("forecast_note", "children"), Output("approvals", "children"),
     Output("check", "children"), Output("check_card", "className"), Output("report_card", "className"),
-    Output("scorecard", "children"),
+    Output("scorecard", "children"), Output("approvals_card", "className"), Output("page_title", "data"),
     Input("tick", "n_intervals"), Input("lang", "value"))
 def refresh(_, lang):
     poller.start_once()
@@ -170,7 +171,7 @@ def refresh(_, lang):
                 views.service_map({}, TOPOLOGY_FALLBACK, lang), views.causes_fig(None, lang), "",
                 views.report(None, lang), views.timeline(None, lang), views.evidence(None, lang),
                 views.forecast_fig(None, lang)[0], "", views.approvals([], lang), views.recovery_check(None, lang)[0],
-                "panel", "panel", views.scorecard(None, lang))
+                "panel", "panel", views.scorecard(None, lang), "panel", "EternalAI")
     svc = poller.get("services") or {"services": {}, "topology": TOPOLOGY_FALLBACK}
     incs = poller.get("incidents") or []
     inc = incs[-1] if incs else None
@@ -179,7 +180,8 @@ def refresh(_, lang):
     note = (f"{t('eta', lang)}: {f[-1]['eta_earliest_s']:.0f}-{f[-1]['eta_latest_s']:.0f}{t('seconds', lang)}" if f else "")
     p, pcls = views.recovery_check(inc, lang)
     fallback = status.get("fallbacks_in_use") or []
-    state, text = views.status_line(incs, poller.get("approvals") or [], time.time(), lang)
+    now, appr = time.time(), poller.get("approvals") or []
+    state, text = views.status_line(incs, appr, now, lang)
     bar = [views.status_view(state, text), views.pill(status["mode"], "info"),
            views.pill(t("models_ok", lang) if not fallback else f"{t('models_fallback', lang)}: {', '.join(fallback)}",
                       "ok" if not fallback else "warn")]
@@ -191,8 +193,14 @@ def refresh(_, lang):
             views.margin_text(inc, lang),
             views.report(inc, lang, bool((status.get("calibration") or {}).get("show_probability"))),
             views.timeline(inc, lang), views.evidence(inc, lang),
-            fig_f, note, views.approvals(poller.get("approvals") or [], lang), p,
-            f"panel glow-{pcls}" if pcls else "panel", rcls, views.scorecard(poller.get("scorecard"), lang))
+            fig_f, note, views.approvals(appr, lang, incs, now), p,
+            f"panel glow-{pcls}" if pcls else "panel", rcls, views.scorecard(poller.get("scorecard"), lang),
+            "panel glow-pending" if appr else "panel", views.page_title(appr, incs, now, lang))
+
+
+# the browser tab title shows a pending approval and its countdown, so it is visible from another tab or window
+app.clientside_callback("function(title) { if (title) { document.title = title; } return ''; }",
+                       Output("title_sink", "children"), Input("page_title", "data"))
 
 
 @app.callback(Output("approval_msg", "children"),
