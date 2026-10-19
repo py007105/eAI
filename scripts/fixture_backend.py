@@ -105,7 +105,44 @@ def scorecard():
                           "time_to_verified_recovery_s": {"mean": 41.0, "sd": 6.2, "n": 5},
                           "failed_request_pct": {"mean": 3.1, "sd": 1.2, "n": 5}, "top1": 5, "top3": 5, "recovered": 5,
                           "false_alerts": 0, "harmful_interventions": 0, **k}
-    return {"runs": 10, "by_scenario": {"memory_leak (fixture)": row(1), "bad_deploy (fixture)": row(2, recovered=4)}}
+    return {"runs": 10 + SCORED["n"], "by_scenario": {"memory_leak (fixture)": row(1), "bad_deploy (fixture)": row(2, recovered=4)}}
+
+
+# --- evaluator endpoints for Demo mode screenshots (same app; point EVALUATOR_URL here). A run is "running" for RUN_S seconds,
+# scored (scorecard +1, still "running" = restoring) for 4 more, then "finished". Hand-made outcomes, not telemetry.
+RUN_S = float(os.getenv("FIXTURE_RUN_S", "8"))
+EV_RUNS = {}
+SCORED = {"n": 0}
+OUTCOMES = {"cpu_burn": ("inventory", {"detected": True, "abstained_correctly": True, "actions_executed": 0, "incidents_opened": 1, "recovered": False,
+                                        "failed_request_pct": 0.0, "final_status": "escalated"})}
+DEFAULT_OUTCOME = ("orders", {"detected": True, "recovered": True, "time_to_verified_recovery_s": 41.6, "failed_request_pct": 10.81,
+                              "incidents_opened": 1, "actions_executed": 1, "final_status": "recovered"})
+
+
+@app.post("/runs")
+def ev_start(req: dict):
+    rid = f"fx{len(EV_RUNS) + 1:04d}"
+    EV_RUNS[rid] = {"t": time.time(), "scenario": req.get("scenario") or "crash", "scored": False}
+    return {"run_id": rid, "blind": req.get("scenario") is None}
+
+
+@app.get("/runs/{rid}/status")
+def ev_status(rid: str):
+    r = EV_RUNS[rid]
+    el = time.time() - r["t"]
+    if el >= RUN_S and not r["scored"]:
+        r["scored"] = True
+        SCORED["n"] += 1
+    return {"run_id": rid, "state": "finished" if el >= RUN_S + 4 else "running", "elapsed_s": round(el, 1)}
+
+
+@app.get("/runs/{rid}/reveal")
+def ev_reveal(rid: str):
+    r = EV_RUNS[rid]
+    tgt, sc = OUTCOMES.get(r["scenario"], DEFAULT_OUTCOME)
+    if r["scenario"] in ("traffic_surge", "good_deploy"):
+        tgt, sc = "web", {"detected": False, "incidents_opened": 0, "actions_executed": 0, "failed_request_pct": 0.0}
+    return {"truth": {"run_id": rid, "scenario": r["scenario"], "target": tgt}, "score": {"run_id": rid, **sc}}
 
 
 @app.post("/challenge/start")
