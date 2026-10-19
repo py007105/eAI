@@ -78,10 +78,14 @@ poller = Poller()
 
 
 def post(path, token=None, json=None, timeout=20):
+    token = token.strip() if token else token       # a pasted token often carries a trailing newline or space
     try:
         r = requests.post(f"{BACKEND}{path}", json=json or {}, timeout=timeout,
                           headers={"X-Approval-Token": token} if token else {})
         return r.status_code, (r.json() if r.content else {})
+    except requests.exceptions.InvalidHeader:
+        # requests' own message repeats the header value, i.e. the token; never show or log that
+        return 0, {"detail": t("token_invalid", "en")}
     except requests.RequestException as e:
         return 0, {"detail": str(e)}
 

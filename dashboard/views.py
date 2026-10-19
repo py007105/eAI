@@ -121,6 +121,16 @@ def evidence(inc: dict | None, lang="en"):
     return [html.Div([html.B(e["id"]), html.Span(e["summary"])], className="ev") for e in inc["evidence"]]
 
 
+def prob_text(inc: dict, conf, show_prob: bool, lang="en") -> str:
+    """The percentage is the classifier's calibrated probability for ITS top class. When the system abstained, the label shown is 'insufficient evidence', which that
+    probability does not describe (a novel window can still have a near-certain top class), so no percentage is shown for an abstained incident."""
+    if conf is None:
+        return ""
+    if inc.get("abstained"):
+        return f"  ({t('abstained_no_prob', lang)})"
+    return f"  ({conf:.0%} {t('calibrated', lang)})" if show_prob else f"  ({t('prob_hidden', lang)})"
+
+
 def report(inc: dict | None, lang="en", show_prob: bool = False):
     """`show_prob` is True only when the backend says the classifier's calibration check passed."""
     if not inc or not inc.get("report"):
@@ -134,8 +144,7 @@ def report(inc: dict | None, lang="en", show_prob: bool = False):
     meta = inc.get("report_meta") or {}
     kids = [html.Div(pills), html.P(r["summary"], style={"marginTop": "10px"}),
             html.Div([html.Span(f"{t('cause', lang)}: ", className="muted"), html.B(r["likely_cause"].replace("_", " ")),
-                      html.Span((f"  ({conf:.0%} {t('calibrated', lang)})" if show_prob
-                                 else f"  ({t('prob_hidden', lang)})") if conf is not None else "", className="muted")]),
+                      html.Span(prob_text(inc, conf, show_prob, lang), className="muted")]),
             html.Div([html.Span(f"{t('runbook', lang)}: ", className="muted"), html.B(r.get("runbook_id") or "-")]),
             html.Div(f"{t('provider', lang)}: {meta.get('provider', '?')}"
                      + (f" ({t('llm_disagreed', lang)})" if meta.get("llm_disagreed") else ""),

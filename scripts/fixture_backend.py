@@ -1,6 +1,6 @@
 """Fixture backend for dashboard design review. NOT real telemetry: hand-made sample data.
 
-    FIXTURE=recovered|awaiting|down python scripts/fixture_backend.py   # serves on :8001
+    FIXTURE=recovered|awaiting|down|abstained python scripts/fixture_backend.py   # serves on :8001
 
 Serves the same endpoints the dashboard uses so the populated UI can be screenshotted without Docker.
 """
@@ -25,6 +25,7 @@ SERVICES = {
     "recovered": {"web": svc(), "orders": svc(), "inventory": svc(), "payments": svc()},
     "awaiting": {"web": svc(True), "orders": svc(True), "inventory": svc(True), "payments": svc()},
     "down": {"web": svc(True), "orders": svc(True), "inventory": svc(True, up=False, running=False), "payments": svc()},
+    "abstained": {"web": svc(True), "orders": svc(True), "inventory": svc(True), "payments": svc()},
 }[STATE]
 
 TIMELINE = [{"t": now - 60 + dt, "msg": m} for dt, m in [
@@ -59,7 +60,14 @@ INC = {"recovered": {**BASE, "status": "recovered", "closed_t": now - 5,
        "awaiting": {**BASE, "status": "awaiting_approval"},
        "down": {**BASE, "status": "escalated", "kind": "reactive", "likely_cause": "down", "confidence": None, "forecasts": [],
                 "report": {**BASE["report"], "summary": "inventory is down and no safe automatic action succeeded; evidence preserved for a human.",
-                           "likely_cause": "down", "runbook_id": None, "missing_information": ["restart did not restore checkout"]}}}[STATE]
+                           "likely_cause": "down", "runbook_id": None, "missing_information": ["restart did not restore checkout"]}},
+       "abstained": {**BASE, "status": "escalated", "kind": "reactive", "likely_cause": "insufficient_evidence", "abstained": True, "confidence": 0.9999,
+                     "forecasts": [], "actions": [], "ranking": [{"service": "inventory", "score": 0.97}, {"service": "orders", "score": 0.02},
+                                                                  {"service": "web", "score": 0.01}, {"service": "payments", "score": 0.0}],
+                     "report": {**BASE["report"], "summary": "Anomaly on inventory does not match a known fault pattern with enough confidence, so no automatic action "
+                                "is proposed. Evidence is preserved for a human.", "likely_cause": "insufficient_evidence", "runbook_id": None,
+                                "missing_information": ["fault pattern not seen in training", "human review needed"]},
+                     "report_meta": {"provider": "gemini", "llm_disagreed": True}}}[STATE]
 
 app = FastAPI()
 
@@ -68,7 +76,8 @@ app = FastAPI()
 def status():
     return {"mode": "ask-first", "models": {"detectors": True, "classifier": True, "ranker": True, "baselines": True},
             "model_meta": {}, "fallbacks_in_use": [], "breakers_open": ["inventory"] if STATE == "down" else [],
-            "last_error": None, "open_incidents": 0 if STATE == "recovered" else 1}
+            "last_error": None, "open_incidents": 0 if STATE == "recovered" else 1,
+            **({"calibration": {"show_probability": True}} if STATE == "abstained" else {})}
 
 
 @app.get("/services")

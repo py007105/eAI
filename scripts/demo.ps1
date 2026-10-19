@@ -47,6 +47,8 @@ if ($NoLlm) {
     $envArgs = @("--env-file", $noLlmEnv)
 }
 if (-not $env:GEMINI_MODEL) { $env:GEMINI_MODEL = "gemini-3.5-flash-lite" }
+# the dashboard image is rebuilt from the checkout (small, cached) so that dashboard fixes made after the evaluation are the ones that run; no evaluated service is rebuilt
+docker compose -p $Project build dashboard
 docker compose @envArgs -p $Project -f docker-compose.yml -f docker-compose.llm.yml up -d $services
 if ($NoLlm) { Remove-Item $noLlmEnv -Force -ErrorAction SilentlyContinue }
 Write-Host "waiting 60 s for services"; Start-Sleep 60

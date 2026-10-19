@@ -42,6 +42,8 @@ v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model
 5. Do not run the launcher twice in a row during the presentation: the stack restart takes about 90 s.
 6. If free RAM drops below 1 GB mid-demo or Docker stops, go to the fallback plan below (show the recording and the results tables).
 
+> **Never click the dashboard's "Start blind challenge" button. Start every challenge with `python scripts\demo_challenge.py start` (or `start --unseen`).** The button draws from all nine scenarios including the unseen fault, and in ask-first mode a proposal it creates waits 120 s for approval and then expires (rehearsal R3: a disk_fill run started by the button was never approved and ended unrecovered). The script draws only from the six supported faults and the two healthy scenarios, and the dashboard still shows everything.
+
 ## 1. Introduction (1 min)
 
 - One sentence: observe, diagnose, act under policy, **verify the user journey**, escalate honestly.
