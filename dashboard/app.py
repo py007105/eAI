@@ -185,7 +185,7 @@ def refresh(_, lang):
     p, pcls = views.recovery_check(inc, lang)
     fallback = status.get("fallbacks_in_use") or []
     now, appr = time.time(), poller.get("approvals") or []
-    state, text = views.status_line(incs, appr, now, lang)
+    state, text = views.status_line(incs, appr, now, lang, svc["services"])
     bar = [views.status_view(state, text), views.pill(status["mode"], "info"),
            views.pill(t("models_ok", lang) if not fallback else f"{t('models_fallback', lang)}: {', '.join(fallback)}",
                       "ok" if not fallback else "warn")]

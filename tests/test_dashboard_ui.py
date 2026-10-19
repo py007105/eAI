@@ -48,6 +48,17 @@ def test_status_line_states_from_existing_fields_only():
     assert views.status_line([inc("escalated", closed_t=now - 10)], [], now)[0] == "escalated"
     # an old closed incident (idle false alert hours ago) does not keep the line red
     assert views.status_line([inc("escalated", closed_t=now - views.RECENT_S - 1)], [], now)[0] == "healthy"
+    # an escalated incident without a close time still counts from when it opened
+    assert views.status_line([inc("escalated", t0=now - 10)], [], now)[0] == "escalated"
+
+
+def test_status_line_never_says_healthy_while_a_service_is_anomalous_or_down():
+    anom = {"inventory": {"anomalous": True, "state": {"running": True}}, "web": {"anomalous": False, "state": {"running": True}}}
+    assert views.status_line([], [], 0.0, "en", anom) == ("watching", "Unusual metrics on inventory; no open incident.")
+    down = {"orders": {"anomalous": False, "state": {"running": False}}}
+    assert views.status_line([], [], 0.0, "en", down)[0] == "watching"
+    ok = {"web": {"anomalous": False, "state": {"running": True}, "features": {"up_frac": 1.0}}}
+    assert views.status_line([], [], 0.0, "en", ok)[0] == "healthy"
 
 
 def test_status_line_has_hindi_text():
