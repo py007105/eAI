@@ -154,7 +154,7 @@ def report(inc: dict | None, lang="en", show_prob: bool = False):
     return kids
 
 
-def proof(inc: dict | None, lang="en"):
+def recovery_check(inc: dict | None, lang="en"):
     """Returns (children, glow class). An incident without a verification is never shown as recovered."""
     if not inc:
         return muted(t("no_incident", lang)), ""
@@ -176,7 +176,7 @@ def proof(inc: dict | None, lang="en"):
                      cell("error_ratio", b.get("error_ratio"), a.get("error_ratio"), pct),
                      cell("latency_ratio", b.get("p95_s"), a.get("p95_s"), ms)],
                     style={"display": "grid", "gridTemplateColumns": "repeat(3,1fr)"})
-    return [banner, grid, muted(f"{v['probes']} {t('proof_footer', lang)} {v['p_max_latency_s']}{t('seconds', lang)}")], \
+    return [banner, grid, muted(f"{v['probes']} {t('check_footer', lang)} {v['p_max_latency_s']}{t('seconds', lang)}")], \
         ("ok" if ok else "bad")
 
 

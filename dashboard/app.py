@@ -123,7 +123,7 @@ def layout():
                           html.Div(t("forecast_caveat"), id="forecast_caveat", className="muted", style={"fontStyle": "italic", "marginTop": "4px"})]), lg=4)]),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_approvals"), html.Div(id="approvals"), html.Div(id="approval_msg", className="muted")]), lg=5),
-            dbc.Col(card([html.Div(id="t_proof"), html.Div(id="proof")], id="proof_card"), lg=7)]),
+            dbc.Col(card([html.Div(id="t_check"), html.Div(id="check")], id="check_card"), lg=7)]),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_challenge"),
                           html.Div(id="challenge_text", className="muted"),
@@ -142,7 +142,7 @@ app.layout = layout
 @app.callback(
     Output("t_map", "children"), Output("t_report", "children"), Output("t_causes", "children"),
     Output("t_timeline", "children"), Output("t_evidence", "children"), Output("t_forecast", "children"),
-    Output("t_approvals", "children"), Output("t_proof", "children"), Output("t_challenge", "children"),
+    Output("t_approvals", "children"), Output("t_check", "children"), Output("t_challenge", "children"),
     Output("t_score", "children"), Output("start", "children"), Output("reveal", "children"), Output("tagline", "children"),
     Output("confnote", "children"), Input("lang", "value"))
 def titles(lang):
@@ -150,7 +150,7 @@ def titles(lang):
     return (P("mdi:graph-outline", "panel_map", lang, "ok"), P("mdi:file-document-outline", "panel_report", lang),
             P("mdi:target-variant", "panel_causes", lang), P("mdi:timeline-clock-outline", "panel_timeline", lang),
             P("mdi:magnify", "panel_evidence", lang), P("mdi:chart-line", "panel_forecast", lang),
-            P("mdi:shield-check-outline", "panel_approvals", lang), P("mdi:check-decagram-outline", "panel_proof", lang, "ok"),
+            P("mdi:shield-check-outline", "panel_approvals", lang), P("mdi:check-decagram-outline", "panel_check", lang, "ok"),
             P("mdi:sword-cross", "panel_challenge", lang), P("mdi:podium-gold", "panel_scorecard", lang),
             t("challenge_start", lang), t("challenge_reveal", lang), t("app_tagline", lang), t("confidence_note", lang))
 
@@ -159,7 +159,7 @@ def titles(lang):
     Output("statusbar", "children"), Output("map", "figure"), Output("causes", "figure"), Output("margin", "children"),
     Output("report", "children"), Output("timeline", "children"), Output("evidence", "children"),
     Output("forecast", "figure"), Output("forecast_note", "children"), Output("approvals", "children"),
-    Output("proof", "children"), Output("proof_card", "className"), Output("report_card", "className"),
+    Output("check", "children"), Output("check_card", "className"), Output("report_card", "className"),
     Output("scorecard", "children"),
     Input("tick", "n_intervals"), Input("lang", "value"))
 def refresh(_, lang):
@@ -169,7 +169,7 @@ def refresh(_, lang):
         return (html.Span(t("backend_offline", lang), style={"color": "#ff4d6d"}),
                 views.service_map({}, TOPOLOGY_FALLBACK, lang), views.causes_fig(None, lang), "",
                 views.report(None, lang), views.timeline(None, lang), views.evidence(None, lang),
-                views.forecast_fig(None, lang)[0], "", views.approvals([], lang), views.proof(None, lang)[0],
+                views.forecast_fig(None, lang)[0], "", views.approvals([], lang), views.recovery_check(None, lang)[0],
                 "panel", "panel", views.scorecard(None, lang))
     svc = poller.get("services") or {"services": {}, "topology": TOPOLOGY_FALLBACK}
     incs = poller.get("incidents") or []
@@ -177,7 +177,7 @@ def refresh(_, lang):
     fig_f, _ = views.forecast_fig(inc, lang)
     f = (inc or {}).get("forecasts") or []
     note = (f"{t('eta', lang)}: {f[-1]['eta_earliest_s']:.0f}-{f[-1]['eta_latest_s']:.0f}{t('seconds', lang)}" if f else "")
-    p, pcls = views.proof(inc, lang)
+    p, pcls = views.recovery_check(inc, lang)
     fallback = status.get("fallbacks_in_use") or []
     bar = [views.pill(status["mode"], "info"),
            views.pill(t("models_ok", lang) if not fallback else f"{t('models_fallback', lang)}: {', '.join(fallback)}",

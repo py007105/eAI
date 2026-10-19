@@ -110,14 +110,14 @@ def proposal_path(pg, action, max_draws):
                     t_ban = None
                     for _ in range(200):
                         ram_ok()
-                        b = pg.locator("#proof .banner")
+                        b = pg.locator("#check .banner")
                         if b.count():
                             t_ban = time.time()
                             rec["banner"] = b.first.inner_text()
                             break
                         pg.wait_for_timeout(1000)
                     rec["s_click_to_banner"] = round(t_ban - t_click, 1) if t_ban else None
-                    shots += [shot(pg, "approve_2_banner_full"), shot(pg, "approve_2_banner", "#t_proof")]
+                    shots += [shot(pg, "approve_2_banner_full"), shot(pg, "approve_2_banner", "#t_check")]
                 else:
                     pg.wait_for_timeout(2000)
                     last = httpx.get(f"{EAI}/incidents", timeout=5).json()[-1]

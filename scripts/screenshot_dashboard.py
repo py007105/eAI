@@ -17,7 +17,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 PANELS = {"map": "t_map", "report": "t_report", "causes": "t_causes", "timeline": "t_timeline", "evidence": "t_evidence",
-          "forecast": "t_forecast", "approvals": "t_approvals", "proof": "t_proof", "challenge": "t_challenge",
+          "forecast": "t_forecast", "approvals": "t_approvals", "check": "t_check", "challenge": "t_challenge",
           "scorecard": "t_score"}
 
 

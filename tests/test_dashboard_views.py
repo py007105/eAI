@@ -31,16 +31,16 @@ def test_node_states_and_failing_path_highlight():
 
 def test_panels_render_with_and_without_incident():
     for inc in (INC, None):
-        views.causes_fig(inc), views.timeline(inc), views.evidence(inc), views.report(inc), views.proof(inc)
+        views.causes_fig(inc), views.timeline(inc), views.evidence(inc), views.report(inc), views.recovery_check(inc)
     fig, has = views.forecast_fig(INC)
     assert has and views.forecast_fig(None)[1] is False
 
 
-def test_proof_banner_only_on_verified_recovery():
-    ok_children, cls = views.proof(INC)
+def test_check_banner_only_on_verified_recovery():
+    ok_children, cls = views.recovery_check(INC)
     assert cls == "ok"
     bad = {**INC, "verification": {**INC["verification"], "outcome": "unresolved", "success_rate": 0.0}}
-    assert views.proof(bad)[1] == "bad"
+    assert views.recovery_check(bad)[1] == "bad"
 
 
 def test_probability_shown_only_when_calibration_verified():
@@ -72,7 +72,7 @@ def test_every_label_key_used_in_code_exists():
 
 def test_incident_without_verification_is_not_shown_as_all_quiet_or_recovered():
     waiting = {**INC, "status": "awaiting_approval", "verification": None}
-    children, cls = views.proof(waiting)
+    children, cls = views.recovery_check(waiting)
     assert cls == "" and t("not_verified") in str(children) and t("no_incident") not in str(children)
 
 
