@@ -1,0 +1,1 @@
+{"run_id": "87745c4b3c", "scenario": "cpu_burn", "target": "inventory", "expected_label": "unseen_fault", "supported": false, "t_inject": 1792433659.3198428, "params": {"threads": 2}, "seed": 536430538}
