@@ -87,6 +87,11 @@ def values():
         V[f"llm_{tag}_rec"] = f"{sum(1 for r in rows(lp) if r['score'].get('recovered'))}/{len(rows(lp))}"
         V[f"llm_{tag}_ttvr"] = f"{min(r['score']['time_to_verified_recovery_s'] for r in rows(lp)):.1f}-{max(r['score']['time_to_verified_recovery_s'] for r in rows(lp)):.1f}"
         V[f"llm_{tag}_same_rb"] = f"{sum(1 for r in rows(lp) for i in r['incidents'] if (i.get('report_meta') or {}).get('llm_disagreed') is False)}/{len(ms)}"
+    fr = [r for r in ev if r["scenario"] in SUPPORTED and r["arm"] in ("eternalai_autopilot", "eternalai_ask_first")]
+    mi = [r for r in fr if (r["score"].get("incidents_opened") or 0) > 1]
+    ma = [r for r in fr if (r["score"].get("actions_executed") or 0) > 1]
+    V.update({"multi_inc": len(mi), "multi_act": len(ma), "n_fault_runs": len(fr),
+              "multi_scen": ", ".join(sorted({f"{r['scenario']} seed {r['seed']} ({r['arm'].replace('eternalai_', '')})" for r in mi + ma}))})
     crit = (ROOT / "docs/results/v2_criteria_final.md").read_text(encoding="utf-8").splitlines()
     V["criteria_table"] = "\n".join(l for l in crit if l.startswith("|"))
     V["wilson_lo_18"] = f"{wilson(18, 18)[0] * 100:.0f}"

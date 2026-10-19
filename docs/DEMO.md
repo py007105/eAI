@@ -33,6 +33,15 @@ v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model
 5. Keep a terminal on `docker compose logs -f eternalai` as a fallback view.
 6. The dashboard was not running during the evaluation; its polling is read-only. The rehearsals check that it does not change the brain's decisions (`docs/results/demo_rehearsals.md`).
 
+## 0b. Demo-day memory checklist (the machine has 16.8 GB and the demo stack ran with only 1.5 to 2.6 GB free in the rehearsals)
+
+1. **Close everything except Docker Desktop and the one browser window for the dashboard.** No IDE, no second browser profile, no chat or video apps, no other Docker projects.
+2. **Close the Claude Code CLI session during the actual demo.** It and its background tools use memory, and a background-task reaper kills idle jobs when host RAM is low.
+3. **Free-RAM check before starting:** `python scripts/memguard.py` (prints free RAM). Start only above 2 GB free; below that, close more apps first. (In the rehearsals the minimum free RAM was 1.55 GB headless, with nothing but Docker running.)
+4. Start the stack with the launcher, wait for 8 PASS lines, then run `python scripts/stock_gate.py --check` once more right before presenting.
+5. Do not run the launcher twice in a row during the presentation: the stack restart takes about 90 s.
+6. If free RAM drops below 1 GB mid-demo or Docker stops, go to the fallback plan below (show the recording and the results tables).
+
 ## 1. Introduction (1 min)
 
 - One sentence: observe, diagnose, act under policy, **verify the user journey**, escalate honestly.
