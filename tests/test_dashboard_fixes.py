@@ -87,6 +87,13 @@ def test_non_latin1_token_gives_the_friendly_message_instead_of_crashing_the_cal
     assert code == 0 and body["detail"] == t("token_invalid")
 
 
+def test_tagline_and_banner_claim_only_internal_verification():
+    assert t("app_tagline") == "Detect. Diagnose. Recover. Verify."
+    assert t("recovered_banner") == "Verified by EternalAI's own synthetic checkout"
+    for lang in ("en", "hi"):
+        assert "prov" not in t("recovered_banner", lang).lower() and "Predict" not in t("app_tagline", lang)
+
+
 def test_forecast_panel_carries_the_caveat():
     import app as dash_app
     assert t("forecast_caveat") in str(dash_app.layout())

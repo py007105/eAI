@@ -6,7 +6,7 @@ backend itself (incident summaries, evidence, timeline messages) is data, not UI
 LABELS = {
     "en": {
         "app_title": "EternalAI",
-        "app_tagline": "Predict. Diagnose. Recover. Prove.",
+        "app_tagline": "Detect. Diagnose. Recover. Verify.",
         "brahmastra": "ब्रह्मास्त्र",
         "mode": "Mode",
         "mode_watch-only": "Watch only",
@@ -61,7 +61,7 @@ LABELS = {
         "error_ratio": "App error rate",
         "latency_ratio": "Web p95 latency",
         "proof_footer": "synthetic checkouts held over the observation window; max latency",
-        "recovered_banner": "The service recovered, and EternalAI proved the application works again.",
+        "recovered_banner": "Verified by EternalAI's own synthetic checkout",
         "not_recovered_banner": "Not recovered. Evidence is preserved and a human has been alerted.",
         "challenge_start": "Start blind challenge",
         "challenge_reveal": "Reveal the truth",
@@ -104,7 +104,7 @@ LABELS = {
         "language": "Language",
     },
     "hi": {
-        "app_tagline": "भविष्यवाणी. निदान. उपचार. प्रमाण.",
+        "app_tagline": "पहचान. निदान. उपचार. सत्यापन.",
         "mode": "मोड",
         "mode_watch-only": "केवल निगरानी",
         "mode_ask-first": "पहले पूछें",
@@ -131,7 +131,7 @@ LABELS = {
         "checkout_ok": "चेकआउट सफलता",
         "error_ratio": "ऐप त्रुटि दर",
         "latency_ratio": "वेब p95 विलंबता",
-        "recovered_banner": "सेवा ठीक हो गई, और EternalAI ने सिद्ध किया कि एप्लिकेशन फिर से काम कर रहा है।",
+        "recovered_banner": "EternalAI के अपने सिंथेटिक चेकआउट द्वारा सत्यापित",
         "not_recovered_banner": "ठीक नहीं हुआ। प्रमाण सुरक्षित हैं और एक व्यक्ति को सूचित किया गया है।",
         "challenge_start": "चुनौती शुरू करें",
         "challenge_reveal": "सच्चाई दिखाएँ",

@@ -54,7 +54,19 @@ R3_PRESENTER = ("Reported by the presenter (R3, real browser): a token pasted fr
                 "not start by script.")
 
 
-def r3b(d):
+def inject_to_card(log, r, truth_dir):
+    """Lower bound: the driver did not record the absolute start time, only s_start_to_card. The start came after the previous log event (plus the
+    driver's 20 s pause after a draw without a proposal), so card time >= that + s_start_to_card; t_inject is the evaluator's truth for the run."""
+    tf = Path(truth_dir) / f"{r['run_id']}.json"
+    i = next((k for k, e in enumerate(log) if e.get("run_id") == r["run_id"] and e.get("event", "").endswith("_path")), None)
+    if not tf.exists() or not i:
+        return "-"
+    prev = log[i - 1]
+    t_start_min = prev["t"] + (20 if prev.get("event") == "draw_without_proposal" else 0)
+    return f"at least {t_start_min + r['s_start_to_card'] - json.loads(tf.read_text(encoding='utf-8'))['t_inject']:.1f}"
+
+
+def r3b(d, truth_dir):
     if not d:
         return ["## R3b: automated in the real dashboard (headless Chromium, below-normal priority, throwaway token)", "", "Not recorded yet."]
     L = ["## R3b: automated in the real dashboard (headless Chromium, below-normal priority, throwaway token)", "",
@@ -62,7 +74,8 @@ def r3b(d):
          "Token handling (mode change from the dashboard):", "",
          f"- wrong token: `{d.get('msg_wrong_token')}`", f"- token with a non-Latin-1 character: `{d.get('msg_non_latin1_token')}`",
          f"- throwaway token, Ask first: `{d.get('msg_correct_token') or '(no error)'}`; brain mode afterwards: {d.get('brain_mode_after')}", ""]
-    draws = [e for e in d.get("log", []) if e.get("event") == "draw_without_proposal"]
+    log = d.get("log", [])
+    draws = [e for e in log if e.get("event") == "draw_without_proposal"]
     for e in draws:
         L.append(f"- draw without a proposal ({e['path']} path, draw {e['draw']}): {e['reveal'].get('scenario')} on {e['reveal'].get('target')}, incidents {e['reveal'].get('incidents_opened')}")
     for key in ("approve", "reject"):
@@ -72,9 +85,11 @@ def r3b(d):
             continue
         L += ["", f"### {key.title()} path (draw {r['draw']})", "", f"- card read from the page: `{' | '.join(r['card_text'].splitlines())}`",
               f"- anomalous services when the card appeared: {', '.join(r['anomalous_at_card'])}",
-              f"- s from start to card: {r['s_start_to_card']}; s from card to click: {r['s_card_to_click']}; message after click: `{r['click_message']}`"]
+              f"- s from fault injection to card: {inject_to_card(log, r, truth_dir)}; s from card to click: {r['s_card_to_click']}; message after click: `{r['click_message']}`",
+              f"- s from the challenge start to card: {r['s_start_to_card']} (includes the evaluator's settle wait before injecting: 45 s, or 200 s after a release change)"]
         if key == "approve":
-            L.append(f"- verification banner: `{r.get('banner')}`; s from click to banner: {r.get('s_click_to_banner')}")
+            L.append(f"- verification banner: `{r.get('banner')}`; s from click to banner: {r.get('s_click_to_banner')} (after R3b the banner text was changed to "
+                     "\"Verified by EternalAI's own synthetic checkout\" and the tagline to \"Detect. Diagnose. Recover. Verify.\"; the R3b screenshots show the old wording)")
         else:
             L.append(f"- incident status after reject: {r.get('incident_status_after_reject')}; actions: {r.get('actions_after_reject')}")
         L += [f"- reveal: {r['reveal']}", f"- free RAM after: {r['free_ram_gb']} GB", f"- screenshots: {', '.join('docs/screenshots/' + s for s in r['screenshots'])}"]
@@ -144,7 +159,7 @@ def main():
         L += headless(r1, "R1", "LLM on (`gemini-3.5-flash-lite`), headless, scripted operator") + [""]
     if r2:
         L += headless(r2, "R2", "keys removed (`-NoLlm`), headless: template fallback") + [""]
-    L += r3(a.dir) + [""] + r3b(load(Path(a.dir) / "R3b.json"))
+    L += r3(a.dir) + [""] + r3b(load(Path(a.dir) / "R3b.json"), Path(a.dir) / "R3b_truth")
     Path(a.out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print("\n".join(L))
 

@@ -1,7 +1,7 @@
 # EternalAI
 
 A predictive cloud recovery assistant. It watches live telemetry from a four-service application (web, orders, payments, inventory), detects anomalies, ranks the
-root-cause service, proposes or runs an approved recovery runbook, and **proves** recovery by passing a synthetic checkout through all four services over an
+root-cause service, proposes or runs an approved recovery runbook, and **verifies** recovery (an internal check) by passing a synthetic checkout through all four services over an
 observation window. When it cannot fix something, it says so, keeps the evidence and stops.
 
 > **Status: benchmark v1 and the reduced v2 evaluation are finished.** Every number in this repository comes from a script you can rerun and is written to a file under `docs/results/`. Read `docs/EVALUATION.md` (methods and limitations) before any number.
