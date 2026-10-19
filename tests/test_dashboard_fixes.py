@@ -75,3 +75,18 @@ def test_token_is_stripped_at_the_ends(monkeypatch):
     monkeypatch.setattr(dash_app.requests, "post", lambda *a, **k: seen.update(k) or R())
     dash_app.post("/mode", "  tok\n", {"mode": "x"})
     assert seen["headers"]["X-Approval-Token"] == "tok"
+
+
+def test_non_latin1_token_gives_the_friendly_message_instead_of_crashing_the_callback(monkeypatch):
+    import app as dash_app
+
+    def enc(*a, **k):
+        "€".encode("latin-1")
+    monkeypatch.setattr(dash_app.requests, "post", enc)
+    code, body = dash_app.post("/mode", "tok€n", {"mode": "x"})
+    assert code == 0 and body["detail"] == t("token_invalid")
+
+
+def test_forecast_panel_carries_the_caveat():
+    import app as dash_app
+    assert t("forecast_caveat") in str(dash_app.layout())

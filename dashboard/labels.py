@@ -49,6 +49,7 @@ LABELS = {
         "calibrated": "calibrated",
         "prob_hidden": "probability hidden: calibration not verified",
         "abstained_no_prob": "no probability shown: the system abstained",
+        "forecast_caveat": "Forecasting is implemented and unit-tested; live lead time not yet demonstrated.",
         "token_invalid": "Token contains invalid characters (spaces, line breaks or symbols). Clear the field and retype it by hand.",
         "provider": "Report written by",
         "llm_disagreed": "LLM disagreed; engine diagnosis kept",
@@ -141,6 +142,7 @@ LABELS = {
         "down": "बंद",
         "language": "भाषा",
         "abstained_no_prob": "प्रायिकता नहीं दिखाई गई: सिस्टम ने निर्णय से परहेज़ किया",
+        "forecast_caveat": "पूर्वानुमान लागू और यूनिट-परीक्षित है; लाइव अग्रिम समय अभी प्रदर्शित नहीं हुआ।",
         "token_invalid": "टोकन में अमान्य अक्षर हैं (स्पेस, नई पंक्ति या चिह्न)। फ़ील्ड साफ़ करके हाथ से दोबारा लिखें।",
     },
 }

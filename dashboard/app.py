@@ -83,7 +83,7 @@ def post(path, token=None, json=None, timeout=20):
         r = requests.post(f"{BACKEND}{path}", json=json or {}, timeout=timeout,
                           headers={"X-Approval-Token": token} if token else {})
         return r.status_code, (r.json() if r.content else {})
-    except requests.exceptions.InvalidHeader:
+    except (requests.exceptions.InvalidHeader, UnicodeEncodeError):
         # requests' own message repeats the header value, i.e. the token; never show or log that
         return 0, {"detail": t("token_invalid", "en")}
     except requests.RequestException as e:
@@ -119,7 +119,8 @@ def layout():
             dbc.Col(card([html.Div(id="t_timeline"), html.Div(id="timeline")]), lg=4),
             dbc.Col(card([html.Div(id="t_evidence"), html.Div(id="evidence", style={"maxHeight": "300px", "overflowY": "auto"})]), lg=4),
             dbc.Col(card([html.Div(id="t_forecast"), dcc.Graph(id="forecast", config={"displayModeBar": False}),
-                          html.Div(id="forecast_note", className="muted")]), lg=4)]),
+                          html.Div(id="forecast_note", className="muted"),
+                          html.Div(t("forecast_caveat"), id="forecast_caveat", className="muted", style={"fontStyle": "italic", "marginTop": "4px"})]), lg=4)]),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_approvals"), html.Div(id="approvals"), html.Div(id="approval_msg", className="muted")]), lg=5),
             dbc.Col(card([html.Div(id="t_proof"), html.Div(id="proof")], id="proof_card"), lg=7)]),

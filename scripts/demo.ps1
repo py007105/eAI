@@ -5,7 +5,7 @@
 # Condition: T3 (OTEL_SDK_DISABLED=true, no Jaeger), identical to the v2 collection and evaluation; the dashboard is the documented difference.
 # Steps: refuse if a benchmark is running -> export results (and checksum) -> reset the scorecard -> start the stack -> preflight -> open the dashboard.
 # The reset deletes the evaluator's volume (eai_truth). It runs only with -ConfirmReset AND only after the export has produced SHA256SUMS.
-param([switch]$ConfirmReset, [switch]$NoLlm, [string]$Project = "eai", [string]$ExportDir = "results/benchmark-v2")
+param([switch]$ConfirmReset, [switch]$NoLlm, [string]$ThrowawayToken = "", [string]$Project = "eai", [string]$ExportDir = "results/benchmark-v2")
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
@@ -41,16 +41,25 @@ $services = docker compose -p $Project config --services | Where-Object { $_ -ne
 # An EMPTY shell variable does not override a key in .env (found in rehearsal R2: the preflight showed the key present), so -NoLlm hands compose a copy of .env
 # without the two key lines (--env-file). The copy lives in the temp directory only and is deleted at the end.
 $envArgs = @()
-if ($NoLlm) {
-    $noLlmEnv = Join-Path $env:TEMP "eai-nollm.env"
-    Get-Content .env | Where-Object { $_ -notmatch '^\s*(GEMINI_API_KEY|GROQ_API_KEY)\s*=' } | Set-Content $noLlmEnv
+$noLlmEnv = $null
+if ($NoLlm -or $ThrowawayToken) {
+    # -ThrowawayToken (automated browser rehearsals): the brain gets a throwaway approval token instead of the one in .env, through the same temporary copy.
+    # The real token line is dropped from the copy, never printed; a shell variable would override the file, so it is cleared for this process.
+    $noLlmEnv = Join-Path $env:TEMP "eai-demo-$PID.env"
+    $lines = Get-Content .env
+    if ($NoLlm) { $lines = $lines | Where-Object { $_ -notmatch '^\s*(GEMINI_API_KEY|GROQ_API_KEY)\s*=' } }
+    if ($ThrowawayToken) {
+        $lines = @($lines | Where-Object { $_ -notmatch '^\s*ETERNALAI_APPROVAL_TOKEN\s*=' }) + "ETERNALAI_APPROVAL_TOKEN=$ThrowawayToken"
+        Remove-Item Env:ETERNALAI_APPROVAL_TOKEN -ErrorAction SilentlyContinue
+    }
+    $lines | Set-Content $noLlmEnv
     $envArgs = @("--env-file", $noLlmEnv)
 }
 if (-not $env:GEMINI_MODEL) { $env:GEMINI_MODEL = "gemini-3.5-flash-lite" }
 # the dashboard image is rebuilt from the checkout (small, cached) so that dashboard fixes made after the evaluation are the ones that run; no evaluated service is rebuilt
 docker compose -p $Project build dashboard
 docker compose @envArgs -p $Project -f docker-compose.yml -f docker-compose.llm.yml up -d $services
-if ($NoLlm) { Remove-Item $noLlmEnv -Force -ErrorAction SilentlyContinue }
+if ($noLlmEnv) { Remove-Item $noLlmEnv -Force -ErrorAction SilentlyContinue }
 Write-Host "waiting 60 s for services"; Start-Sleep 60
 
 # 3b. inventory stock (Amendment 8): the inventory service only subtracts stock and its volume survives the reset above, so a long evaluation or earlier demo
