@@ -39,3 +39,35 @@ This points to a weakness in how the detector's healthy limits are learned: for 
 1. Run the read-only capture (H1-H3, H6) on fresh non-benchmark seeds at both surge levels with the brain only logging (watch-only), recording memory against the learned limit. Script-only measurement.
 2. Add the onset-window replay (H5) to `scripts/diag_surge.py`.
 3. Pre-register v2 (Amendment 4) with this diagnosis as its stated motivation; any retraining uses fresh runs only (rules G3b).
+
+---
+
+## Addendum: read-only capture, 6 of 12 runs (surge level 25 only; stopped by low memory, not restarted)
+
+Source: `results/surge-capture/raw/` (6 runs, seeds 3600, 3601, 3602, 3603, 3605, 3606), rendered in `docs/results/surge_capture.md`. The brain was the v2 build in watch-only mode, so it logged what it saw and never acted. These are non-benchmark seeds.
+
+**Observed (facts):**
+- An incident opened in **6 of 6** surge runs. In every one the v2 diagnosis record lists `limits_exceeded` containing **`mem_share`** (one also `mem_slope_share_per_min`, one also `cpu_per_req_ratio`). That is direct evidence that the memory limit is what trips the detector (hypothesis H1), not something inferred from another brain.
+- During the surge `web` memory rose from about 67 MB to about 77 MB (0.285-0.289 of its limit, against a learned limit of 0.2794), and `inventory` rose from 66-73 MB to about 76 MB (0.283-0.286, against 0.2603). In the training surges the same services rose by about 1 MB (`web`) and 2.4 MB (`inventory`) and stayed under their limits. So the live surge raises memory by several times what the training surges did.
+- At rest, **before** the surge, `orders` already sat at 73.6 MB (0.2742 of its limit) against a learned limit of 0.2738 (about 73.5 MB), and against a training median of about 69.9 MB. `orders` exceeded its learned limit in all 6 runs without any surge on it, and `inventory` was at 66.5-72.6 MB before the surge. Healthy memory in the live stack is higher than it was in the training runs, by a few MB per service, which is as large as the headroom the limits leave.
+- With the answered label `healthy` plus a memory-limit exceedance, the engine abstains rather than guesses (5 of 6 incidents ended `insufficient_evidence`; 1 diagnosed `memory_leak` and stayed open). In v1 the same situation was diagnosed `memory_leak` and acted on in 4 of 5 autopilot runs.
+
+**What this changes:**
+- **H1 is now supported by direct evidence** (limits exceeded in 6 of 6 incidents); H6 (the stack's healthy memory differs from training) is supported for `orders` and `inventory`; H3/H2 (intensity and normalisation) are not separable yet because the level-40 runs were not made.
+- The cause of the higher live memory (state growth in the persistent SQLite volumes after many hours of load, container age, or something else) is **not established** here; it was not measured.
+- The detector's healthy limits are tied to absolute memory levels learned over one short collection window. Any drift of a few MB, or a transient load-driven rise of several MB, moves a healthy service outside them. That is the design weakness stated earlier, and the capture shows it is not rare: it happens in every surge run and at rest for `orders`.
+
+---
+
+## Addendum 2: what the memory-versus-uptime data adds (`docs/postmortems/memory-drift-data.md`; seen data, diagnosis only)
+
+**Observed:**
+1. **The same load raises memory much more now than in training.** The six captured surges (level 25, about 81 requests per second at `web`, the same as in training) lifted `web` from about 67 MB to about 76-77 MB within 8 s and then flat (plateau). The training surges at the same rate lifted `web` by about 1 MB (median 68.8 to 69.8 MB). The rise is quick, large and flat.
+2. **A service that is not recreated keeps what the load gave it.** `inventory` (not targeted, not recreated between the runs) started the first capture run at 66.5 MB and every later run at 71.6-72.6 MB, never back down. A high-water mark.
+3. **`orders` is above training at rest** (73.6 MB in all six runs, constant, container age 23-34 min) against a training median of 70.1 MB; its learned limit is about 73.5 MB. `payments` 66.9 MB against 64.4 MB. Their data volumes are 9.7 MB and 9.4 MB (`inventory` 12 KB), so state growth could explain a few MB, but that was not tested.
+4. **Jaeger was dead for the whole benchmark.** The container `eai-jaeger-1` was created at 13:52Z on 2026-10-17 and OOM-killed (`OOMKilled=true`, exit 137) at 15:15:34Z, which is 20:45 IST. The v1 benchmark's first row finished at 21:24 IST, and its first run started a few minutes earlier, so every v1 benchmark run was made with the apps exporting traces to a collector that was no longer there (compose sets `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318`, `OTEL_SDK_DISABLED=false`, and `app/common/obs.py` installs a `BatchSpanProcessor` with an OTLP exporter). The Jaeger store had no cap (compose gave it 512 MB and no `MEMORY_MAX_TRACES`) and was killed by its limit. The v1 training runs (2026-10-16 19:09Z to 2026-10-17 11:13Z) all finished before this container existed (13:52Z), and whether an earlier Jaeger instance was running during training cannot be determined from what survives. The v1 benchmark evidence (preserved incidents) shows memory shares of 25-28% for the services in the hours after the Jaeger death, against 24-26% training medians.
+5. The capture ran in the same state (Jaeger stopped at the time): the plateau at `web` of about 76-77 MB and the 8 s rise are what an exporter queue that cannot drain would look like.
+
+**New hypothesis H7 (not tested): with the collector gone, the OpenTelemetry batch exporter in each app buffers spans in memory and the buffer fills under load**, adding several MB per busy service (a plateau at the queue limit), which is what pushes `web` and `inventory` over their tight learned memory limits during a surge. Consistent with: the sudden, flat rise; its size scaling with request rate (the busy services `web` and `inventory` rise, idle `orders` and `payments` do not); training surges (made when the collector, if present, was reachable) showing about +1 MB; and the dead collector. Not yet shown: that Jaeger was up during training, and the effect of the exporter on memory. A cheap experiment decides it (Stage 0 in Amendment 4): the same surge with Jaeger up (capped store), with Jaeger down and the exporter on (the v1 condition), and with the SDK disabled.
+
+**Consequences if H7 holds:** v1's healthy-run false alarms came partly from the environment (a dead trace collector), not only from the model's limits; the v1 numbers stand as recorded and are labelled with this condition; the detector's absolute-memory limits remain too tight to survive any such environment change, which is why v2 also moves memory detection to within-run relative features (Amendment 4, E2); and "leave Jaeger off to save RAM" is not free: it must be done as `OTEL_SDK_DISABLED=true` on the apps, identically for training data, evaluation and the paired baselines.

@@ -1,0 +1,12 @@
+﻿[20:27:50] guard watching D:\eAI\eAI-workspace\eAI\results\benchmark-v2\benchmark_v2_raw.jsonl
+[22:59:11] ask-first row eternalai_ask_first good_deploy seed 208: ok
+[23:03:31] ask-first row eternalai_ask_first traffic_surge seed 207: ok
+[23:05:31] ask-first row eternalai_ask_first good_deploy seed 218: ok
+[23:09:51] ask-first row eternalai_ask_first traffic_surge seed 217: ok
+[23:11:51] ask-first row eternalai_ask_first good_deploy seed 228: ok
+[23:16:11] ask-first row eternalai_ask_first traffic_surge seed 227: ok
+[23:17:51] ask-first row eternalai_ask_first traffic_surge seed 237: ok
+[23:19:51] ask-first row eternalai_ask_first good_deploy seed 238: ok
+[23:24:31] ask-first row eternalai_ask_first error_spike seed 202: ok
+[23:26:51] ask-first row eternalai_ask_first bad_deploy seed 205: ok
+[23:30:51] ask-first row eternalai_ask_first crash seed 200: ok

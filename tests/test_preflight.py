@@ -16,6 +16,35 @@ class FakeContainers:
         return [] if self.env is None else [SimpleNamespace(attrs={"Config": {"Env": self.env}})]
 
 
+class ServiceContainers:
+    """Service-aware fake: `services` maps a compose service name to its environment list; absent services return no container."""
+    def __init__(self, services):
+        self.services = services
+
+    def list(self, filters=None):
+        name = filters["label"].split("=", 1)[1]
+        return [SimpleNamespace(attrs={"Config": {"Env": self.services[name]}})] if name in self.services else []
+
+
+T3_APPS = {n: ["OTEL_SDK_DISABLED=true"] for n in ("web", "orders", "inventory", "payments")}
+
+
+def t3_client(**extra):
+    return SimpleNamespace(containers=ServiceContainers({**T3_APPS, **extra}))
+
+
+def test_telemetry_condition_t3_passes_fails_and_reports_dashboard_as_info():
+    ok, detail = pf.check_telemetry_condition(lambda: t3_client())
+    assert ok and "condition T3 holds" in detail and "dashboard not running" in detail
+    ok, detail = pf.check_telemetry_condition(lambda: t3_client(dashboard=["X=1"]))
+    assert ok and "documented difference" in detail                                  # dashboard on is INFO, not a failure
+    assert not pf.check_telemetry_condition(lambda: t3_client(jaeger=["X=1"]))[0]
+    bad = {**T3_APPS, "web": ["OTEL_SDK_DISABLED=false"]}
+    ok, detail = pf.check_telemetry_condition(lambda: SimpleNamespace(containers=ServiceContainers(bad)))
+    assert not ok and "web" in detail
+    assert not pf.check_telemetry_condition(lambda: SimpleNamespace(containers=ServiceContainers({})))[0]   # apps not running
+
+
 class FakeClient:
     def __init__(self, env=("A=1",), ping_ok=True):
         self.containers, self._ok = FakeContainers(None if env is None else list(env)), ping_ok
@@ -63,6 +92,18 @@ def test_scorecard_must_be_empty_and_unreachable_fails():
     assert not pf.check_scorecard_empty(boom)[0]
 
 
+def test_inventory_stock_check_refuses_below_threshold_and_when_unreadable():
+    assert pf.check_inventory_stock(lambda: {"sku-mug": 100000, "sku-bag": 90000})[0]
+    ok, d = pf.check_inventory_stock(lambda: {"sku-mug": 100000, "sku-bag": 0})
+    assert not ok and "sku-bag" in d and "stock_gate.py --restock" in d
+    assert not pf.check_inventory_stock(lambda: {})[0]
+
+    def boom():
+        raise RuntimeError
+
+    assert not pf.check_inventory_stock(boom)[0]
+
+
 def test_tag_check_detects_missing_tag_and_code_difference():
     def runner(files, rc=0):
         return lambda args: SimpleNamespace(returncode=rc if args[1] == "rev-parse" else 0, stdout="\n".join(files))
@@ -76,8 +117,11 @@ def test_tag_check_detects_missing_tag_and_code_difference():
 def test_run_all_with_everything_mocked_passes_and_skips_env_when_docker_down():
     env = ["ETERNALAI_APPROVAL_TOKEN=real", "GEMINI_API_KEY=k"]
     ok = lambda args: SimpleNamespace(returncode=0, stdout="")  # noqa: E731
-    res = pf.run_all(True, "t", lambda: FakeClient(env), lambda u: {"runs": 0}, lambda n: (object(), {}), ok)
-    assert all(r[1][0] for r in res) and len(res) == 6
+    class Full(FakeClient):
+        def __init__(self):
+            self.containers, self._ok = ServiceContainers({**T3_APPS, "eternalai": env}), True
+    res = pf.run_all(True, "t", Full, lambda u: {"runs": 0}, lambda n: (object(), {}), ok, lambda: {"sku-mug": 100000})
+    assert all(r[1][0] for r in res) and len(res) == 8
     res = pf.run_all(True, "t", lambda: FakeClient(env, ping_ok=False), lambda u: {"runs": 0}, lambda n: (object(), {}), ok)
     d = dict(res)
     assert not d["docker daemon"][0] and not d["approval token"][0]

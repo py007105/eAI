@@ -1,0 +1,9 @@
+# v2 Stage 3: the inventory stock ran out (class a, harness/environment artifact)
+
+Evidence (read-only, 2026-10-19):
+- `inventory` `/items` now reports stock 0 for all four SKUs (seeded at 100000 each, `app/inventory/main.py`; every checkout reserves stock, and the load generator, the surges and the synthetic verification checkout all consume it).
+- Every verification probe from ask-first `disk_fill` seed 204 (finished 23:39:41 IST) onward ended in `HTTP 409` (orders: "cannot reserve stock"); the last row with a successful verification is ask-first `crash` seed 200 (23:30:48). The orphan run (injected 23:31:34) is where the stock ran out.
+- 59 rows finished before that point: all 56 healthy-run rows (24 autopilot, 24 threshold_restart, 8 ask-first) and the 3 ask-first fault rows (the only 3 recoveries in the file). 36 fault rows finished after it: 15 ask-first and 21 autopilot (18 supported + 3 cpu_burn). In those 36 rows no recovery verification could succeed, and the load generator's checkouts were failing too, so their failed-request % and their detection and classification inputs were also taken against a store that could not sell.
+- Classification: **(a) harness artifact**: the environment (a finite stock) made the scoring and verification impossible, independent of what the system did. Not a system bug, not a design limitation of EternalAI; the stock size is a property of the test application.
+- Health log: 12 non-recovery fault rows fall inside the external health log (from 00:29:31); no ALERT, no required container down or restarted outside runbook actions. Rows before that are not covered.
+- The criteria script was run as written and its output is kept unchanged in `docs/results/v2_criteria.md`: criteria 1, 5 and 6 FAIL, 2, 3, 4 and 7 PASS. Criteria 1 and 4 to 7 are computed on the 36 affected rows (plus the 3 earlier ask-first rows in criterion 1). No criterion was recomputed to rescue it.

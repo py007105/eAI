@@ -1,50 +1,63 @@
-# v2 plan (APPROVED SCOPE: priorities G1-G4 in the user's message of 2026-10-18; pre-registration pending)
+# v2 plan (REDUCED; pre-registered in Amendment 4 of `docs/EVALUATION_PLAN.md`, committed 2026-10-18T14:42:16+05:30 before any v2 collection or rerun)
 
-v1 (tag `benchmark-system-v1`, 225 rows in `results/benchmark-v1/`) stays as recorded and is never replaced. v2 runs on fresh seeds and is reported beside v1 (`docs/EVALUATION_PLAN.md`, section 9). Hour estimates are mine, not measurements. The v2 plan is evaluated in a pre-registration (Amendment 4) that is committed **before any v2 data collection or rerun**.
+v1 (tag `benchmark-system-v1`, 225 rows in `results/benchmark-v1/`) stays as recorded and is never replaced. v2 runs on fresh seeds and is reported beside v1. Hour estimates come from measured v1 run times (mean 3.4 min per evaluation run, 2.5 min per training run); they are estimates, not measurements of v2.
 
-## Items A-D (one line each)
+## Time against the budget
 
-| item | what changes | est. h | files touched | retraining / new data |
+- v2 started at about 13:10 IST on 2026-10-18 (the user's v2 instruction, right after the forecast check was killed). At the time of this plan it is about 14:45 IST: **about 1 h 35 min elapsed** of the 30 h v2 budget (and of the 48 h horizon). Everything done so far was code, tests, diagnosis and pre-registration; the only Docker work was the reproduction runs and the 6 capture runs.
+- Nothing starts until the user says "memory fixed". The 12 h buffer and the 14 h system freeze (from about 23:10 IST on 2026-10-19, T+34 h) are unchanged.
+
+## What changed in the plan, and why
+
+The first plan (about 45 Docker hours) assumed the v1 design (225-run scale, per-arm repetition of everything). The reduced plan keeps only runs that carry a claim. Three new findings also changed the content: the approval token bug is fixed and explained; the trace collector was dead during the whole v1 benchmark (hypothesis H7, a dead exporter's buffer adding several MB of memory under load, untested); and absolute memory limits cannot survive a few MB of drift, so v2 detects memory by growth against the service's own past (E2).
+
+## Remaining Docker hours: about 10 (limit 20)
+
+| stage | what | runs | stack hours | priority |
 |---|---|---|---|---|
-| **A** (G1) | A pending approval expires after a TTL (proposal: 120 s): the incident is escalated with its evidence preserved, and a pending approval never blocks detection of a new incident; unit tests | 2 | `eternalai/engine.py`, `eternalai/config.py`, `tests/test_approval_ttl.py` | none |
-| **B** | Every incident row (and benchmark row) records top class, confidence, abstention reason, novelty distance, exceeded limit features, report provider and latency, forecasts | 2 | `eternalai/engine.py`, `eternalai/classify.py`, `scripts/run_benchmark.py`, tests | none |
-| **C** (G1) | Harness operator logs every approve call's status and any exception and fails loudly; plus a reproduction that explains why it did not approve in v1 | 1.5 | `scripts/run_benchmark.py`, `scripts/diag_approver.py`, tests | none |
-| **D** | The harness resets the brain's policy state (cooldowns, breakers, suppressor, open incidents) between runs through an authenticated admin call, so runs are independent | 2 | `eternalai/api.py`, `eternalai/engine.py`, `scripts/run_benchmark.py`, tests | none |
+| 0 | Telemetry condition experiment: 6 level-40 surge runs (2 each: Jaeger up and capped / Jaeger down with exporter / SDK disabled), decided by the rule in Amendment 4 K | 6 | 0.7 | enables everything |
+| 1 | Fresh training data: 34 runs (12 surge at both intensities, 6 good_deploy, 6 crashes on `orders`/`payments`, 10 other faults on previously uncovered targets), 45 min warm-up, two batches 60+ min apart, container ages logged | 34 | 3.2 (incl. warm-up and gap) | required for E3 |
+| 2 | Retrain, cross-validate and freeze `models-v2`; build and tag `benchmark-system-v2` | 0 | 0 (CPU about 1.5 h with the stack stopped) | required |
+| 3a | **P1** autopilot healthy: 12 surge + 12 good_deploy | 24 | 1.1 | safety claim |
+| 3b | **P1** threshold_restart on the same 24 seeds (paired) | 24 | 1.1 | safety claim |
+| 3c | **P1/P2** ask-first healthy: 4 surge + 4 good_deploy | 8 | 0.4 | shows no blocking |
+| 3d | **P2** ask-first, 6 supported faults x 3 | 18 | 1.1 | validity of the fix |
+| 3e | **P3** autopilot, 6 supported faults + cpu_burn x 3 | 21 | 1.2 | not materially worse than v1 |
+| 3f | **P4** no_action, threshold_restart, prototype_rules on faults | 0 | 0 | not run; no claim made |
+| reserve | reruns after a kill or a harness failure (20% of stage 3) | - | 1.0 | |
+| **total** | | **135 runs** (95 evaluation) | **about 9.9** | |
 
-Dependent on the surge diagnosis (`docs/postmortems/surge-false-alarm-diagnosis.md`; hypotheses H1-H3 lead):
+Evaluation 95 runs is about 4.9 h of run time; with brain starts and the reserve about 6 h.
 
-| item | what changes | est. h | files | retraining / new data |
-|---|---|---|---|---|
-| **E** (G2/G3b) | Fix the healthy-surge false alarms from features and data, not rules: learned healthy limits get a minimum width for near-constant features such as memory; training adds healthy-surge windows at two intensities (and a few more `orders`/`payments` crashes); no surge flag reaches the models | 6-9 incl. about 3 h of collection | `eternalai/detect.py`, `models/train_models.py`, `models/collect_runs.py`, `models/artifacts/` | **yes**: retrain on the 72 old training runs plus fresh runs from unused training-block seeds only; v1 benchmark runs are never used |
+## Non-Docker work still to do (about 6 h)
 
-No evaluator change is planned. Surge intensity varies by choosing seeds (the evaluator draws 25 or 40 from the seed); more levels would need an evaluator change and a new approval.
+E2 retraining and verification (1.5 h CPU, memory-heavy so with the stack down), building the v2 images (0.3 h), writing the evaluation summary tooling and v1/v2 side-by-side rendering for the reduced counts (1 h), triage and post-mortems (1.5 h), docs from the rendered tables (1.5 h). The live LLM check and three demo rehearsals stay in the buffer after the system freeze.
 
-## Schedule (wall-clock hours from "now" = T; plan against 48 h; system freeze in the last 14 h)
+## Schedule from "memory fixed" (M)
 
-| stage | hours | T window | notes |
-|---|---|---|---|
-| 0. Plan, diagnosis, this schedule | 0.5 | T+0-1 | done as this commit |
-| 1. G1: reproduce the missed approval, build A and C, tests | 3.5 | T+1-4.5 | stack needed for the reproduction (about 15 min of runs) |
-| 2. B and D with tests | 4 | T+4.5-8.5 | code only |
-| 3. Read-only surge capture at both intensities (H1-H3, H6) | 2 | T+8.5-10.5 | brain only logging; about 12 short runs plus analysis |
-| 4. Pre-registration, Amendment 4 (changes, seeds via checker, arms, counts, criteria, demo rule) | 1 | T+10.5-11.5 | **committed before stage 5** |
-| 5. Fresh data collection (about 40 runs) | 3 | T+11.5-14.5 | seeds from the unused training block only |
-| 6. Retrain, cross-validate, freeze `models-v2` with data hashes, build, tag `benchmark-system-v2` | 3 | T+14.5-17.5 | no change after the tag |
-| 7. Pre-registered evaluation: 4 arms on the same fresh seeds, about 220 runs | 11 | T+17.5-28.5 | machine time, about 2.9 min per run; the longest unattended stage |
-| 8. Triage, render v1 and v2 side by side, post-mortems, docs | 5 | T+28.5-33.5 | |
-| **System freeze** (no change to `eternalai/ evaluator/ app/ models/`) | | from T+34 | |
-| 9. Buffer: live LLM check (key needed then), three demo rehearsals, merge, release check, tags | 14 | T+34-48 | at least 12 h buffer kept |
+| window | stage |
+|---|---|
+| M to M+0.7 h | Stage 0 |
+| M+0.7 to M+1 h | apply the chosen condition, start the stack, preflight |
+| M+1 to M+4.2 h | Stage 1 collection |
+| M+4.2 to M+6.2 h | Stage 2 (stack stopped): retrain, freeze, tag |
+| M+6.2 to M+12.2 h | Stage 3 evaluation and reserve |
+| M+12.2 to M+16 h | triage, rendering, docs |
 
-Stages 0-7 total about 28.5 h of the 30 h build budget; stage 7 is mostly waiting. A slip of more than 4 hours, a memory failure that stops runs, or a change needed outside A-E is a stop-and-ask trigger.
+If M is within the next hour, all of it ends about 17 h after the v2 start, with more than 15 h left before the freeze. A slip of more than 4 hours, a memory failure that stops runs, or a change outside Amendment 4 is a stop-and-ask trigger.
 
-## Evaluation design (details are fixed in Amendment 4)
+## Surge intensity 40: needed?
 
-Arms: autopilot, ask-first, plus `threshold_restart` and `no_action` on the same fresh seeds (paired). At least 20 healthy and surge runs per EternalAI arm with varied surge intensities, and the fault scenarios too, so the evaluation shows the fix did not simply make the system less sensitive. The v2 demo rule: v2 is shown only if it meets the pre-registered criteria on the fresh seeds; otherwise the demo uses v1 with the issues stated plainly.
+**In the evaluation: yes, and it comes with the seeds** (8 of the 12 surge seeds draw 40, 4 draw 25). Level 25 already breaks v1 (6 of 6 captures), so level 40 is the harder, untrained-for case, and a fix that only works at 25 would not be a fix. **In the diagnostic capture: no further level-40 capture is needed for diagnosis**; the six remaining capture seeds are all level 40 and are used by Stage 0 (two per condition), so they give level-40 data at no extra cost. **In training: yes** (6 of the 12 fresh surge runs), otherwise the models would again never have seen it. The six finished level-25 captures stay as they are.
 
-## Rules for retraining (G3b)
+## Which containers v2 runs need
 
-Fit only on fresh runs from unused training-block seeds (plus the original 72 training runs, which are training data and not benchmark data). The v1 benchmark runs are seen data: they are not used to train, to select thresholds or to tune. No surge flag, scenario name or injection parameter may reach a model at inference. Surge handling comes from traffic-normalised features and healthy-surge training data, not from "ignore surges" rules. No retuning after seeing v2 results; any further change is v3.
+Needed: `web`, `orders`, `inventory`, `payments`, `prometheus`, `loadgen`, `evaluator`, and `eternalai` for every arm except `no_action`. Not needed: `dashboard` (not started for any v2 run) and `jaeger` (nothing reads it; the brain's code has no Jaeger client). Leaving Jaeger off is only safe together with `OTEL_SDK_DISABLED=true` on the apps (condition T3), because an exporter without a collector buffers spans in memory: that choice is made by the Stage 0 rule and then applied identically to the training collection, every arm and the baselines.
 
-## Not in scope
+## Tooling added (scripts only, no system change)
 
-Orders-crash: no fix unless a root cause is proven. No tuning to benchmark seeds.
+`scripts/memguard.py` (waits and logs while free RAM is under a threshold; `--min-free-gb` default 1.0), `scripts/safe_collect.py` (resumable, atomic, memory-guarded training collector that logs container ages), `scripts/surge_capture.py` (atomic run files), and `run_benchmark.py` now waits for free RAM before each run. A guard that needs a change in `evaluator/` or the app is not required; none was made.
+
+## Rules (unchanged)
+
+Retraining only on the 72 original training runs plus fresh runs from unused training-block seeds; the v1 benchmark and the surge captures are seen data and are not used to train or to choose a threshold; no scenario name, surge flag or injection parameter reaches a model; no retuning after seeing v2 results (any further change is v3); the orders crash is not tuned for.

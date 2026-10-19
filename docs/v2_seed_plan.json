@@ -1,0 +1,985 @@
+{
+ "validated_against": 297,
+ "training_jobs": [
+  {
+   "scenario": "traffic_surge",
+   "seed": 1801,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1806,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1807,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1808,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1810,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1814,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1800,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1802,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1803,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1804,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1805,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "traffic_surge",
+   "seed": 1809,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1815,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1818,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1813,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1811,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1820,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "good_deploy",
+   "seed": 1817,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1824,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1826,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1836,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1812,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1816,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "crash",
+   "seed": 1821,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "bad_deploy",
+   "seed": 1822,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "bad_deploy",
+   "seed": 1825,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "scenario": "latency",
+   "seed": 1819,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "scenario": "latency",
+   "seed": 1828,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "scenario": "error_spike",
+   "seed": 1831,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "scenario": "error_spike",
+   "seed": 1838,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "memory_leak",
+   "seed": 1841,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "memory_leak",
+   "seed": 1823,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "scenario": "disk_fill",
+   "seed": 1842,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "scenario": "disk_fill",
+   "seed": 1827,
+   "target": "payments",
+   "surge_level": null
+  }
+ ],
+ "evaluation_seeds": [
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "rep": 0,
+   "seed": 200,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "rep": 1,
+   "seed": 210,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "crash",
+   "rep": 2,
+   "seed": 220,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "rep": 0,
+   "seed": 201,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "rep": 1,
+   "seed": 211,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "latency",
+   "rep": 2,
+   "seed": 221,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "rep": 0,
+   "seed": 202,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "rep": 1,
+   "seed": 212,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "error_spike",
+   "rep": 2,
+   "seed": 222,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "rep": 0,
+   "seed": 203,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "rep": 1,
+   "seed": 213,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "memory_leak",
+   "rep": 2,
+   "seed": 223,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "rep": 0,
+   "seed": 204,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "rep": 1,
+   "seed": 214,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "disk_fill",
+   "rep": 2,
+   "seed": 224,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "rep": 0,
+   "seed": 205,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "rep": 1,
+   "seed": 215,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "bad_deploy",
+   "rep": 2,
+   "seed": 225,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "rep": 0,
+   "seed": 206,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "rep": 1,
+   "seed": 216,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "cpu_burn",
+   "rep": 2,
+   "seed": 226,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 0,
+   "seed": 207,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 1,
+   "seed": 217,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 2,
+   "seed": 227,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 3,
+   "seed": 237,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 4,
+   "seed": 247,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 5,
+   "seed": 257,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 6,
+   "seed": 267,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 7,
+   "seed": 277,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 8,
+   "seed": 287,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 9,
+   "seed": 297,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 10,
+   "seed": 307,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "traffic_surge",
+   "rep": 11,
+   "seed": 317,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 0,
+   "seed": 208,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 1,
+   "seed": 218,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 2,
+   "seed": 228,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 3,
+   "seed": 238,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 4,
+   "seed": 248,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 5,
+   "seed": 258,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 6,
+   "seed": 268,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 7,
+   "seed": 278,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 8,
+   "seed": 288,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 9,
+   "seed": 298,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 10,
+   "seed": 308,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_autopilot",
+   "scenario": "good_deploy",
+   "rep": 11,
+   "seed": 318,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 0,
+   "seed": 207,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 1,
+   "seed": 217,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 2,
+   "seed": 227,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 3,
+   "seed": 237,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 4,
+   "seed": 247,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 5,
+   "seed": 257,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 6,
+   "seed": 267,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 7,
+   "seed": 277,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 8,
+   "seed": 287,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 9,
+   "seed": 297,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 10,
+   "seed": 307,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "traffic_surge",
+   "rep": 11,
+   "seed": 317,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 0,
+   "seed": 208,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 1,
+   "seed": 218,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 2,
+   "seed": 228,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 3,
+   "seed": 238,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 4,
+   "seed": 248,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 5,
+   "seed": 258,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 6,
+   "seed": 268,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 7,
+   "seed": 278,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 8,
+   "seed": 288,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 9,
+   "seed": 298,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 10,
+   "seed": 308,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "threshold_restart",
+   "scenario": "good_deploy",
+   "rep": 11,
+   "seed": 318,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "rep": 0,
+   "seed": 200,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "rep": 1,
+   "seed": 210,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "crash",
+   "rep": 2,
+   "seed": 220,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "rep": 0,
+   "seed": 201,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "rep": 1,
+   "seed": 211,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "latency",
+   "rep": 2,
+   "seed": 221,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "rep": 0,
+   "seed": 202,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "rep": 1,
+   "seed": 212,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "error_spike",
+   "rep": 2,
+   "seed": 222,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "rep": 0,
+   "seed": 203,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "rep": 1,
+   "seed": 213,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "memory_leak",
+   "rep": 2,
+   "seed": 223,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "rep": 0,
+   "seed": 204,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "rep": 1,
+   "seed": 214,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "disk_fill",
+   "rep": 2,
+   "seed": 224,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "rep": 0,
+   "seed": 205,
+   "target": "inventory",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "rep": 1,
+   "seed": 215,
+   "target": "web",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "bad_deploy",
+   "rep": 2,
+   "seed": 225,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "traffic_surge",
+   "rep": 0,
+   "seed": 207,
+   "target": "web",
+   "surge_level": 25
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "traffic_surge",
+   "rep": 1,
+   "seed": 217,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "traffic_surge",
+   "rep": 2,
+   "seed": 227,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "traffic_surge",
+   "rep": 3,
+   "seed": 237,
+   "target": "web",
+   "surge_level": 40
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "good_deploy",
+   "rep": 0,
+   "seed": 208,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "good_deploy",
+   "rep": 1,
+   "seed": 218,
+   "target": "payments",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "good_deploy",
+   "rep": 2,
+   "seed": 228,
+   "target": "orders",
+   "surge_level": null
+  },
+  {
+   "arm": "eternalai_ask_first",
+   "scenario": "good_deploy",
+   "rep": 3,
+   "seed": 238,
+   "target": "payments",
+   "surge_level": null
+  }
+ ],
+ "capture_seeds": [
+  3600,
+  3601,
+  3602,
+  3603,
+  3605,
+  3606,
+  3604,
+  3608,
+  3614,
+  3620,
+  3621,
+  3624
+ ]
+}
