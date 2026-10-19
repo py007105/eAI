@@ -29,3 +29,7 @@ Status: read-only analysis of the exported v2 evidence. No model, threshold, pol
 - Never claim reliable abstention on unseen faults. The demo cpu_burn trial can fail the same way; the rehearsal plan treats "autopilot acts on a wrong service" as a possible outcome and says what to do (approval mode shows the same wrong proposal, a human rejects it).
 - Mitigation in the design is the ask-first mode and the allow-list/cooldown; none of these is claimed to prevent a wrong restart.
 - A fix (for example a stricter novelty rule, or requiring the ranking margin) would be a model/policy change: **v3, fresh seeds, not applied**.
+
+## Decision (user, 2026-10-19)
+
+Accepted as a **model generalisation limitation**. **No v3: not fixed before the freeze.** Documentation states cpu_burn exactly (v2 and v1 abstention counts are different versions on different seeds and are not pooled) and never claims general abstention on unseen faults.

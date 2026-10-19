@@ -1,13 +1,13 @@
 # Questions we expect, with truthful answers
 
-Numbers come from `docs/results/benchmark.md` (v1) only. Where the honest answer is "we did not test that", it says so.
+Numbers come from the generated result files (`docs/results/benchmark.md` for v1, `docs/results/benchmark_v2.md` for v2). Where the honest answer is "we did not test that", it says so.
 
 > **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
 > 1. **The ask-first arm is invalid.** The benchmark harness handed the brain and the simulated operator the placeholder token `change-me` (an import of the config module loaded it from `.env`), so the brain refused every approval (HTTP 503) and the operator ignored the refusal; the first proposal then sat unapproved and, because a pending approval never expires, blocked all later detection (42 of 45 runs). Its 0 of 30 recoveries say nothing about ask-first operation (`docs/postmortems/ask-first-arm-stuck-incident-v1.md`). Both faults are fixed on the v2 branch and evaluated on fresh seeds.
 > 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
 > 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
 >
-> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. v2 is a proposal only (`docs/V2_PROPOSAL.md`).
+> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
 
 | arm (v1) | self-reported recovery, 30 supported runs | failed-request % (mean) | seconds to self-reported recovery (mean) | healthy runs with a false alert (of 10) | harmful interventions on healthy runs |
 |---|---|---|---|---|---|
@@ -19,6 +19,46 @@ Numbers come from `docs/results/benchmark.md` (v1) only. Where the honest answer
 
 Source: `docs/results/benchmark.md`, sections 1b and 4 (rendered from `results/benchmark-v1/benchmark_raw.jsonl`). Where the autopilot does **not** beat the baselines: threshold_restart recovered `crash` in 4 of 5 runs against the autopilot's 2 of 5 (both orders crashes abstained); on `latency` the autopilot's failed-request % (8.1) is higher than threshold_restart's (4.0), and on `memory_leak` it is higher than no_action's (11.2 against 0.4) because its own container recreation fails requests; its false-alert count on healthy runs is worse than threshold_restart's and equal to prototype_rules'; and the pooled failed-request % and detection-time differences against threshold_restart and prototype_rules have intervals that include zero, so they are not distinguishable at n = 5 per cell.
 
+
+<!-- gen:qa_v2 -->
+## Benchmark v2 (final): numbers and answers
+
+Numbers in this block come from `docs/results/benchmark_v2.md` and `docs/results/benchmark_v1_v2.md`, filled in by `scripts/build_docs.py`. The caveats are in `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2"; read it before quoting any figure. v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better"; v1 and v2 are unpaired.
+
+| v2 figure | value |
+|---|---|
+| evaluated rows (valid original + replacement) | 95 (58 + 37) |
+| autopilot, supported faults: detected / recovered by its own check | 18/18 [82%, 100%] / 18/18 [82%, 100%] |
+| ask-first, supported faults: detected / recovered | 18/18 [82%, 100%] / 18/18 [82%, 100%] |
+| autopilot, healthy runs: incidents / executed actions | 1/24 / 0/24 |
+| threshold_restart, same healthy seeds: incidents | 6/24 |
+| cpu_burn (unseen), autopilot abstained | 2/3 in v2; 4/5 in v1 (different seeds, not pooled) |
+| mean detection time / mean failed-request % (autopilot, 18 supported runs) | 11.78 s / 11.15% |
+
+**Why not simply restart on a threshold?**
+On healthy runs the same-seed threshold_restart baseline opened an incident in 6/24 runs against 1/24 for the autopilot (v2 healthy seeds; the one autopilot incident was in a traffic surge). That is the only same-seed v2 baseline comparison. For supported faults v2 ran no baseline, so we do **not** claim the autopilot recovers better than a restart script. In v1 (different seeds, older system) threshold_restart recovered more `crash` runs than the autopilot (4 of 5 against 2 of 5) and was ahead on some other metrics (see the v1 results above). What a bare restart cannot do is choose between restart, rollback and cleanup, rank which service is the root cause, or explain itself, and it restarts on a healthy release change. Whether that is worth the extra complexity beyond this one application is not shown.
+
+**Where is genuine ML used?**
+Four learned components, all trained on this application's own runs (105 runs used, two telemetry conditions): per-service anomaly limits plus an IsolationForest (the forest adds nothing measurable over the learned limits, `docs/results/detector_margin.md`), a calibrated gradient-boosting fault classifier with a nearest-neighbour novelty gate, a gradient-boosting root-cause ranker, and a Theil-Sen trend forecaster (its live lead time is undemonstrated). The policy, the runbooks and the verification are deterministic code; the LLM only writes the report and cannot act.
+
+**Is this overfitted to one application?**
+It is specific to one application, and we say so. Cross-validation scores are optimistic (same fault injector, four iterations), and the benchmark seeds use the same injector. The v2 counts (18/18 [82%, 100%] recovered, 1/24 healthy incidents) come from 3 runs per fault type and carry wide intervals (an 18-of-18 result is consistent with a true rate near 82%). On public cross-system data fault classification transfers weakly (leave-one-system-out macro-F1 about 0.62, `docs/results/transfer_re1.md`). We have not shown that the models work on any other system.
+
+**How would it work with other applications?**
+The architecture is portable (metrics, container state, topology, allow-listed runbooks, a verification probe), but the **trained models are not**: they would need new training runs on the new application with a fault injector, and the runbooks and topology would have to be defined for it. Nothing here was tested on a second application.
+
+**Can it accidentally harm healthy services?**
+It can, and it did. In v1 the autopilot recreated a container in 4 of 5 traffic surges. In v2 seed 426 (an unseen fault on `orders`) the autopilot restarted `inventory`, a service that was not the target; failed requests were 27.71% and the checkout probes 0/4. Whether the restart added damage is unknown. The scorer calls such an action "harmful" only by definition (an executed action on a service other than the injected target), which is not a measurement of damage. In the 24 healthy v2 autopilot runs no action was executed (0/24), but 24 runs cannot rule out a rate of several percent. Mitigations are the allow-list, cooldowns, a circuit breaker and the ask-first mode, where a human approves; none is claimed to prevent a wrong restart.
+
+**What happens when it encounters an unknown failure?**
+It is designed to abstain (insufficient evidence, no action, evidence kept, escalate), and it did so in 2/3 v2 runs and 4/5 v1 runs of the one unseen fault we tried, on different seeds. That is not a reliable property: in seed 426 the novelty gate did not fire (novelty 0.61 against a threshold of 1.12) and the autopilot acted on the wrong service. We tried one unseen fault type only. For an unseen fault, ask-first mode shows the proposal to a human before anything runs; in autopilot mode the honest answer is "it may abstain and it may also act wrongly; we measured both".
+
+**How is recovery verified?**
+By the system itself: a synthetic checkout through all four services, held over a window; only a full pass counts as "recovered". That is an **internal** verification. The independent measure is the load generator's failed-request %, which the evaluator reads; it measures user impact, not proof of recovery, and v2 has no same-seed no-action arm to compare it with. No independent probe logs exist.
+
+**What evidence supports generalization?**
+Little, and limited: the models were scored on seeds they never saw (v1 100-148, v2 200-318 and 400-429), including one fault type held out of training (cpu_burn: abstained in 2/3 v2 and 4/5 v1 runs, with one wrong-service restart in v2), and the failure modes v1 exposed (blocked ask-first, healthy-run incidents) recurred much less in v2 on different seeds (ask-first never blocked; 1/24 autopilot healthy runs opened an incident), at small sample sizes. Against that: one application, one fault injector, one machine, n = 3 per fault type, unpaired v1/v2 comparisons, two telemetry conditions in training. We make no claim of generalization to other systems or of production readiness.
+<!-- /gen:qa_v2 -->
 
 **Isn't a cross-validation macro-F1 near 1.0 just overfitting?**
 Not in the sense of leakage: every split is by whole run (never by random rows), calibration and thresholds are fitted inside training folds, and the data check found no label-bearing columns and no run-order effect. But it is optimistic for three honest reasons: the faults are strong and cleanly injected
@@ -54,7 +94,7 @@ The analysis plan was committed before any result was read (`docs/EVALUATION_PLA
 72 training runs (71 used). The benchmark has 225 runs: 5 arms x 9 scenarios x 5 repetitions. Five per cell is too few to compare arms cell by cell, so only pooled differences with bootstrap intervals are reported, and no significance is claimed from single cells.
 
 **Why does it sometimes do nothing?**
-By design it abstains when a window is unlike anything it was trained on or its confidence is low (on the unseen fault cpu_burn the autopilot abstained correctly in 4 of 5 runs; it also abstained on both crashes of `orders`, a missed recovery on a supported fault; see `docs/postmortems/crash-orders-seed100-v1.md`). It also gives a short grace period after a release change, because a normal rolling release restarts the service for a few seconds; a bad release is still caught once errors persist. The cost of the grace is slower detection of bad deploys by up to that period.
+By design it abstains when a window is unlike anything it was trained on or its confidence is low (v1 only here; on the unseen fault cpu_burn the v1 autopilot abstained correctly in 4 of 5 runs, and the v2 figures, including a wrong-service restart in seed 426, are in the v2 block above, not pooled with v1; it also abstained on both crashes of `orders`, a missed recovery on a supported fault; see `docs/postmortems/crash-orders-seed100-v1.md`). It also gives a short grace period after a release change, because a normal rolling release restarts the service for a few seconds; a bad release is still caught once errors persist. The cost of the grace is slower detection of bad deploys by up to that period.
 
 **Is the dashboard real?**
 It reads the live backend over REST and shows real incidents. The screenshots in `docs/screenshots/` use fixture data to show layout and are labelled that way.

@@ -1,81 +1,84 @@
 # Live demo script
 
-Status: structure and talk track, v1 numbers filled from `docs/results/benchmark.md` where stated. v2 is shown only if it meets its pre-registered criteria on fresh seeds; otherwise the demo uses v1 and states the issues plainly.
+Status: **v2 version** (rule P of Amendment 4: all seven pre-registered criteria passed, so the demo shows v2). Every v2 caveat is in one place: `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2". The rehearsal results and the final startup, narration, UI and contingency sections are completed after the three rehearsals (`docs/results/demo_rehearsals.md`); until that file exists they are drafts and say so.
 
-> **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
-> 1. **The ask-first arm is invalid.** The benchmark harness handed the brain and the simulated operator the placeholder token `change-me` (an import of the config module loaded it from `.env`), so the brain refused every approval (HTTP 503) and the operator ignored the refusal; the first proposal then sat unapproved and, because a pending approval never expires, blocked all later detection (42 of 45 runs). Its 0 of 30 recoveries say nothing about ask-first operation (`docs/postmortems/ask-first-arm-stuck-incident-v1.md`). Both faults are fixed on the v2 branch and evaluated on fresh seeds.
-> 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
-> 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
->
-> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. v2 is a proposal only (`docs/V2_PROPOSAL.md`).
+v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better". Say this once, early. The v1 findings that motivated v2 (invalid ask-first arm, false alarms on healthy runs, self-reported recovery) are in `docs/EVALUATION.md` and `docs/results/benchmark.md`.
 
-Rehearse the whole script once on the real stack before presenting: a step that has not been seen to work is not demo material.
+<!-- gen:demo_v2 -->
+**Numbers to quote (v2, filled from `docs/results/benchmark_v2.md`; caveats in `docs/EVALUATION.md`, canonical section):**
 
-**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout, i.e. self-reported. The independent measure is the load generator's failed-request %, which the evaluator reads; show that number alongside it. The benchmark brains were configured without LLM keys, but the report provider is not recorded per run, so do not say "template only" as a verified fact; before a live-LLM demo, confirm the key reaches the brain container (presence only, never print it).
+| say | value | say alongside it |
+|---|---|---|
+| supported faults, autopilot: recovered by its own check | 18/18 | 18 runs, 3 per fault type: "no failure observed", not a rate |
+| supported faults, ask-first: recovered | 18/18 | same sample size |
+| healthy runs, autopilot: incidents opened | 1/24 | the threshold-restart script on the same seeds: 6/24 |
+| healthy runs, autopilot: actions executed | 0/24 | 24 runs cannot rule out a rate of several percent |
+| mean detection time, autopilot | 11.78 s | v1 was 12.1 s: a tie within noise |
+| mean failed-request %, autopilot (independent measure) | 11.15% | no same-seed no-action reference in v2; not comparable with v1 |
+| unseen fault (cpu_burn), autopilot abstained | 2/3 in v2, 4/5 in v1 | different seeds, never pooled |
 
-## 0. Before the demo (do this on a quiet machine, 15 minutes ahead)
+**The unseen-fault segment (labelled as such, ask-first mode):** `python scripts/demo_challenge.py start --unseen`. Say before it starts: "this is a fault type EternalAI was never trained on. In our tests it abstained in 2/3 v2 runs and 4/5 v1 runs, and in one v2 run (seed 426) it chose the wrong service: it ranked the true target 3rd, did not flag the window as novel, and restarted `inventory` while the fault was on `orders`; failed requests were 27.71% and the checkout probes 0/4. We do not claim it abstains on unseen faults. That is why this segment runs in ask-first mode: it proposes, a human decides."
 
-1. `cp .env.example .env` and set `ETERNALAI_APPROVAL_TOKEN` to a real secret (approve, reject and mode changes are refused otherwise). Optional: `GEMINI_API_KEY` for live LLM reports.
-2. `docker compose --profile releases build && docker compose up -d`; wait about 60 s. Open http://localhost:8050. The status bar should show the mode and "Models loaded from saved artifacts".
-3. **Reset the scorecard.** The scorecard panel aggregates every run stored in the evaluator's volume, which after development and the benchmark contains hundreds of runs that are not part of the demo.
-   Copy `results.jsonl` out of the `eai_truth` volume first if the benchmark is still being written up, then `docker compose down`, `docker volume rm eai_truth`, `docker compose up -d`.
-   Never do this while the benchmark is running.
-4. Set the mode in the dashboard (enter the token, choose **Ask first**). Confirm `GET /status` shows no `fallbacks_in_use`.
-5. Keep a terminal open on `docker compose logs -f eternalai` as a fallback view.
+**If a judge picks an unseen fault while the autopilot is on (honest answer):** "The autopilot may abstain, escalate and keep the evidence, which is what it did in 2/3 of our v2 runs and 4/5 of our v1 runs of one unseen fault type. It may also act on the wrong service, which it did once in v2 (seed 426). We did not measure how often on other faults, and we do not claim it knows when to stop. For an unseen fault, switch to ask-first so a human sees the proposed service and runbook before anything runs. What you see on screen is the proposal and the ranked services; whether that is enough for a human to spot a wrong target is recorded in the rehearsal log (`docs/results/demo_rehearsals.md`)."
+<!-- /gen:demo_v2 -->
+
+**The moment to build towards:** *the service restarted, and EternalAI's own checkout passed again.* Be exact about what that is: the "proof" is the system's own synthetic checkout (an internal verification). The independent measure is the load generator's failed-request %, which the evaluator reads; show it alongside, and say it is an impact metric, not proof.
+
+## 0. Before the demo (startup; exact procedure in the rehearsal log once rehearsed)
+
+1. `.env` exists with `ETERNALAI_APPROVAL_TOKEN` set to a real secret (approve, reject and mode changes are refused otherwise). Optional: `GEMINI_API_KEY` for live LLM reports. Never print or commit `.env`.
+2. Verify the benchmark export before any reset: `sha256sum -c` on `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun` (0 mismatches expected).
+3. Start with the launcher: `powershell -ExecutionPolicy Bypass -File scripts\demo.ps1 -ConfirmReset`. It refuses while a benchmark process runs, exports and checksums first, resets only the scorecard volume (a copy is already in the export), starts the stack under telemetry condition T3 (trace exporter off, no Jaeger) **with the dashboard on**, restocks the inventory to the seeded level (the inventory service only subtracts stock), and runs `scripts/preflight.py`.
+4. Open http://localhost:8050. The status bar should show the mode and "Models loaded from saved artifacts"; `GET :8000/status` must show no `fallbacks_in_use`.
+5. Keep a terminal on `docker compose logs -f eternalai` as a fallback view.
+6. The dashboard was not running during the evaluation; its polling is read-only. The rehearsals check that it does not change the brain's decisions (`docs/results/demo_rehearsals.md`).
 
 ## 1. Introduction (1 min)
 
 - One sentence: observe, diagnose, act under policy, **verify the user journey**, escalate honestly.
-- Show the service map: four services, all green; show that traffic is flowing (loadgen) and that a checkout works: `curl -X POST localhost:8080/api/checkout ...` or the shop endpoint.
-- Say what is real: real containers, real restarts and rollbacks, real metrics. Say what is controlled: the faults are injected by a script we wrote.
+- Show the four services green and traffic flowing. Say what is real (containers, restarts, rollbacks, metrics) and what is controlled (the faults come from a script we wrote).
 
-## 2. Blind challenge, ask-first (4-5 min)
+## 2. Hidden challenge, ask-first (4-5 min)
 
-1. Click **Start blind challenge**. State aloud: neither the presenter nor EternalAI knows what the evaluator picked; the ground truth is in a volume the brain cannot read.
-2. Watch the service map turn amber or red and the failing path highlight; the incident timeline starts.
-3. When a proposal appears in the **Approval queue**, read it aloud: the ranked causes, the proposed runbook, the risk, the evidence ids. Point out the margin between the top two causes and that the percentage shown is a calibrated probability (only shown because its calibration check passed).
-4. Click **Approve**. Narrate: the executor runs one allow-listed runbook; then verification runs a synthetic checkout through all four services for the observation window.
-5. When the banner appears, deliver the line: *"The service restarted, and EternalAI's own checkout passed again; the independent measure is the failed-request %."* Show **before/after**: checkout success, app error rate, web latency.
-6. Click **Reveal the truth**: injected fault, target, and what EternalAI got right or wrong. Read the scorecard line for this run: the failed-request % first (independent), then detection time and the self-reported recovery time, all read off the scorecard panel for that run. For scale, v1 autopilot means over the 30 supported runs were 18.39% failed requests, 12.1 s to detect and 50.0 s to self-reported recovery (`docs/results/benchmark.md`, section 4).
-   If it was wrong, say so: an honest wrong answer is part of the demo.
+1. Start the hidden challenge: `python scripts/demo_challenge.py start`. It draws one of the six supported faults or the two healthy scenarios with `secrets` and does not print the choice. (The dashboard's own "Start blind challenge" button draws from all nine scenarios including the unseen fault; changing that would be a system change, so it is not used for the live challenge. The dashboard still shows the incident, the service map and the approval queue.)
+2. Watch the service map and the incident timeline. If it is a healthy scenario, the expected outcome is **no incident**; say so.
+3. When a proposal appears in the **Approval queue**, read it aloud: the ranked causes, the proposed runbook, the risk, the evidence ids, and the margin between the top two causes.
+4. **Approve** (token needed). Narrate: one allow-listed runbook, then a synthetic checkout through all four services over the observation window.
+5. When the verification banner appears: *"EternalAI's own checkout passed again; the independent measure is the failed-request percentage."*
+6. Reveal: `python scripts/demo_challenge.py reveal RUN_ID`. Read the failed-request % first, then detection time. If it was wrong, say so.
 
 ## 3. Autopilot and the policy engine (2 min)
 
-- Switch to **Autopilot** and start another challenge. Contrast: the same pipeline without the approval wait. Say which actions autopilot may and may not take (low and medium risk allow-listed runbooks only; cooldown; circuit breaker after two interventions).
-- Optional: show `/audit`: every action with its actor and evidence ids.
+- Switch to **Autopilot** and start another hidden challenge. Say what autopilot may and may not do (allow-listed low and medium risk runbooks, cooldown, circuit breaker after two interventions). Optional: `/audit`.
 
-## 4. A fault it has not seen (2 min)
+## 4. A fault it has not seen (2 min, labelled, ask-first)
 
-- Trigger the unseen fault (cpu_burn) from the evaluator (`POST :8200/runs {"scenario":"cpu_burn"}` keeps the demo honest: it was never in the training data).
-- Expected behaviour: EternalAI abstains ("insufficient evidence"), proposes no action, preserves the evidence and escalates. Say plainly that it is deliberately conservative here: a threshold-and-restart script acts without diagnosing, and whether that recovers this fault is a benchmark row, the cpu_burn rows of `docs/results/benchmark.md`: self-reported recovery was 5/5 for threshold_restart, 2/5 for prototype_rules, 1/5 for the autopilot and 0/5 for the (invalid) ask-first arm, and the autopilot abstained correctly in 4 of 5 runs, not something to assert from memory.
+- Switch to **Ask first**, then `python scripts/demo_challenge.py start --unseen`. Use the narration in the numbers block above. The expected outcome is **uncertain by design**: abstain and escalate (as in most of our runs), or a proposal that targets the wrong service (as in seed 426). Show the ranked causes and say that if a proposal appears, a human must check it; do not approve a proposal whose service you do not believe.
+- Whether the evidence on screen lets a human spot a wrong target is recorded in the rehearsal log. Until it is recorded, do not claim it.
 
-## 5. Healthy negatives (1 min)
+## 5. When recovery fails (1-2 min)
 
-- Run a `traffic_surge` or `good_deploy` challenge from the evaluator. Expected: no incident. Say that false alarms on healthy changes are a measured number (v1: healthy runs with a false alert 8/10 autopilot, 5/10 threshold_restart, 8/10 prototype_rules; the autopilot recreated a container in 4 of 5 surges), not a promise.
+- Show `docs/postmortems/cpu_burn_seed426.md` (a real wrong-service action) and the circuit breaker in the status bar if it opened.
 
-## 6. When recovery fails (2 min)
+## 6. Close (1 min)
 
-- Show the post-mortem in `docs/postmortems/` for a real non-recovery from the benchmark: what was detected, what was decided, what was not done, what the evidence file preserved, and which triage class it got.
-- Show the circuit breaker in the status bar if it has opened. Say what a human receives: the incident, the evidence, the reason it stopped.
+- Quote the numbers block, each with its caveat. Name the limits in one breath: one application, scripted faults, n = 3 per fault type, recovery judged by the system itself, no paired baseline for supported faults, forecast lead time undemonstrated, Groq untested.
 
-## 7. Close (1 min)
-
-- Numbers, each from `docs/results/benchmark.md` (v1, 30 supported runs per arm), independent measure first: failed requests 18.39% (autopilot) versus 32.17% (no action), 26.60% (threshold_restart), 26.29% (prototype_rules); self-reported recovery 27/30 versus 12/30 and 9/30; mean seconds to self-reported recovery 50.0 versus 68.2 and 69.4; healthy runs with a false alert 8/10 (autopilot), 5/10, 8/10; harmful interventions on healthy runs 4 (autopilot), 0, 0; abstention on the unseen fault 4/5 (autopilot). Say the three findings at the top of this file aloud as part of the close.
-- Name the limits in one breath: one application, scripted faults, n = 5 per cell, recovery judged by the system itself. Point at `docs/EVALUATION.md` and `docs/QA_FOR_JUDGES.md`.
-
-## Fallback plan
+## Fallback plan (draft; finalised after the rehearsals)
 
 | if | do |
 |---|---|
-| the dashboard does not update | refresh; check `GET :8000/status`; the dashboard caches the backend and shows "Backend offline" when it is down |
-| a challenge hangs | `GET :8200/runs/<id>/status`; wait for the evaluator to restore the stack (up to 3 min after a release change) before starting another |
+| the dashboard does not update | refresh; check `GET :8000/status`; the dashboard shows "Backend offline" when the backend is down |
+| a challenge hangs | `GET :8200/runs/<id>/status`; wait for the evaluator to restore the stack (up to 3 min after a release change) before the next |
 | approvals are refused | the token is still the placeholder; set `ETERNALAI_APPROVAL_TOKEN` in `.env` and `docker compose up -d eternalai` |
+| checkouts fail with HTTP 409 | the inventory stock ran out: `python scripts/stock_gate.py --restock --force` |
 | a service is stuck after a failed run | `docker compose up -d --force-recreate <service>`; check `docker compose ps` |
 | nothing works | show `docs/screenshots/` (fixture data, say so) and the generated results; do not improvise numbers |
 
 ## Reset between rehearsals
 
-`docker compose down && docker compose up -d`. To remove demo state entirely, `docker compose down -v` (this also deletes the shop's data and the evaluator's records).
+Use the launcher (`-ConfirmReset`) after the checksum verification. Never `docker compose down -v` and never delete a volume by hand: the export in `results/benchmark-v2/` is the evidence.
 
-## Dashboard rehearsal under T3 (planned; result not yet recorded)
-The evaluated condition (T3) had no dashboard. The demo launcher starts it. Before the demo, one short rehearsal with the dashboard on runs a healthy `traffic_surge` and one supported fault under `scripts/demo.ps1` and compares incidents opened and actions executed with what the evaluation arms did on the same scenarios. Result: {{dashboard_rehearsal_result}}.
+## Dashboard rehearsal under T3
+
+Result: recorded in `docs/results/demo_rehearsals.md` (pending until the rehearsals are done).
