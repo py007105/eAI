@@ -1,0 +1,175 @@
+﻿== job 1/37: P2 eternalai_ask_first crash seed 400 (fresh, replaces 200)
+D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe : Traceback (most recent call last):
+At line:1 char:504
++ ... events.log; D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe -u scri ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\eAI\eAI-docs\scripts\stage3_rerun.py", line 113, in <module>
+    main()
+    ~~~~^^
+  File "D:\eAI\eAI-docs\scripts\stage3_rerun.py", line 85, in main
+    rec = stock_gate.gate()
+  File "D:\eAI\eAI-docs\scripts\stock_gate.py", line 78, in gate
+    rec = {"t": time.time(), "threshold": threshold, "seed_level": SEED_STOCK, "before": read_stock(), "restocked": 
+False}
+                                                                                         ~~~~~~~~~~^^
+  File "D:\eAI\eAI-docs\scripts\stock_gate.py", line 50, in read_stock
+    r = _docker(["exec", CONTAINER, "python", "-c", READ_PY])
+  File "D:\eAI\eAI-docs\scripts\stock_gate.py", line 45, in _docker
+    return subprocess.run(["docker", *args], capture_output=True, text=True, timeout=timeout, env=env)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\premy\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\premy\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\premy\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 1553, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+== job 1/37: P2 eternalai_ask_first crash seed 400 (fresh, replaces 200)
+   stock before {'sku-lamp': 0, 'sku-mug': 0, 'sku-bag': 0, 'sku-book': 0} restocked True after_restock {'sku-lamp': 99999, 'sku-mug': 99999, 'sku-bag': 100000, 'sku-book': 100000}
+APPROVER approved dc702673 (restart_service on payments) after 5.2s
+eternalai_ask_first crash seed 400: detected=True recovered=True failed%=15.0
+== job 2/37: P2 eternalai_ask_first latency seed 401 (fresh, replaces 201)
+   stock before {'sku-lamp': 99887, 'sku-mug': 99868, 'sku-bag': 99900, 'sku-book': 99901} restocked False after_restock {'sku-lamp': 99887, 'sku-mug': 99868, 'sku-bag': 99900, 'sku-book': 99901}
+APPROVER approved b2c03e1a (restart_service on inventory) after 5.2s
+eternalai_ask_first latency seed 401: detected=True recovered=True failed%=2.66
+== job 3/37: P2 eternalai_ask_first error_spike seed 402 (fresh, replaces 212)
+   stock before {'sku-lamp': 99784, 'sku-mug': 99760, 'sku-bag': 99801, 'sku-book': 99765} restocked False after_restock {'sku-lamp': 99784, 'sku-mug': 99760, 'sku-bag': 99801, 'sku-book': 99765}
+APPROVER approved ce3bd09d (restart_service on inventory) after 5.2s
+eternalai_ask_first error_spike seed 402: detected=True recovered=True failed%=29.0
+== job 4/37: P2 eternalai_ask_first memory_leak seed 403 (fresh, replaces 203)
+   stock before {'sku-lamp': 99702, 'sku-mug': 99646, 'sku-bag': 99735, 'sku-book': 99693} restocked False after_restock {'sku-lamp': 99702, 'sku-mug': 99646, 'sku-bag': 99735, 'sku-book': 99693}
+APPROVER approved 0a8701a6 (recreate_container on orders) after 5.3s
+eternalai_ask_first memory_leak seed 403: detected=True recovered=True failed%=0.6
+== job 5/37: P2 eternalai_ask_first disk_fill seed 404 (fresh, replaces 204)
+   stock before {'sku-lamp': 99621, 'sku-mug': 99521, 'sku-bag': 99619, 'sku-book': 99590} restocked False after_restock {'sku-lamp': 99621, 'sku-mug': 99521, 'sku-bag': 99619, 'sku-book': 99590}
+APPROVER approved 76eb56a6 (clear_temp_path on web) after 5.3s
+eternalai_ask_first disk_fill seed 404: detected=True recovered=True failed%=0.0
+== job 6/37: P2 eternalai_ask_first bad_deploy seed 405 (fresh, replaces 215)
+   stock before {'sku-lamp': 99519, 'sku-mug': 99379, 'sku-bag': 99536, 'sku-book': 99508} restocked False after_restock {'sku-lamp': 99519, 'sku-mug': 99379, 'sku-bag': 99536, 'sku-book': 99508}
+APPROVER approved 50c43fca (rollback_release on web) after 5.3s
+eternalai_ask_first bad_deploy seed 405: detected=True recovered=True failed%=42.36
+== job 7/37: P2 eternalai_ask_first crash seed 410 (fresh, replaces 210)
+   stock before {'sku-lamp': 99437, 'sku-mug': 99266, 'sku-bag': 99440, 'sku-book': 99405} restocked False after_restock {'sku-lamp': 99437, 'sku-mug': 99266, 'sku-bag': 99440, 'sku-book': 99405}
+APPROVER approved f481a153 (restart_service on orders) after 5.3s
+eternalai_ask_first crash seed 410: detected=True recovered=True failed%=14.87
+== job 8/37: P2 eternalai_ask_first latency seed 411 (fresh, replaces 211)
+   stock before {'sku-lamp': 99208, 'sku-mug': 99030, 'sku-bag': 99251, 'sku-book': 99196} restocked False after_restock {'sku-lamp': 99208, 'sku-mug': 99030, 'sku-bag': 99251, 'sku-book': 99196}
+APPROVER approved 37461fd2 (restart_service on orders) after 5.2s
+eternalai_ask_first latency seed 411: detected=True recovered=True failed%=1.11
+== job 9/37: P2 eternalai_ask_first error_spike seed 412 (fresh, replaces 222)
+   stock before {'sku-lamp': 99150, 'sku-mug': 98919, 'sku-bag': 99151, 'sku-book': 99080} restocked False after_restock {'sku-lamp': 99150, 'sku-mug': 98919, 'sku-bag': 99151, 'sku-book': 99080}
+APPROVER approved 0be504f5 (restart_service on payments) after 5.2s
+eternalai_ask_first error_spike seed 412: detected=True recovered=True failed%=6.19
+== job 10/37: P2 eternalai_ask_first memory_leak seed 413 (fresh, replaces 213)
+   stock before {'sku-lamp': 99036, 'sku-mug': 98789, 'sku-bag': 99050, 'sku-book': 99027} restocked False after_restock {'sku-lamp': 99036, 'sku-mug': 98789, 'sku-bag': 99050, 'sku-book': 99027}
+APPROVER approved ec6b5d8f (recreate_container on inventory) after 5.3s
+eternalai_ask_first memory_leak seed 413: detected=True recovered=True failed%=4.88
+== job 11/37: P2 eternalai_ask_first disk_fill seed 414 (fresh, replaces 214)
+   stock before {'sku-lamp': 98960, 'sku-mug': 98653, 'sku-bag': 98984, 'sku-book': 98940} restocked False after_restock {'sku-lamp': 98960, 'sku-mug': 98653, 'sku-bag': 98984, 'sku-book': 98940}
+APPROVER approved 246fc96a (clear_temp_path on inventory) after 5.2s
+APPROVER approved e63cbd6d (clear_temp_path on inventory) after 5.3s
+eternalai_ask_first disk_fill seed 414: detected=True recovered=True failed%=0.0
+== job 12/37: P2 eternalai_ask_first bad_deploy seed 415 (fresh, replaces 225)
+   stock before {'sku-lamp': 98829, 'sku-mug': 98470, 'sku-bag': 98866, 'sku-book': 98822} restocked False after_restock {'sku-lamp': 98829, 'sku-mug': 98470, 'sku-bag': 98866, 'sku-book': 98822}
+APPROVER approved b9139db4 (rollback_release on payments) after 5.2s
+eternalai_ask_first bad_deploy seed 415: detected=True recovered=True failed%=12.89
+== job 13/37: P2 eternalai_ask_first crash seed 420 (fresh, replaces 220)
+   stock before {'sku-lamp': 98748, 'sku-mug': 98337, 'sku-bag': 98764, 'sku-book': 98734} restocked False after_restock {'sku-lamp': 98748, 'sku-mug': 98337, 'sku-bag': 98764, 'sku-book': 98734}
+APPROVER approved 52c6c15e (restart_service on web) after 5.3s
+eternalai_ask_first crash seed 420: detected=True recovered=True failed%=32.5
+== job 14/37: P2 eternalai_ask_first latency seed 421 (fresh, replaces 221)
+   stock before {'sku-lamp': 98564, 'sku-mug': 98143, 'sku-bag': 98512, 'sku-book': 98543} restocked False after_restock {'sku-lamp': 98564, 'sku-mug': 98143, 'sku-bag': 98512, 'sku-book': 98543}
+APPROVER approved 41c5007c (restart_service on payments) after 5.2s
+eternalai_ask_first latency seed 421: detected=True recovered=True failed%=0.54
+== job 15/37: P2 eternalai_ask_first memory_leak seed 423 (fresh, replaces 223)
+   stock before {'sku-lamp': 98445, 'sku-mug': 98018, 'sku-bag': 98397, 'sku-book': 98440} restocked False after_restock {'sku-lamp': 98445, 'sku-mug': 98018, 'sku-bag': 98397, 'sku-book': 98440}
+APPROVER approved 50000a29 (recreate_container on payments) after 5.3s
+eternalai_ask_first memory_leak seed 423: detected=True recovered=True failed%=2.53
+== job 16/37: P2 eternalai_ask_first disk_fill seed 424 (fresh, replaces 224)
+   stock before {'sku-lamp': 98350, 'sku-mug': 97910, 'sku-bag': 98309, 'sku-book': 98348} restocked False after_restock {'sku-lamp': 98350, 'sku-mug': 97910, 'sku-bag': 98309, 'sku-book': 98348}
+APPROVER approved 3f4a2ff6 (clear_temp_path on inventory) after 5.2s
+eternalai_ask_first disk_fill seed 424: detected=True recovered=True failed%=1.05
+== job 17/37: P3 eternalai_autopilot error_spike seed 202 (same-seed, replaces 202)
+   stock before {'sku-lamp': 98247, 'sku-mug': 97762, 'sku-bag': 98184, 'sku-book': 98251} restocked False after_restock {'sku-lamp': 98247, 'sku-mug': 97762, 'sku-bag': 98184, 'sku-book': 98251}
+eternalai_autopilot error_spike seed 202: detected=True recovered=True failed%=21.74
+== job 18/37: P3 eternalai_autopilot bad_deploy seed 205 (same-seed, replaces 205)
+   stock before {'sku-lamp': 98166, 'sku-mug': 97687, 'sku-bag': 98120, 'sku-book': 98164} restocked False after_restock {'sku-lamp': 98166, 'sku-mug': 97687, 'sku-bag': 98120, 'sku-book': 98164}
+eternalai_autopilot bad_deploy seed 205: detected=True recovered=True failed%=41.16
+== job 19/37: P3 eternalai_autopilot crash seed 400 (fresh, replaces 200)
+   stock before {'sku-lamp': 98064, 'sku-mug': 97581, 'sku-bag': 98050, 'sku-book': 98097} restocked False after_restock {'sku-lamp': 98064, 'sku-mug': 97581, 'sku-bag': 98050, 'sku-book': 98097}
+eternalai_autopilot crash seed 400: detected=True recovered=True failed%=10.73
+== job 20/37: P3 eternalai_autopilot latency seed 401 (fresh, replaces 201)
+   stock before {'sku-lamp': 97839, 'sku-mug': 97355, 'sku-bag': 97793, 'sku-book': 97903} restocked False after_restock {'sku-lamp': 97839, 'sku-mug': 97355, 'sku-bag': 97793, 'sku-book': 97903}
+eternalai_autopilot latency seed 401: detected=True recovered=True failed%=5.36
+== job 21/37: P3 eternalai_autopilot error_spike seed 402 (fresh, replaces 212)
+   stock before {'sku-lamp': 97730, 'sku-mug': 97225, 'sku-bag': 97696, 'sku-book': 97803} restocked False after_restock {'sku-lamp': 97730, 'sku-mug': 97225, 'sku-bag': 97696, 'sku-book': 97803}
+eternalai_autopilot error_spike seed 402: detected=True recovered=True failed%=17.79
+== job 22/37: P3 eternalai_autopilot memory_leak seed 403 (fresh, replaces 203)
+   stock before {'sku-lamp': 97634, 'sku-mug': 97123, 'sku-bag': 97620, 'sku-book': 97738} restocked False after_restock {'sku-lamp': 97634, 'sku-mug': 97123, 'sku-bag': 97620, 'sku-book': 97738}
+eternalai_autopilot memory_leak seed 403: detected=True recovered=True failed%=0.33
+== job 23/37: P3 eternalai_autopilot disk_fill seed 404 (fresh, replaces 204)
+   stock before {'sku-lamp': 97532, 'sku-mug': 97005, 'sku-bag': 97524, 'sku-book': 97641} restocked False after_restock {'sku-lamp': 97532, 'sku-mug': 97005, 'sku-bag': 97524, 'sku-book': 97641}
+eternalai_autopilot disk_fill seed 404: detected=True recovered=True failed%=0.0
+== job 24/37: P3 eternalai_autopilot bad_deploy seed 405 (fresh, replaces 215)
+   stock before {'sku-lamp': 97456, 'sku-mug': 96899, 'sku-bag': 97438, 'sku-book': 97545} restocked False after_restock {'sku-lamp': 97456, 'sku-mug': 96899, 'sku-bag': 97438, 'sku-book': 97545}
+eternalai_autopilot bad_deploy seed 405: detected=True recovered=True failed%=37.5
+== job 25/37: P3 eternalai_autopilot cpu_burn seed 406 (fresh, replaces 206)
+   stock before {'sku-lamp': 97367, 'sku-mug': 96799, 'sku-bag': 97351, 'sku-book': 97444} restocked False after_restock {'sku-lamp': 97367, 'sku-mug': 96799, 'sku-bag': 97351, 'sku-book': 97444}
+eternalai_autopilot cpu_burn seed 406: detected=True recovered=False failed%=68.22
+== job 26/37: P3 eternalai_autopilot crash seed 410 (fresh, replaces 210)
+   stock before {'sku-lamp': 97208, 'sku-mug': 96612, 'sku-bag': 97142, 'sku-book': 97244} restocked False after_restock {'sku-lamp': 97208, 'sku-mug': 96612, 'sku-bag': 97142, 'sku-book': 97244}
+eternalai_autopilot crash seed 410: detected=True recovered=True failed%=8.45
+== job 27/37: P3 eternalai_autopilot latency seed 411 (fresh, replaces 211)
+   stock before {'sku-lamp': 97147, 'sku-mug': 96521, 'sku-bag': 97062, 'sku-book': 97141} restocked False after_restock {'sku-lamp': 97147, 'sku-mug': 96521, 'sku-bag': 97062, 'sku-book': 97141}
+eternalai_autopilot latency seed 411: detected=True recovered=True failed%=0.68
+== job 28/37: P3 eternalai_autopilot error_spike seed 412 (fresh, replaces 222)
+   stock before {'sku-lamp': 97055, 'sku-mug': 96435, 'sku-bag': 96977, 'sku-book': 97029} restocked False after_restock {'sku-lamp': 97055, 'sku-mug': 96435, 'sku-bag': 96977, 'sku-book': 97029}
+eternalai_autopilot error_spike seed 412: detected=True recovered=True failed%=8.86
+== job 29/37: P3 eternalai_autopilot memory_leak seed 413 (fresh, replaces 213)
+   stock before {'sku-lamp': 96948, 'sku-mug': 96344, 'sku-bag': 96876, 'sku-book': 96906} restocked False after_restock {'sku-lamp': 96948, 'sku-mug': 96344, 'sku-bag': 96876, 'sku-book': 96906}
+eternalai_autopilot memory_leak seed 413: detected=True recovered=True failed%=3.65
+== job 30/37: P3 eternalai_autopilot disk_fill seed 414 (fresh, replaces 214)
+   stock before {'sku-lamp': 96866, 'sku-mug': 96240, 'sku-bag': 96776, 'sku-book': 96799} restocked False after_restock {'sku-lamp': 96866, 'sku-mug': 96240, 'sku-bag': 96776, 'sku-book': 96799}
+eternalai_autopilot disk_fill seed 414: detected=True recovered=True failed%=0.0
+== job 31/37: P3 eternalai_autopilot bad_deploy seed 415 (fresh, replaces 225)
+   stock before {'sku-lamp': 96777, 'sku-mug': 96066, 'sku-bag': 96659, 'sku-book': 96663} restocked False after_restock {'sku-lamp': 96777, 'sku-mug': 96066, 'sku-bag': 96659, 'sku-book': 96663}
+eternalai_autopilot bad_deploy seed 415: detected=True recovered=True failed%=9.97
+== job 32/37: P3 eternalai_autopilot cpu_burn seed 416 (fresh, replaces 216)
+   stock before {'sku-lamp': 96679, 'sku-mug': 95942, 'sku-bag': 96544, 'sku-book': 96555} restocked False after_restock {'sku-lamp': 96679, 'sku-mug': 95942, 'sku-bag': 96544, 'sku-book': 96555}
+eternalai_autopilot cpu_burn seed 416: detected=True recovered=False failed%=0.0
+== job 33/37: P3 eternalai_autopilot crash seed 420 (fresh, replaces 220)
+   stock before {'sku-lamp': 96488, 'sku-mug': 95717, 'sku-bag': 96340, 'sku-book': 96361} restocked False after_restock {'sku-lamp': 96488, 'sku-mug': 95717, 'sku-bag': 96340, 'sku-book': 96361}
+eternalai_autopilot crash seed 420: detected=True recovered=True failed%=31.33
+== job 34/37: P3 eternalai_autopilot latency seed 421 (fresh, replaces 221)
+   stock before {'sku-lamp': 96415, 'sku-mug': 95610, 'sku-bag': 96277, 'sku-book': 96303} restocked False after_restock {'sku-lamp': 96415, 'sku-mug': 95610, 'sku-bag': 96277, 'sku-book': 96303}
+eternalai_autopilot latency seed 421: detected=True recovered=True failed%=1.46
+== job 35/37: P3 eternalai_autopilot memory_leak seed 423 (fresh, replaces 223)
+   stock before {'sku-lamp': 96320, 'sku-mug': 95493, 'sku-bag': 96173, 'sku-book': 96192} restocked False after_restock {'sku-lamp': 96320, 'sku-mug': 95493, 'sku-bag': 96173, 'sku-book': 96192}
+eternalai_autopilot memory_leak seed 423: detected=True recovered=True failed%=1.69
+== job 36/37: P3 eternalai_autopilot disk_fill seed 424 (fresh, replaces 224)
+   stock before {'sku-lamp': 96237, 'sku-mug': 95396, 'sku-bag': 96060, 'sku-book': 96068} restocked False after_restock {'sku-lamp': 96237, 'sku-mug': 95396, 'sku-bag': 96060, 'sku-book': 96068}
+eternalai_autopilot disk_fill seed 424: detected=True recovered=True failed%=0.0
+== job 37/37: P3 eternalai_autopilot cpu_burn seed 426 (fresh, replaces 226)
+   stock before {'sku-lamp': 96128, 'sku-mug': 95283, 'sku-bag': 95947, 'sku-book': 95990} restocked False after_restock {'sku-lamp': 96128, 'sku-mug': 95283, 'sku-bag': 95947, 'sku-book': 95990}
+eternalai_autopilot cpu_burn seed 426: detected=True recovered=False failed%=27.71
+re-run complete
