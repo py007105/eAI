@@ -1,0 +1,1 @@
+{"run_id": "81448e49df", "scenario": "cpu_burn", "target": "payments", "expected_label": "unseen_fault", "supported": false, "t_inject": 1792438496.156465, "params": {"threads": 2}, "seed": 998620968}
