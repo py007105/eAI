@@ -70,7 +70,7 @@ class Incident:
 class Engine:
     use_models = True   # baseline engines (eternalai/baselines.py) set this False and never load trained artifacts
 
-    def __init__(self, mode: str = config.MODE):
+    def __init__(self, mode: str | None = None):
         self.prom, self.dv = Prom(), DockerView()
         self.executor, self.policy = Executor(), PolicyEngine(mode)
         self.persist = Persistence(3)
@@ -227,8 +227,10 @@ class Engine:
                     inc.log("reset between runs: incident closed")
                     self._preserve(inc)
                     closed.append(inc.id)
-            cleared = {"cooldown_services": sorted(self.policy.history), "breakers": sorted(self.policy.breaker_open)}
+            cleared = {"cooldown_services": sorted(self.policy.history), "breakers": sorted(self.policy.breaker_open),
+                       "actions_this_hour": len(self.policy.executed)}
             self.policy.history.clear()
+            self.policy.executed = []
             self.policy.breaker_open.clear()
             self.suppress, self.persist = Suppressor(), Persistence(3)
             self.first_anom.clear()
@@ -371,7 +373,7 @@ class Engine:
             inc.log("no safe automatic action: escalated to a human with evidence preserved")
             self._preserve(inc)
             return
-        d = self.policy.evaluate(runbook, service)
+        d = self.policy.evaluate(runbook, service, fault=inc.likely_cause, user_impact=self._user_impact())
         act = {"t": time.time(), "runbook_id": runbook, "service": service, "verdict": d.verdict,
                "reason": d.reason, "risk": d.risk, "executed": False, "approved_by": None}
         inc.actions.append(act)
@@ -385,6 +387,12 @@ class Engine:
         else:  # blocked
             inc.status, inc.closed_t = "escalated", time.time()
             self._preserve(inc)
+
+    def _user_impact(self) -> bool | None:
+        """Are users affected? The entry services (no callers) are anomalous. None if not observed yet."""
+        entries = [s for s in config.SERVICES if not config.CALLERS.get(s)]
+        seen = [self.latest[s].get("anomalous") for s in entries if s in self.latest]
+        return any(bool(a) for a in seen) if seen else None
 
     # ------------------------------------------------------------ act + verify
     def approve(self, inc_id: str, approver: str):
@@ -416,7 +424,7 @@ class Engine:
         svc = act["service"]
         inc.before = self._app_snapshot(probe=True)  # measured just before acting, with short timeouts
         try:
-            res = self.executor.run(act["runbook_id"], svc, actor, [e.id for e in inc.evidence][:6])
+            res = self.executor.run(act["runbook_id"], svc, actor, [e.id for e in inc.evidence][:6], reason=act.get("reason", ""))
             act["executed"], act["result"], act["executed_t"] = True, res, time.time()
             self.policy.record_execution(svc)
             inc.log(f"executed {act['runbook_id']} on {svc} by {actor}")
@@ -433,6 +441,9 @@ class Engine:
         inc.verification = v
         inc.after = self._app_snapshot(probe=False) | {"checkout_success": v["success_rate"]}
         inc.log(f"verification: {v['outcome']} ({v['success_rate']:.0%} of {v['probes']} checkouts)")
+        log_v = getattr(self.executor, "log_verification", None)
+        if log_v:
+            log_v(inc.id, act["runbook_id"], svc, v["outcome"], v["success_rate"])
         if v["outcome"] == "recovered":
             self.policy.record_recovered(svc)
             inc.status, inc.closed_t = "recovered", time.time()

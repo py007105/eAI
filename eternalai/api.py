@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from . import config
 from .engine import Engine
+from .rulebook import canonical_mode
 
 EVALUATOR_URL = os.getenv("EVALUATOR_URL", "http://localhost:8200")
 engine: Engine | None = None
@@ -86,6 +87,7 @@ def status():
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
             "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
+            "policy": engine.policy.rulebook.summary(),
             "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
@@ -143,18 +145,23 @@ def reject(iid: str, who: Who, x_approval_token: str | None = Header(None)):
 @app.post("/mode")
 def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
     _auth(x_approval_token)
-    if m.mode not in ("watch-only", "ask-first", "autopilot"):
-        raise HTTPException(400, "mode must be watch-only, ask-first or autopilot")
-    engine.policy.mode = m.mode
-    return {"mode": m.mode}
+    try:
+        mode = canonical_mode(m.mode)          # plan names watch / ask / autopilot are accepted too
+    except ValueError:
+        raise HTTPException(400, "mode must be watch-only, ask-first or autopilot (or watch, ask)")
+    if engine.policy.kill_switch and mode != "watch-only":
+        raise HTTPException(409, "kill switch is on: switch it off before leaving watch-only")
+    engine.policy.mode = mode
+    return {"mode": mode}
 
 
 @app.post("/killswitch")
 def killswitch(k: KillSwitch, x_approval_token: str | None = Header(None)):
-    """Switch execution off (on=true) or back on (on=false). While on, the policy blocks every action and approvals are refused."""
+    """Switch execution off (on=true) or back on (on=false). On: the mode becomes watch-only (plan §14), the policy blocks every
+    action and approvals are refused. Off: the mode stays watch-only until someone changes it with POST /mode."""
     _auth(x_approval_token)
-    engine.policy.kill_switch = k.on
-    return {"kill_switch": engine.policy.kill_switch}
+    engine.policy.set_kill_switch(k.on)
+    return {"kill_switch": engine.policy.kill_switch, "mode": engine.policy.mode}
 
 
 @app.post("/admin/reset")

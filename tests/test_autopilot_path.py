@@ -1,27 +1,41 @@
-"""The whole automatic path, diagnosis -> policy -> executor, for every runbook x service: autopilot executes only low-risk
-actions; high-risk ones (rollback anywhere, recreate on a stateful service) wait for approval and never reach the executor;
-protected services are only observed; the kill switch blocks everything, including approvals. No Docker or Prometheus:
-the telemetry, ranker, classifier, investigator and executor are fakes, the engine and policy are real."""
+"""The whole automatic path, diagnosis -> policy -> executor, for every diagnosis x service and every runbook x service, under
+both rulebooks: the plan's default (eternalai/rulebooks/default.yaml) and the reproduction of the measured benchmark-v2 system.
+The expected decisions below are written out by hand from the plan (§6.4, §13.2, §14), not computed by the code under test.
+No Docker or Prometheus: the telemetry, ranker, classifier, investigator and executor are fakes, the engine and policy are real."""
 import threading
 
 import pytest
 
-from eternalai import config, engine as engine_mod
+from eternalai import config, engine as engine_mod, rulebook
 from eternalai.classify import CAUSE_RUNBOOKS, Prediction
 from eternalai.engine import Engine, Incident
 from eternalai.policy import RUNBOOKS, PolicyEngine
 
 SERVICES = list(config.SERVICES)
-EXPECTED_RISK = {("restart_service", s): "low" for s in SERVICES} | {("clear_temp_path", s): "low" for s in SERVICES} \
-    | {("rollback_release", s): "high" for s in SERVICES} \
-    | {("recreate_container", s): ("low" if s == "web" else "high") for s in SERVICES}
+RULEBOOKS = {"plan": rulebook.load(rulebook.DEFAULT_FILE, SERVICES),
+             "benchmark-v2": rulebook.load(rulebook.RULEBOOK_DIR / "benchmark-v2.yaml", SERVICES)}
+
+
+def expected(book, runbook, service, fault=None):
+    """(risk, autopilot verdict), by hand."""
+    if book == "plan":
+        risk = {"restart_service": "low", "clear_temp_path": "low", "rollback_release": "high",
+                "recreate_container": "low" if service == "web" else "high"}[runbook]
+        if fault in ("error_spike", "latency_spike") and risk == "low":
+            risk = "medium"
+        if service == "payments":                       # protected: always asks
+            return risk, "needs_approval"
+        return risk, "execute" if risk == "low" else "needs_approval"
+    # benchmark-v2: everything low or medium, and autopilot executed low and medium
+    risk = "low" if runbook in ("restart_service", "clear_temp_path") or service == "web" else "medium"
+    return risk, "execute"
 
 
 class FakeExecutor:
     def __init__(self):
         self.calls, self.audit = [], []
 
-    def run(self, runbook_id, service, actor, evidence_ids=None):
+    def run(self, runbook_id, service, actor, evidence_ids=None, reason=""):
         self.calls.append((runbook_id, service, actor))
         return {"ok": True}
 
@@ -57,13 +71,15 @@ class FakeDockerView:
         return {}
 
 
-def make_engine(mode, root, label, monkeypatch, kill_switch=False, protected=()):
+def make_engine(mode, root, label, monkeypatch, kill_switch=False, protected=None, book="plan"):
     monkeypatch.setattr(engine_mod, "Investigator", FakeInvestigator)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     e = Engine.__new__(Engine)
     e.lock, e.last_error, e.last_closed, e.incidents, e.first_anom = threading.RLock(), None, {}, [], {}
-    e.policy = PolicyEngine(mode, kill_switch=kill_switch, protected=set(protected))
+    e.policy = PolicyEngine(mode, rulebook=RULEBOOKS[book], kill_switch=kill_switch,
+                            protected=None if protected is None else set(protected))
+    e.latest = {}
     e.executor, e.dv, e.detectors, e.prom = FakeExecutor(), FakeDockerView(), None, None
     e.ranker, e.classifier = FakeRanker(root), FakeClassifier(label)
     e.frames = {s: None for s in SERVICES}
@@ -87,44 +103,66 @@ def diagnose(e, root):
     return inc
 
 
+@pytest.mark.parametrize("book", sorted(RULEBOOKS))
 @pytest.mark.parametrize("service", SERVICES)
 @pytest.mark.parametrize("label", sorted(CAUSE_RUNBOOKS))
-def test_autopilot_full_path_every_diagnosis_and_service(label, service, monkeypatch):
-    e = make_engine("autopilot", service, label, monkeypatch)
+def test_autopilot_full_path_every_diagnosis_and_service(label, service, book, monkeypatch):
+    e = make_engine("autopilot", service, label, monkeypatch, book=book)
     inc = diagnose(e, service)
     rb = CAUSE_RUNBOOKS[label][0]
+    risk, verdict = expected(book, rb, service, label)
     act = inc.actions[-1]
-    assert act["runbook_id"] == rb and act["service"] == service and act["risk"] == EXPECTED_RISK[(rb, service)]
-    if EXPECTED_RISK[(rb, service)] == "high":
-        assert act["verdict"] == "needs_approval" and inc.status == "awaiting_approval" and e.executor.calls == []
+    assert act["runbook_id"] == rb and act["service"] == service and act["risk"] == risk and act["verdict"] == verdict
+    if verdict == "execute":
+        assert e.executor.calls == [(rb, service, "autopilot")]
     else:
-        assert act["verdict"] == "execute" and e.executor.calls == [(rb, service, "autopilot")]
+        assert inc.status == "awaiting_approval" and e.executor.calls == []
+
+
+@pytest.mark.parametrize("book", sorted(RULEBOOKS))
+@pytest.mark.parametrize("service", SERVICES)
+@pytest.mark.parametrize("runbook", sorted(RUNBOOKS))
+def test_autopilot_policy_to_executor_every_runbook_and_service(runbook, service, book, monkeypatch):
+    e = make_engine("autopilot", service, "down", monkeypatch, book=book)
+    inc = Incident("p", 1000.0)
+    inc.likely_cause = "down"
+    e.incidents.append(inc)
+    e._propose(inc, service, runbook)
+    risk, verdict = expected(book, runbook, service, "down")
+    assert inc.actions[-1]["verdict"] == verdict and inc.actions[-1]["risk"] == risk
+    assert e.executor.calls == ([(runbook, service, "autopilot")] if verdict == "execute" else [])
 
 
 @pytest.mark.parametrize("service", SERVICES)
-@pytest.mark.parametrize("runbook", sorted(RUNBOOKS))
-def test_autopilot_policy_to_executor_every_runbook_and_service(runbook, service, monkeypatch):
-    e = make_engine("autopilot", service, "down", monkeypatch)
-    inc = Incident("p", 1000.0)
-    e.incidents.append(inc)
-    e._propose(inc, service, runbook)
-    high = EXPECTED_RISK[(runbook, service)] == "high"
-    assert inc.actions[-1]["verdict"] == ("needs_approval" if high else "execute")
-    assert e.executor.calls == ([] if high else [(runbook, service, "autopilot")])
+def test_high_risk_never_executes_in_any_mode_under_the_plan(service, monkeypatch):
+    for mode in ("watch-only", "ask-first", "autopilot"):
+        e = make_engine(mode, service, "bad_deploy", monkeypatch)
+        inc = diagnose(e, service)
+        assert inc.actions[-1]["risk"] == "high" and e.executor.calls == []
+        assert inc.actions[-1]["verdict"] == ("observe_only" if mode == "watch-only" else "needs_approval")
 
 
 @pytest.mark.parametrize("service", SERVICES)
 @pytest.mark.parametrize("label", sorted(CAUSE_RUNBOOKS))
-def test_protected_service_never_executes_or_asks(label, service, monkeypatch):
+def test_protected_service_always_waits_for_approval(label, service, monkeypatch):
     e = make_engine("autopilot", service, label, monkeypatch, protected={service})
     inc = diagnose(e, service)
-    assert inc.actions[-1]["verdict"] == "observe_only" and inc.status == "open" and e.executor.calls == []
+    assert inc.actions[-1]["verdict"] == "needs_approval" and inc.status == "awaiting_approval" and e.executor.calls == []
+    e.approve(inc.id, "dashboard")                       # an approval is the only way it runs
+    assert e.executor.calls == [(CAUSE_RUNBOOKS[label][0], service, "human:dashboard")]
+
+
+def test_payments_is_protected_by_the_plan_rulebook(monkeypatch):
+    e = make_engine("autopilot", "payments", "down", monkeypatch)
+    inc = diagnose(e, "payments")
+    assert "protected" in inc.actions[-1]["reason"] and e.executor.calls == []
 
 
 @pytest.mark.parametrize("service", SERVICES)
 @pytest.mark.parametrize("label", sorted(CAUSE_RUNBOOKS))
 def test_kill_switch_blocks_the_whole_path(label, service, monkeypatch):
     e = make_engine("autopilot", service, label, monkeypatch, kill_switch=True)
+    assert e.policy.mode == "watch-only"
     inc = diagnose(e, service)
     assert inc.actions[-1]["verdict"] == "blocked" and inc.status == "escalated" and e.executor.calls == []
 
@@ -133,11 +171,11 @@ def test_kill_switch_refuses_a_pending_approval(monkeypatch):
     e = make_engine("autopilot", "orders", "bad_deploy", monkeypatch)
     inc = diagnose(e, "orders")
     assert inc.status == "awaiting_approval"
-    e.policy.kill_switch = True
+    e.policy.set_kill_switch(True)
     with pytest.raises(ValueError, match="kill switch"):
         e.approve(inc.id, "dashboard")
     assert e.executor.calls == []
-    e.policy.kill_switch = False
+    e.policy.set_kill_switch(False)
     e.approve(inc.id, "dashboard")
     assert e.executor.calls == [("rollback_release", "orders", "human:dashboard")]
 
@@ -149,7 +187,30 @@ def test_abstention_never_reaches_policy_or_executor(monkeypatch):
     assert inc.actions == [] and inc.status == "escalated" and e.executor.calls == []
 
 
-def test_killswitch_endpoint_needs_the_token(monkeypatch):
+def test_hourly_cap_stops_autopilot(monkeypatch):
+    e = make_engine("autopilot", "web", "down", monkeypatch)
+    cap = e.policy.rulebook.max_actions_per_hour
+    for i in range(cap):
+        e.policy.record_execution(f"x{i}", now=1000.0 + i)    # other names, so no cooldown or breaker applies to web
+    d = e.policy.evaluate("restart_service", "web", now=1000.0 + cap)
+    assert d.verdict == "blocked" and "hourly cap" in d.reason
+    assert e.policy.evaluate("restart_service", "web", now=1000.0 + 3601).verdict == "execute"
+
+
+def test_cpu_runaway_acts_only_when_users_are_affected(monkeypatch):
+    e = make_engine("autopilot", "orders", "down", monkeypatch)
+    no = e.policy.evaluate("restart_service", "orders", now=1000.0, fault="cpu_runaway", user_impact=False)
+    yes = e.policy.evaluate("restart_service", "orders", now=1000.0, fault="cpu_runaway", user_impact=True)
+    assert no.verdict == "observe_only" and yes.verdict == "needs_approval" and yes.risk == "medium"
+
+
+def test_db_slowdown_is_always_escalated(monkeypatch):
+    e = make_engine("autopilot", "orders", "down", monkeypatch)
+    d = e.policy.evaluate("restart_service", "orders", now=1000.0, fault="db_slowdown")
+    assert d.verdict == "blocked" and "escalated" in d.reason
+
+
+def test_killswitch_endpoint_needs_the_token_and_returns_to_watch_mode(monkeypatch):
     from fastapi.testclient import TestClient
 
     from eternalai import api
@@ -160,4 +221,9 @@ def test_killswitch_endpoint_needs_the_token(monkeypatch):
     assert c.post("/killswitch", json={"on": True}).status_code == 403
     assert c.post("/killswitch", json={"on": True}, headers={"X-Approval-Token": "wrong"}).status_code == 403
     r = c.post("/killswitch", json={"on": True}, headers={"X-Approval-Token": "test-token-123"})
-    assert r.status_code == 200 and r.json() == {"kill_switch": True} and e.policy.kill_switch is True
+    assert r.status_code == 200 and r.json()["kill_switch"] is True and e.policy.kill_switch is True
+    assert e.policy.mode == "watch-only" and r.json()["mode"] == "watch-only"
+    h = {"X-Approval-Token": "test-token-123"}
+    assert c.post("/mode", json={"mode": "autopilot"}, headers=h).status_code == 409   # cannot leave watch-only while on
+    c.post("/killswitch", json={"on": False}, headers=h)
+    assert c.post("/mode", json={"mode": "ask"}, headers=h).json() == {"mode": "ask-first"}

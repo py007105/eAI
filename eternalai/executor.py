@@ -116,17 +116,23 @@ class Executor:
         return {"cleared": config.APPROVED_TEMP_PATH, "service": service}
 
     # ---------------------------------------------------------------- entry
-    def run(self, runbook_id: str, service: str, actor: str, evidence_ids: list[str] | None = None):
+    def run(self, runbook_id: str, service: str, actor: str, evidence_ids: list[str] | None = None, reason: str = ""):
+        """Audit record (plan §14): what (runbook, service), why (policy reason), evidence, who (actor / approver), result."""
         fn = {"restart_service": self.restart_service, "recreate_container": self.recreate_container,
               "rollback_release": self.rollback_release, "clear_temp_path": self.clear_temp_path}.get(runbook_id)
         if fn is None:
             raise ExecutionError(f"unknown runbook {runbook_id}")
         try:
             result = fn(service)
-            self._log(runbook=runbook_id, service=service, actor=actor, ok=True, result=result,
+            self._log(runbook=runbook_id, service=service, actor=actor, reason=reason, ok=True, result=result,
                       evidence_ids=evidence_ids or [])
             return {"ok": True, **result}
         except Exception as e:  # audited, then re-raised as a clean error
-            self._log(runbook=runbook_id, service=service, actor=actor, ok=False, error=str(e)[:300],
+            self._log(runbook=runbook_id, service=service, actor=actor, reason=reason, ok=False, error=str(e)[:300],
                       evidence_ids=evidence_ids or [])
             raise ExecutionError(str(e)) from e
+
+    def log_verification(self, incident_id: str, runbook_id: str, service: str, outcome: str, success_rate: float):
+        """The result of the check that followed an action, in the same audit trail."""
+        return self._log(kind="verification", incident_id=incident_id, runbook=runbook_id, service=service,
+                         outcome=outcome, success_rate=success_rate)

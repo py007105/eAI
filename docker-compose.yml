@@ -79,7 +79,8 @@ services:
       WEB_URL: http://web:8000
       EVALUATOR_URL: http://evaluator:8200
       ETERNALAI_BRAIN: ${ETERNALAI_BRAIN:-eternalai}   # eternalai | threshold_restart | prototype_rules (benchmark baselines)
-      ETERNALAI_MODE: ${ETERNALAI_MODE:-ask-first}
+      ETERNALAI_MODE: ${ETERNALAI_MODE:-}             # empty: the rulebook's mode
+      ETERNALAI_POLICY_FILE: ${ETERNALAI_POLICY_FILE:-}  # empty: eternalai/rulebooks/default.yaml (the plan's values)
       ETERNALAI_APPROVAL_TOKEN: ${ETERNALAI_APPROVAL_TOKEN:-change-me}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
