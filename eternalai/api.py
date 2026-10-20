@@ -86,6 +86,7 @@ def status():
                             "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
+            "last_error_t": getattr(engine, "last_error_t", None),
             "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
             "policy": engine.policy.rulebook.summary(),
             "telemetry_failed": getattr(engine, "telemetry_failed", {}),

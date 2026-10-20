@@ -503,9 +503,11 @@ class Engine:
                 self.tick()
             except Exception as e:  # keep the loop alive; the error is visible in status
                 self.last_error = f"{type(e).__name__}: {e}"
+                self.last_error_t = time.time()
             time.sleep(max(0.0, interval - (time.time() - t0)))
 
     def stop(self):
         self._stop.set()
 
     last_error: str | None = None
+    last_error_t: float | None = None

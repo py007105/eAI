@@ -33,16 +33,33 @@ Q = {
 
 # A query that fails (connection error, HTTP error, Prometheus error status, malformed answer) must not lose the whole tick:
 # its value becomes missing (NaN / empty series) and the failure is recorded, so the caller can tell "failed" from "no data".
-QUERY_ERRORS = (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError)
+class PrometheusUnreachable(Exception):
+    """Prometheus could not be reached recently: the query was not sent (see Prom.UNREACHABLE_BACKOFF_S)."""
+
+
+QUERY_ERRORS = (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError, PrometheusUnreachable)
 
 
 class Prom:
+    # A tick sends about 56 queries. When Prometheus is unreachable each one fails only after a name lookup or connect
+    # timeout (about 3.9 s measured inside the brain container with Prometheus stopped), so one tick took minutes and
+    # detection, approval expiry and everything else in the loop stalled. After a connection-level failure the remaining
+    # queries are not sent for this long; they are marked failed at once and Prometheus is tried again on a later tick.
+    UNREACHABLE_BACKOFF_S = 5.0
+
     def __init__(self, url=config.PROMETHEUS_URL):
         self.c = httpx.Client(base_url=url, timeout=10)
         self.failures: list[tuple[float, str, str]] = []   # (time, query, error type), most recent last, capped
+        self._down_until = 0.0
 
     def _result(self, path: str, params: dict):
-        r = self.c.get(path, params=params)
+        if time.time() < getattr(self, "_down_until", 0.0):
+            raise PrometheusUnreachable("not sent: Prometheus was unreachable moments ago")
+        try:
+            r = self.c.get(path, params=params)
+        except httpx.TransportError:      # connect / DNS / timeout: the server, not this query, is the problem
+            self._down_until = time.time() + self.UNREACHABLE_BACKOFF_S
+            raise
         r.raise_for_status()
         body = r.json()
         if body.get("status") != "success":
@@ -125,14 +142,19 @@ class DockerView:
 
     def containers(self) -> dict[str, docker.models.containers.Container]:
         out = {}
-        for c in self.client.containers.list(all=True, filters={"label": "eai.managed=true"}):
+        # ignore_removed: a container replaced between the list call and its inspect (a restart, rollback or the evaluator's
+        # restore) is skipped instead of failing the whole tick (seen in the Phase 1 live check, "No such container").
+        for c in self.client.containers.list(all=True, filters={"label": "eai.managed=true"}, ignore_removed=True):
             out[c.labels.get("com.docker.compose.service", c.name)] = c
         return out
 
     def state(self) -> dict[str, ContainerState]:
         out = {}
         for svc, c in self.containers().items():
-            c.reload()
+            try:
+                c.reload()
+            except docker.errors.NotFound:   # removed since the list call: no state this tick
+                continue
             s = c.attrs["State"]
             tag = c.attrs["Config"]["Image"].split(":")[-1]  # reference it was created from
             seq = int(c.image.labels.get("eai.release_seq", 0))

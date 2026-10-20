@@ -27,17 +27,18 @@ def prom_with(fail_on=(), mode="http500"):
         return httpx.Response(200, json={"status": "success", "data": {"result": [{"value": [0, "1"]}]}})
     p = Prom.__new__(Prom)
     p.c = httpx.Client(base_url="http://prom", transport=httpx.MockTransport(handler))
-    p.failures = []
+    p.failures, p._down_until = [], 0.0
     return p
 
 
 def test_one_failed_query_marks_only_that_signal_missing():
-    for mode in ("http500", "error_status", "malformed", "connect"):
+    # (a connection error means Prometheus itself is unreachable: see the backoff test below)
+    for mode in ("http500", "error_status", "malformed"):
         p = prom_with(fail_on=["process_cpu_seconds_total"], mode=mode)
         df = p.signals("web", 60, end=1_000_000.0)
         assert df.attrs["failed_queries"] == ["cpu_cores"], mode
         assert df["cpu_cores"].isna().all() and df["mem_bytes"].notna().any() and df["up"].notna().any(), mode
-        assert p.failures and p.failures[-1][2] in ("HTTPStatusError", "ValueError", "JSONDecodeError", "ConnectError"), mode
+        assert p.failures and p.failures[-1][2] in ("HTTPStatusError", "ValueError", "JSONDecodeError"), mode
 
 
 def test_a_failed_rate_query_stays_missing_and_is_not_turned_into_zero_traffic():
@@ -108,3 +109,42 @@ def test_a_real_up_zero_still_means_down():
     e = observing_engine(p)
     _, _, anom = e._observe()
     assert all(anom.values()) and e.telemetry_failed == {}
+
+
+def test_unreachable_prometheus_costs_one_attempt_per_tick_not_one_per_query(monkeypatch):
+    calls = []
+
+    def handler(req):
+        calls.append(req.url.params.get("query"))
+        raise httpx.ConnectError("name resolution failed", request=req)
+    p = Prom.__new__(Prom)
+    p.c, p.failures, p._down_until = httpx.Client(base_url="http://prom", transport=httpx.MockTransport(handler)), [], 0.0
+    clock = {"t": 1000.0}
+    monkeypatch.setattr("eternalai.collector.time.time", lambda: clock["t"])
+    df = p.signals("orders", 60, end=1_000_000.0)
+    assert len(calls) == 1                                   # the other queries were not sent
+    assert set(df.attrs["failed_queries"]) >= set(Q) and df.isna().all().all()
+    assert {f[2] for f in p.failures} == {"ConnectError", "PrometheusUnreachable"}
+    clock["t"] += Prom.UNREACHABLE_BACKOFF_S + 0.1          # later tick: Prometheus is tried again
+    p.signals("orders", 60, end=1_000_000.0)
+    assert len(calls) == 2
+
+
+def test_a_container_removed_mid_poll_is_skipped():
+    import docker
+    from eternalai.collector import DockerView
+
+    class Gone:
+        labels, name = {"com.docker.compose.service": "orders"}, "eai-orders-1"
+
+        def reload(self):
+            raise docker.errors.NotFound("No such container")
+
+    class Containers:
+        def list(self, **kw):
+            assert kw.get("ignore_removed") is True
+            return [Gone()]
+
+    class Client:
+        containers = Containers()
+    assert DockerView(client=Client()).state() == {}
