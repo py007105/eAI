@@ -13,6 +13,8 @@ import random
 import sys
 import time
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 SCENARIOS = ["memory_leak", "disk_fill", "traffic_surge", "good_deploy"]
 GRADUAL = ["memory_leak", "disk_fill"]
@@ -135,7 +137,7 @@ def collect(a):
         f = out / f"{sc}_{seed}.json"
         if f.exists():
             continue
-        r = httpx.post(f"{EV}/runs", json={"scenario": sc, "seed": seed, "timeout_s": TIMEOUT.get(sc, 90), "healthy_s": 60}, timeout=20)
+        r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": sc, "seed": seed, "timeout_s": TIMEOUT.get(sc, 90), "healthy_s": 60}, timeout=20))
         if r.status_code != 200:
             print(f"{sc} {seed}: could not start ({r.status_code})", flush=True)
             continue

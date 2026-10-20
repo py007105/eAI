@@ -12,11 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from eternalai.collector import DockerView  # noqa: E402
 from eternalai.executor import Executor  # noqa: E402
 from eternalai.verify import verify_recovery  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 svc = sys.argv[1] if len(sys.argv) > 1 else "orders"
 EV = "http://localhost:8200"
 dv, ex = DockerView(), Executor()
-rid = httpx.post(f"{EV}/runs", json={"scenario": "bad_deploy", "target": svc, "timeout_s": 60}, timeout=20).json()["run_id"]
+rid = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": "bad_deploy", "target": svc, "timeout_s": 60}, timeout=20)).json()["run_id"]
 print("evaluator started a run (scenario hidden from us)")
 # wait until the bad release is observable: image tag changes to a higher release sequence
 for _ in range(120):
