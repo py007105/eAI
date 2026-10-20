@@ -7,7 +7,7 @@ x-app: &app
   environment: &appenv
     OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false}      # v2: the telemetry condition is chosen by the pre-registered Stage 0 rule (Amendment 4)
-    CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
+    CHAOS_TOKEN: ${CHAOS_TOKEN:?set CHAOS_TOKEN to a real secret in .env}   # required: the services also refuse the old default 'evaluator-only'
 
 services:
   inventory:
@@ -33,7 +33,7 @@ services:
     <<: *app
     build: {context: ./app, args: {SERVICE: web, VERSION: v1, RELEASE_SEQ: "1"}}
     image: eai/web:v1
-    ports: ["8080:8000"]
+    ports: ["127.0.0.1:8080:8000"]
     depends_on: [orders, inventory]
     labels: {eai.managed: "true", eai.role: app}
 
@@ -55,22 +55,23 @@ services:
     image: eai/evaluator:v1
     mem_limit: 256m
     networks: [eai]
-    ports: ["8200:8200"]
+    ports: ["127.0.0.1:8200:8200"]
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "truth:/truth"]
     environment:
       PROMETHEUS_URL: http://prometheus:9090
       EAI_URL: ${EAI_URL:-http://eternalai:8000}   # set EAI_URL=http://host.docker.internal:8000 to score a host-run backend
-      CHAOS_TOKEN: ${CHAOS_TOKEN:-evaluator-only}
+      CHAOS_TOKEN: ${CHAOS_TOKEN:?set CHAOS_TOKEN to a real secret in .env}
+      ETERNALAI_APPROVAL_TOKEN: ${ETERNALAI_APPROVAL_TOKEN:-change-me}   # POST /runs needs it (same token as the brain)
     extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on: [web]
 
-  # The brain. It mounts the Docker socket (root-equivalent on the host: see docs/ARCHITECTURE.md, Security)
+  # The brain. It mounts the Docker socket (root-equivalent on the host; see docs/EVALUATION.md, Security)
   # but NOT the truth volume. Approve/reject/mode endpoints are refused until a real token is set in .env.
   eternalai:
     build: {context: ., dockerfile: eternalai/Dockerfile}
     image: eai/eternalai:v2
     networks: [eai]
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]
     mem_limit: 512m
     volumes: ["/var/run/docker.sock:/var/run/docker.sock", "eternalai-runtime:/srv/runtime"]
     environment:
@@ -88,7 +89,7 @@ services:
     build: {context: ., dockerfile: dashboard/Dockerfile}
     image: eai/dashboard:v1
     networks: [eai]
-    ports: ["8050:8050"]
+    ports: ["127.0.0.1:8050:8050"]
     mem_limit: 256m
     environment:
       BACKEND_URL: http://eternalai:8000
@@ -109,7 +110,7 @@ services:
     image: prom/prometheus:v2.55.1
     mem_limit: 512m
     networks: [eai]
-    ports: ["9090:9090"]
+    ports: ["127.0.0.1:9090:9090"]
     volumes: [./telemetry/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=2h"]
 
@@ -117,7 +118,7 @@ services:
     image: jaegertracing/all-in-one:1.64.0
     mem_limit: 512m
     networks: [eai]
-    ports: ["16686:16686"]
+    ports: ["127.0.0.1:16686:16686"]
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
       MEMORY_MAX_TRACES: ${JAEGER_MAX_TRACES:-1000}   # v2: cap the in-memory store; v1 ran it unbounded and it was OOM-killed at its 512 MB limit

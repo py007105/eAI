@@ -251,16 +251,16 @@ def set_mode(mode, token, lang):
 
 @app.callback(Output("demo_msg", "children"),
               Input("demo_hidden", "n_clicks"), Input("demo_unseen", "n_clicks"), Input("demo_reveal", "n_clicks"),
-              State("lang", "value"), prevent_initial_call=True)
-def demo_action(_h, _u, _r, lang):
+              State("token", "value"), State("lang", "value"), prevent_initial_call=True)
+def demo_action(_h, _u, _r, token, lang):
     trig = callback_context.triggered_id
     if not callback_context.triggered or not callback_context.triggered[0]["value"]:
         return dash.no_update
     if trig == "demo_reveal":
         ok, msg = DEMO.reveal()
-    else:
-        ok, msg = DEMO.start("unseen" if trig == "demo_unseen" else "hidden", (poller.get("status") or {}).get("mode"))
-    return t(msg, lang) if msg.startswith("demo_") else msg
+    else:   # starting a run injects a real fault: the evaluator requires the approval token typed on the page
+        ok, msg = DEMO.start("unseen" if trig == "demo_unseen" else "hidden", (poller.get("status") or {}).get("mode"), token)
+    return t(msg, lang) if msg.startswith(("demo_", "token_")) else msg
 
 
 @app.callback(Output("demo_state", "children"), Output("demo_runs", "children"), Output("demo_hidden", "disabled"),

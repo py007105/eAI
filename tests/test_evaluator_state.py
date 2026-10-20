@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture
 def ev(tmp_path, monkeypatch):
     monkeypatch.setenv("TRUTH_DIR", str(tmp_path / "truth"))  # never touch a real /truth
+    monkeypatch.setenv("CHAOS_TOKEN", "test-chaos-token")     # the evaluator refuses to start with the old default
     monkeypatch.syspath_prepend(str(ROOT / "evaluator"))
     import scenarios
 

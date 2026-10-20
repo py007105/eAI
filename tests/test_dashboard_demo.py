@@ -25,8 +25,9 @@ class FakeEvaluator:
     def __init__(self):
         self.posts, self.state, self.runs, self.reveal_body, self.post_code = [], "running", 5, None, 200
 
-    def post(self, url, json=None, timeout=None):
+    def post(self, url, json=None, timeout=None, headers=None):
         self.posts.append(json)
+        self.headers = headers
         return Resp(self.post_code, {"run_id": f"r{len(self.posts)}"} if self.post_code == 200 else {"detail": "a run is already in progress"})
 
     def get(self, url, timeout=None):
@@ -49,7 +50,7 @@ def test_hidden_start_sends_a_scenario_from_the_pool_only():
     for _ in range(200):
         ev = FakeEvaluator()
         d = demo.DemoRuns("http://ev", ev)
-        assert d.start("hidden", "ask-first") == (True, "demo_started")
+        assert d.start("hidden", "ask-first", "tok") == (True, "demo_started")
         seen.add(ev.posts[0]["scenario"])
     assert seen <= set(demo.POOL) and "cpu_burn" not in seen and len(seen) > 4
 
@@ -57,33 +58,33 @@ def test_hidden_start_sends_a_scenario_from_the_pool_only():
 def test_unseen_segment_only_in_ask_first():
     ev = FakeEvaluator()
     d = demo.DemoRuns("http://ev", ev)
-    assert d.start("unseen", "autopilot") == (False, "demo_unseen_needs_ask_first") and not ev.posts
-    assert d.start("unseen", "ask-first")[0] and ev.posts[-1] == {"scenario": "cpu_burn"}
+    assert d.start("unseen", "autopilot", "tok") == (False, "demo_unseen_needs_ask_first") and not ev.posts
+    assert d.start("unseen", "ask-first", "tok")[0] and ev.posts[-1] == {"scenario": "cpu_burn"}
 
 
 def test_no_second_start_while_running_or_restoring_so_no_409():
     ev = FakeEvaluator()
     d = demo.DemoRuns("http://ev", ev)
-    d.start("hidden", "ask-first")
-    assert d.start("hidden", "ask-first") == (False, "demo_busy") and len(ev.posts) == 1
+    d.start("hidden", "ask-first", "tok")
+    assert d.start("hidden", "ask-first", "tok") == (False, "demo_busy") and len(ev.posts) == 1
     ev.runs = 6                                   # scored, evaluator still "running": restoring
     d.poll()
-    assert d.current()["phase"] == "restoring" and d.start("hidden", "ask-first") == (False, "demo_busy")
+    assert d.current()["phase"] == "restoring" and d.start("hidden", "ask-first", "tok") == (False, "demo_busy")
     ev.state = "finished"
     d.poll()
-    assert d.current()["phase"] == "finished" and d.start("hidden", "ask-first")[0] and len(ev.posts) == 2
+    assert d.current()["phase"] == "finished" and d.start("hidden", "ask-first", "tok")[0] and len(ev.posts) == 2
 
 
 def test_a_run_started_elsewhere_gives_a_friendly_conflict_message():
     ev = FakeEvaluator()
     ev.post_code = 409
-    assert demo.DemoRuns("http://ev", ev).start("hidden", "ask-first") == (False, "demo_conflict")
+    assert demo.DemoRuns("http://ev", ev).start("hidden", "ask-first", "tok") == (False, "demo_conflict")
 
 
 def test_reveal_only_after_the_evaluator_says_finished():
     ev = FakeEvaluator()
     d = demo.DemoRuns("http://ev", ev)
-    d.start("hidden", "ask-first")
+    d.start("hidden", "ask-first", "tok")
     assert d.reveal() == (False, "demo_not_finished")
     ev.state, ev.reveal_body = "finished", {"truth": {"scenario": "crash", "target": "orders"}, "score": {"detected": True, "recovered": True,
                                                                                                          "time_to_verified_recovery_s": 41.6, "failed_request_pct": 10.81}}
@@ -94,7 +95,7 @@ def test_reveal_only_after_the_evaluator_says_finished():
 def test_scenario_never_reaches_the_page_before_the_reveal():
     ev = FakeEvaluator()
     d = demo.DemoRuns("http://ev", ev)
-    d.start("hidden", "ask-first")
+    d.start("hidden", "ask-first", "tok")
     sent = ev.posts[0]["scenario"]
     page = str(views.demo_state(d.current(), None)) + str(views.demo_runs(d.runs, demo.summary))
     assert sent not in page and sent.replace("_", " ") not in page and "scenario" not in d.current()
@@ -142,3 +143,19 @@ def test_new_proposal_alert_fires_once_per_proposal_and_does_not_wipe_itself():
     assert "AudioContext" in js and "classList.add('flash')" in js
     assert "return window.dash_clientside.no_update" in js          # an unchanged poll must not clear the "alerted" marker
     assert "body.flash" in (ROOT / "dashboard" / "assets" / "style.css").read_text(encoding="utf-8")
+
+
+def test_starting_a_run_needs_the_token_and_sends_it_as_a_header():
+    ev = FakeEvaluator()
+    d = demo.DemoRuns("http://ev", ev)
+    assert d.start("hidden", "ask-first", None) == (False, "demo_token_needed") and not ev.posts
+    assert d.start("hidden", "ask-first", "   ") == (False, "demo_token_needed") and not ev.posts
+    assert d.start("hidden", "ask-first", " tok \n")[0] and ev.headers == {"X-Approval-Token": "tok"}
+
+
+def test_a_refused_token_gives_a_message_that_does_not_repeat_it():
+    for code in (403, 503):
+        ev = FakeEvaluator()
+        ev.post_code = code
+        ok, msg = demo.DemoRuns("http://ev", ev).start("hidden", "ask-first", "secret-value")
+        assert not ok and msg == "demo_token_refused" and "secret" not in t(msg)

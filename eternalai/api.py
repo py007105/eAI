@@ -174,9 +174,13 @@ def audit():
 
 # ---- blind-challenge pass-through for the dashboard. The engine never reads these responses.
 @app.post("/challenge/start")
-def challenge_start():
-    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15)  # no scenario: the evaluator picks one itself
-    r.raise_for_status()
+def challenge_start(x_approval_token: str | None = Header(None)):
+    """Starts a real fault injection, so it needs the approval token; the token is forwarded to the evaluator."""
+    _auth(x_approval_token)
+    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15,   # no scenario: the evaluator picks one itself
+                   headers={"X-Approval-Token": x_approval_token})
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, r.json().get("detail", "evaluator refused"))
     return r.json()
 
 

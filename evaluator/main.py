@@ -6,6 +6,7 @@ the caller (and EternalAI) only get a run id.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import random
@@ -15,7 +16,7 @@ import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from scenarios import HEALTHY_SCENARIOS, SCENARIOS, SERVICES, Injector
@@ -28,8 +29,28 @@ TRUTH = Path(os.getenv("TRUTH_DIR", "/truth"))  # a volume only this container m
 TRUTH.mkdir(parents=True, exist_ok=True)
 RESULTS = TRUTH / "results.jsonl"
 
+DEFAULT_CHAOS_TOKEN = "evaluator-only"   # the old published default: anyone who read the repository knew it
+
+
+def chaos_token() -> str:
+    """The token the evaluator sends to the services' /_chaos endpoint. Refuse to start without a real one."""
+    tok = os.getenv("CHAOS_TOKEN", "")
+    if not tok or tok == DEFAULT_CHAOS_TOKEN:
+        raise RuntimeError("CHAOS_TOKEN is unset or the published default 'evaluator-only'; set a real secret in .env. Refusing to start.")
+    return tok
+
+
+def _auth(token: str | None):
+    """Starting a run injects a real fault, so it needs the same approval token as the brain's write endpoints."""
+    good = os.getenv("ETERNALAI_APPROVAL_TOKEN", "")
+    if not good or good == "change-me":
+        raise HTTPException(503, "starting runs is disabled: set ETERNALAI_APPROVAL_TOKEN to a real secret")
+    if not token or not hmac.compare_digest(token, good):
+        raise HTTPException(403, "invalid approval token")
+
+
 app = FastAPI(title="eai-evaluator")
-inj = Injector(os.getenv("CHAOS_TOKEN", "evaluator-only"))
+inj = Injector(chaos_token())
 runs: dict[str, dict] = {}
 _state = {"after_deploy": False}  # the previous run left a release change behind
 _lock = threading.Lock()
@@ -131,7 +152,8 @@ def health():
 
 
 @app.post("/runs")
-def start(req: RunRequest):
+def start(req: RunRequest, x_approval_token: str | None = Header(None)):
+    _auth(x_approval_token)
     if any(r["state"] == "running" for r in runs.values()):
         raise HTTPException(409, "a run is already in progress")
     rng = random.Random(req.seed)
