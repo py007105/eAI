@@ -31,3 +31,15 @@ DEPLOY_GRACE_S = 15.0     # ignore anomalies this long after a release change (a
 # v2: a proposal that nobody approves must not stop detection forever. After this long a pending approval (or a watch-only
 # observation) is escalated with its evidence preserved, and the incident is closed.
 APPROVAL_TTL_S = float(os.getenv("ETERNALAI_APPROVAL_TTL_S", "120"))
+# Safety controls. Kill switch: when on, nothing is executed (autopilot or approved); it can also be switched at run time
+# with POST /killswitch. Protected services: proposals for them are only recorded (observe_only), in every mode.
+def env_flag(value: str | None) -> bool:
+    return (value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def env_list(value: str | None) -> set:
+    return {s.strip() for s in (value or "").split(",") if s.strip()}
+
+
+KILL_SWITCH = env_flag(os.getenv("ETERNALAI_KILL_SWITCH"))
+PROTECTED_SERVICES = env_list(os.getenv("ETERNALAI_PROTECTED_SERVICES"))

@@ -34,8 +34,10 @@ def main():
             print("alert:", pg.locator("#alert_sink").text_content(), "| title:", pg.title())
             demo_panel = pg.locator("#t_demo").locator("xpath=..")
             demo_panel.screenshot(path=OUT / "demo_1_ready.png")
+            pg.fill("#token", "fixture-only-token")   # starting a run needs a token; the fixture evaluator ignores it
             pg.click("#demo_hidden")
             pg.wait_for_timeout(1500)
+            pg.fill("#token", "")                     # cleared again before any further screenshot
             print("after start:", pg.locator("#demo_msg").inner_text(), "| hidden button disabled:", pg.locator("#demo_hidden").is_disabled())
             seen, t0 = [], time.time()
             while time.time() - t0 < 25:

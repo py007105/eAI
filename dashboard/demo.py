@@ -43,8 +43,12 @@ class DemoRuns:
         c = self.current()
         return bool(c and c["phase"] in ("starting", "running", "restoring"))
 
-    def start(self, segment: str, mode: str | None) -> tuple[bool, str]:
-        """segment: "hidden" or "unseen". Returns (ok, message key or detail)."""
+    def start(self, segment: str, mode: str | None, token: str | None = None) -> tuple[bool, str]:
+        """segment: "hidden" or "unseen". `token`: the approval token typed on the page; the evaluator requires it to start
+        a run (a run injects a real fault). It is sent as a header and never stored or shown. Returns (ok, message key or detail)."""
+        token = (token or "").strip()
+        if not token:
+            return False, "demo_token_needed"
         if self.busy():
             return False, "demo_busy"
         if segment == "unseen" and mode != "ask-first":
@@ -52,9 +56,13 @@ class DemoRuns:
         scen = UNSEEN if segment == "unseen" else secrets.choice(POOL)
         try:
             baseline = self.http.get(f"{self.base}/scorecard", timeout=5).json().get("runs", 0)
-            r = self.http.post(f"{self.base}/runs", json={"scenario": scen}, timeout=15)
+            r = self.http.post(f"{self.base}/runs", json={"scenario": scen}, timeout=15, headers={"X-Approval-Token": token})
+        except (requests.exceptions.InvalidHeader, UnicodeEncodeError):
+            return False, "token_invalid"          # requests' own message would repeat the token
         except (requests.RequestException, ValueError) as e:
             return False, f"evaluator unreachable: {type(e).__name__}"
+        if r.status_code in (403, 503):
+            return False, "demo_token_refused"
         if r.status_code == 409:
             return False, "demo_conflict"
         if r.status_code != 200:

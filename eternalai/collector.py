@@ -31,33 +31,65 @@ Q = {
 }
 
 
+# A query that fails (connection error, HTTP error, Prometheus error status, malformed answer) must not lose the whole tick:
+# its value becomes missing (NaN / empty series) and the failure is recorded, so the caller can tell "failed" from "no data".
+QUERY_ERRORS = (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError)
+
+
 class Prom:
     def __init__(self, url=config.PROMETHEUS_URL):
         self.c = httpx.Client(base_url=url, timeout=10)
+        self.failures: list[tuple[float, str, str]] = []   # (time, query, error type), most recent last, capped
+
+    def _result(self, path: str, params: dict):
+        r = self.c.get(path, params=params)
+        r.raise_for_status()
+        body = r.json()
+        if body.get("status") != "success":
+            raise ValueError(f"prometheus status {body.get('status')}: {body.get('errorType')}")
+        return body["data"]["result"]
+
+    def _fail(self, q: str, e: Exception):
+        self.failures = (self.failures + [(time.time(), q, type(e).__name__)])[-50:]
 
     def instant(self, q: str):
-        r = self.c.get("/api/v1/query", params={"query": q}).json()
-        res = r["data"]["result"]
-        return float(res[0]["value"][1]) if res else np.nan
+        """Latest value, or NaN if there is no series OR the query failed (recorded in `failures`)."""
+        try:
+            res = self._result("/api/v1/query", {"query": q})
+            return float(res[0]["value"][1]) if res else np.nan
+        except QUERY_ERRORS as e:
+            self._fail(q, e)
+            return np.nan
+
+    def _range(self, q: str, start: float, end: float, step=config.STEP_S) -> tuple[pd.Series, bool]:
+        """(series, ok). ok=False means the query failed, not merely that it returned no data."""
+        try:
+            res = self._result("/api/v1/query_range", {"query": q, "start": start, "end": end, "step": step})
+            if not res:
+                return pd.Series(dtype=float), True
+            v = np.array(res[0]["values"], dtype=float)
+            return pd.Series(v[:, 1], index=v[:, 0]), True
+        except QUERY_ERRORS as e:
+            self._fail(q, e)
+            return pd.Series(dtype=float), False
 
     def range(self, q: str, start: float, end: float, step=config.STEP_S) -> pd.Series:
-        r = self.c.get("/api/v1/query_range", params={"query": q, "start": start, "end": end, "step": step}).json()
-        res = r["data"]["result"]
-        if not res:
-            return pd.Series(dtype=float)
-        v = np.array(res[0]["values"], dtype=float)
-        return pd.Series(v[:, 1], index=v[:, 0])
+        return self._range(q, start, end, step)[0]
 
     def signals(self, service: str, seconds: int = 180, end: float | None = None) -> pd.DataFrame:
-        """Raw signal frame for `service`, indexed by unix seconds on a 2 s grid. NaN where unobserved."""
+        """Raw signal frame for `service`, indexed by unix seconds on a 2 s grid. NaN where unobserved.
+        `df.attrs["failed_queries"]` lists the signals whose query FAILED this time (their column is NaN)."""
         end = end or time.time()
         start = end - seconds
-        cols = {k: self.range(q.format(s=service), start, end) for k, q in Q.items()}
+        cols, failed = {}, []
+        queries = {k: q.format(s=service) for k, q in Q.items()}
         # failures of this service's calls to each other service (evidence for blaming the callee)
         for tgt in config.TOPOLOGY.get(service, []):
-            cols[f"depfail_{tgt}"] = self.range(
-                f'sum(rate(dependency_calls_total{{service="{service}",target="{tgt}",outcome="error"}}[10s]))',
-                start, end)
+            queries[f"depfail_{tgt}"] = f'sum(rate(dependency_calls_total{{service="{service}",target="{tgt}",outcome="error"}}[10s]))'
+        for k, q in queries.items():
+            cols[k], ok = self._range(q, start, end)
+            if not ok:
+                failed.append(k)
         grid = np.arange(int(start) // config.STEP_S * config.STEP_S, int(end), config.STEP_S, dtype=float)
         df = pd.DataFrame({k: v.reindex(grid, method="nearest", tolerance=config.STEP_S) if len(v) else np.nan
                            for k, v in cols.items()}, index=grid)
@@ -65,7 +97,9 @@ class Prom:
         # if it was up; if it was not scraped (up NaN/0) the rate stays NaN.
         up = df["up"].fillna(0) > 0
         for c in ["req_rate", "err_rate", "dep_fail_rate", "error_log_rate"] + [c for c in df if c.startswith("depfail_")]:
-            df[c] = df[c].where(~(df[c].isna() & up), 0.0)
+            if c not in failed:          # a failed query stays missing; it is not "no traffic"
+                df[c] = df[c].where(~(df[c].isna() & up), 0.0)
+        df.attrs["failed_queries"] = sorted(failed)
         return df
 
 

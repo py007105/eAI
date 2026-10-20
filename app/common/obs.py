@@ -19,7 +19,9 @@ from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Gauge, Histogram,
 SERVICE = os.getenv("SERVICE", "unknown")
 VERSION = os.getenv("APP_VERSION", "dev")
 RELEASE = os.getenv("RELEASE_FLAVOR", "good")  # baked into the image at build time
-CHAOS_TOKEN = os.getenv("CHAOS_TOKEN", "evaluator-only")
+CHAOS_TOKEN = os.getenv("CHAOS_TOKEN", "")
+if not CHAOS_TOKEN or CHAOS_TOKEN == "evaluator-only":   # unset, or the old published default: anyone could inject faults
+    raise RuntimeError("CHAOS_TOKEN is unset or the published default 'evaluator-only'; set a real secret in .env. Refusing to start.")
 SCRATCH = Path(os.getenv("SCRATCH_DIR", "/tmp/eai-scratch"))
 
 REQS = Counter("http_requests_total", "Requests", ["service", "route", "status"])

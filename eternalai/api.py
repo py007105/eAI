@@ -64,6 +64,10 @@ class Mode(BaseModel):
     mode: str
 
 
+class KillSwitch(BaseModel):
+    on: bool
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -81,6 +85,8 @@ def status():
                             "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
+            "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
+            "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
 
@@ -143,6 +149,14 @@ def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
     return {"mode": m.mode}
 
 
+@app.post("/killswitch")
+def killswitch(k: KillSwitch, x_approval_token: str | None = Header(None)):
+    """Switch execution off (on=true) or back on (on=false). While on, the policy blocks every action and approvals are refused."""
+    _auth(x_approval_token)
+    engine.policy.kill_switch = k.on
+    return {"kill_switch": engine.policy.kill_switch}
+
+
 @app.post("/admin/reset")
 def admin_reset(x_approval_token: str | None = Header(None)):
     """v2 (harness independence): clear cooldowns, breakers, de-duplication state and any open or pending incident between benchmark runs.
@@ -161,9 +175,13 @@ def audit():
 
 # ---- blind-challenge pass-through for the dashboard. The engine never reads these responses.
 @app.post("/challenge/start")
-def challenge_start():
-    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15)  # no scenario: the evaluator picks one itself
-    r.raise_for_status()
+def challenge_start(x_approval_token: str | None = Header(None)):
+    """Starts a real fault injection, so it needs the approval token; the token is forwarded to the evaluator."""
+    _auth(x_approval_token)
+    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15,   # no scenario: the evaluator picks one itself
+                   headers={"X-Approval-Token": x_approval_token})
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, r.json().get("detail", "evaluator refused"))
     return r.json()
 
 
