@@ -16,10 +16,12 @@ import httpx
 from pydantic import BaseModel, Field, ValidationError
 
 from .classify import ABSTAIN, CLASSES
+from .redact import redact
 
-# Pinned, not a "-latest" alias, so results are reproducible. "gemini-2.5-flash" returned HTTP 404
-# ("no longer available to new users") when tested on 2026-10-17; override with GEMINI_MODEL.
-GEMINI_DEFAULT_MODEL = "gemini-3.8-flash"
+# Pinned, not a "-latest" alias, so results are reproducible. The default is the model with a recorded working live result:
+# gemini-3.5-flash-lite gave 4 of 5 schema-valid reports in 1.2-1.6 s; gemini-3.8-flash gave 0 of 5 (4 timeouts, 1 HTTP error);
+# gemini-2.5-flash (the plan's model) returned HTTP 404 on 2026-10-17 (docs/results/llm_live.md). Override with GEMINI_MODEL.
+GEMINI_DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 CAUSES = tuple(c for c in CLASSES if c != "healthy") + (ABSTAIN,)
 RUNBOOKS = ("restart_service", "recreate_container", "rollback_release", "clear_temp_path")
@@ -81,16 +83,18 @@ def template_report(ctx: dict) -> IncidentReport:
 
 
 def _prompt(ctx: dict) -> str:
+    """The only text sent to an LLM provider. Evidence summaries can contain raw log lines, so they are redacted (plan §9.6)."""
     return json.dumps({"service_ranking": ctx["ranking"], "engine_diagnosis": ctx["cause"],
                        "candidate_runbooks": ctx["candidates"],
-                       "evidence": [{"id": e["id"], "tool": e["tool"], "summary": e["summary"]}
+                       "evidence": [{"id": e["id"], "tool": e["tool"], "summary": redact(e["summary"])}
                                     for e in ctx["evidence"]]})
 
 
 def _gemini(prompt: str, client: httpx.Client) -> str:
     model = os.getenv("GEMINI_MODEL", GEMINI_DEFAULT_MODEL)
+    # the key goes in a header, never in the URL (URLs end up in proxy and access logs)
     r = client.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                    params={"key": os.environ["GEMINI_API_KEY"]}, timeout=20,
+                    headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]}, timeout=20,
                     json={"systemInstruction": {"parts": [{"text": SYSTEM}]},
                           "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                           "generationConfig": {"responseMimeType": "application/json", "temperature": 0.1,

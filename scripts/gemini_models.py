@@ -12,7 +12,7 @@ key = os.getenv("GEMINI_API_KEY")
 if not key:
     sys.exit("GEMINI_API_KEY not set")
 try:
-    r = httpx.get("https://generativelanguage.googleapis.com/v1beta/models", params={"key": key, "pageSize": 200}, timeout=20)
+    r = httpx.get("https://generativelanguage.googleapis.com/v1beta/models", params={"pageSize": 200}, headers={"x-goog-api-key": key}, timeout=20)
 except httpx.HTTPError as e:
     sys.exit(f"request failed: {type(e).__name__}")
 print("HTTP", r.status_code)
