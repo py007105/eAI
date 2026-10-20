@@ -175,6 +175,7 @@ class Engine:
                 inc._noted = True
         self.suppress.update(anom)
         confirmed = self.suppress.filter(confirmed)
+        to_diagnose = None
         with self.lock:
             self._expire_pending(now)
             # v2: an incident waiting for approval does not block detection. Services it already covers are not re-opened
@@ -198,7 +199,9 @@ class Engine:
                 # An incident opens ~6 s after onset (3 persistent ticks). Diagnose once a full feature window lies after
                 # the onset, because the classifier was trained on such windows only.
                 if not open_inc.diagnosed and now - open_inc.opened_t >= max(4.0, self.window_s - 4.0):
-                    self._try_diagnose(open_inc, feats, scores, anom)
+                    to_diagnose = open_inc
+        if to_diagnose is not None:   # outside the lock: the API must not wait on telemetry and Docker calls
+            self._try_diagnose(to_diagnose, feats, scores, anom)
         if not open_inc:
             self._predictive(feats, now)
 
@@ -246,15 +249,25 @@ class Engine:
     # ------------------------------------------------------------ diagnosis
     def _try_diagnose(self, inc: Incident, feats, scores, anom):
         """An exception during diagnosis must never leave an incident 'open' forever (an open incident blocks all new
-        ones): escalate it with the error recorded and the evidence preserved."""
+        ones): escalate it with the error recorded and the evidence preserved.
+
+        Called WITHOUT the engine lock. EternalAI's own `_diagnose` does its slow work (Prometheus queries, Docker calls, log
+        reads, evidence building, model inference) unlocked and takes the lock only to read and write incident state, so the
+        API (/approvals, /incidents) never waits on telemetry. The benchmark baseline brains override `_diagnose` and were
+        written for the old contract (called under the lock); they keep it, unchanged."""
         try:
-            self._diagnose(inc, feats, scores, anom)
+            if type(self)._diagnose is Engine._diagnose:
+                self._diagnose(inc, feats, scores, anom)
+            else:
+                with self.lock:
+                    self._diagnose(inc, feats, scores, anom)
         except Exception as e:
-            self.last_error = f"diagnosis failed: {type(e).__name__}: {e}"
-            inc.diagnosed = True
-            inc.status, inc.closed_t = "escalated", time.time()
-            inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
-            self._preserve(inc)
+            with self.lock:
+                self.last_error = f"diagnosis failed: {type(e).__name__}: {e}"
+                inc.diagnosed = True
+                inc.status, inc.closed_t = "escalated", time.time()
+                inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
+                self._preserve(inc)
 
     def _diagnosis_record(self, root: str, p, feats_root: dict) -> dict:
         """v2 item B: keep what v1 threw away (the top class behind an abstention, why it abstained, how novel the window was,
@@ -269,17 +282,39 @@ class Engine:
                 "limits_exceeded": det.out_of_range(feats_root) if det is not None else None}
 
     def _diagnose(self, inc: Incident, feats, scores, anom):
+        """Diagnose `inc`. Called without the lock (see `_try_diagnose`): read state under the lock, compute unlocked, apply
+        under the lock. If the incident changed meanwhile (closed by a reset, or diagnosed already), the result is dropped."""
+        with self.lock:
+            services = list(inc.services)
+            onset = {s: self.first_anom.get(s) for s in config.SERVICES}
+        d = self._diagnose_compute(services, onset, feats, scores, anom)
+        with self.lock:
+            if inc.diagnosed or inc.status != "open":
+                return
+            inc.ranking, inc.diagnosis = d["ranking"], d["diagnosis"]
+            inc.likely_cause, inc.confidence, inc.abstained = d["label"], d["confidence"], d["abstained"]
+            inc.evidence = d["evidence"]
+            # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
+            # report replaces the text later (a live Gemini call took ~7 s in testing).
+            inc.report, inc.diagnosed = d["report"].model_dump(), True
+            inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
+            inc.log(f"diagnosed {d['label']} on {d['root']}")
+            self._propose(inc, d["root"], d["report"].runbook_id if not d["abstained"] else None)
+            self._llm_upgrade_async(inc, d["ctx"])
+
+    def _diagnose_compute(self, services: list, onset: dict, feats, scores, anom) -> dict:
+        """The slow part of a diagnosis, run WITHOUT the engine lock: Prometheus (dependency failures), Docker (state, logs),
+        evidence building, ranking and classification. Touches no shared incident state."""
         depfail = self._depfail()
-        onset = {s: self.first_anom.get(s) for s in config.SERVICES}
         table = evidence_table(scores, anom, onset, depfail, feats)
         if self.ranker:
-            inc.ranking = self.ranker.rank(table)
+            ranking = self.ranker.rank(table)
         else:  # fallback: old-prototype style rule, flagged in status
             order = deepest_anomalous(anom) or list(config.SERVICES)
-            inc.ranking = [{"service": s, "score": round(1 / (i + 1), 3)} for i, s in enumerate(order)]
-        root = inc.ranking[0]["service"]
+            ranking = [{"service": s, "score": round(1 / (i + 1), 3)} for i, s in enumerate(order)]
+        root = ranking[0]["service"]
         inv = Investigator(self.prom, self.dv)
-        for s in {root, *inc.services}:
+        for s in {root, *services}:
             inv.metrics(s, feats[s]); inv.container(s); inv.error_logs(s); inv.deploy_history(s)
         inv.dependency_failures(depfail)
         inv.forecast(root, self.frames[root])
@@ -288,30 +323,21 @@ class Engine:
         if self.classifier:
             p = self.classifier.predict(feats[root])
             label, conf, abst, probs = p.label, p.confidence, p.abstained, p.probs
-            inc.diagnosis = self._diagnosis_record(root, p, feats[root])
+            diagnosis = self._diagnosis_record(root, p, feats[root])
         else:
             label, conf, abst, probs = rule_diagnose(feats[root]), None, False, {}
-            inc.diagnosis = {"root": root, "rule_label": label}
+            diagnosis = {"root": root, "rule_label": label}
         if st is not None and not st.running and st.oom_killed:
             label, abst = "memory_leak", False  # container was OOM-killed: direct evidence
         if label == "healthy":                  # anomalous but classified healthy => do not guess
             label, abst = ABSTAIN, True
-        inc.likely_cause, inc.confidence, inc.abstained = label, conf, abst
         inv.similar_incidents(label if not abst else "unknown fault")
-        inc.evidence = inv.items
         alts = [c for c, v in sorted(probs.items(), key=lambda kv: -kv[1]) if c not in ("healthy", label)][:2]
         cands = [] if abst else list(CAUSE_RUNBOOKS.get(label, []))
         ctx = {"cause": label, "confidence": conf or 0.0, "candidates": cands, "alternatives": alts,
-               "ranking": inc.ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary}
-                                                        for e in inc.evidence]}
-        # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
-        # report replaces the text later (a live Gemini call took ~7 s in testing).
-        rep = template_report(ctx)
-        inc.report, inc.diagnosed = rep.model_dump(), True
-        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
-        inc.log(f"diagnosed {label} on {root}")
-        self._propose(inc, root, rep.runbook_id if not abst else None)
-        self._llm_upgrade_async(inc, ctx)
+               "ranking": ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary} for e in inv.items]}
+        return {"ranking": ranking, "root": root, "diagnosis": diagnosis, "label": label, "confidence": conf,
+                "abstained": abst, "evidence": inv.items, "ctx": ctx, "report": template_report(ctx)}
 
     def _llm_upgrade_async(self, inc: Incident, ctx: dict):
         if not llm_enabled():
@@ -429,18 +455,21 @@ class Engine:
                 f = e.data
                 if f["eta_earliest_s"] < config.PREDICT_HORIZON_S and f["share_of_limit_now"] > 0.25:
                     cause = "memory_leak" if f["resource"] == "memory" else "disk_fill"
+                    inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)   # Docker/telemetry: outside the lock
+                    ranking = [{"service": s, "score": 1.0}]
+                    cands = CAUSE_RUNBOOKS[cause]
+                    ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
+                           "ranking": ranking, "evidence": [
+                               {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inv.items]}
+                    rep = template_report(ctx)
                     with self.lock:
+                        if any(i.status in ("open", "awaiting_approval", "verifying", "executing") for i in self.incidents):
+                            return   # a reactive incident opened meanwhile; it takes precedence
                         inc = Incident(uuid.uuid4().hex[:8], now, kind="predicted", services=[s])
-                        inc.ranking, inc.likely_cause, inc.forecasts = [{"service": s, "score": 1.0}], cause, [f]
+                        inc.ranking, inc.likely_cause, inc.forecasts = ranking, cause, [f]
                         inc.confidence = None
                         inc.log(f"forecast: {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
-                        inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)
                         inc.evidence = inv.items
-                        cands = CAUSE_RUNBOOKS[cause]
-                        ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
-                               "ranking": inc.ranking, "evidence": [
-                                   {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inc.evidence]}
-                        rep = template_report(ctx)
                         inc.report, inc.diagnosed = rep.model_dump(), True
                         inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
                         self.incidents.append(inc)
