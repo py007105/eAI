@@ -64,6 +64,10 @@ class Mode(BaseModel):
     mode: str
 
 
+class KillSwitch(BaseModel):
+    on: bool
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -81,6 +85,7 @@ def status():
                             "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
+            "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
 
@@ -141,6 +146,14 @@ def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
         raise HTTPException(400, "mode must be watch-only, ask-first or autopilot")
     engine.policy.mode = m.mode
     return {"mode": m.mode}
+
+
+@app.post("/killswitch")
+def killswitch(k: KillSwitch, x_approval_token: str | None = Header(None)):
+    """Switch execution off (on=true) or back on (on=false). While on, the policy blocks every action and approvals are refused."""
+    _auth(x_approval_token)
+    engine.policy.kill_switch = k.on
+    return {"kill_switch": engine.policy.kill_switch}
 
 
 @app.post("/admin/reset")

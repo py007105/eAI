@@ -359,6 +359,8 @@ class Engine:
             inc = next((i for i in self.incidents if i.id == inc_id), None)
             if not inc or inc.status != "awaiting_approval":
                 raise ValueError("no pending approval for that incident")
+            if self.policy.kill_switch:
+                raise ValueError("kill switch is on: nothing is executed, not even approved actions")
             act = next(a for a in reversed(inc.actions) if a["verdict"] == "needs_approval" and not a["executed"])
             act["approved_by"] = approver
         self._run_async(inc, act, actor=f"human:{approver}")
