@@ -107,10 +107,13 @@ def layout():
                                                              for m in ("watch-only", "ask-first", "autopilot")],
                                          clearable=False, placeholder=t("mode"), className="dark-dd", style={"width": "160px"}),
                             dbc.Input(id="token", type="password", placeholder=t("token_placeholder"),
-                                      style={"width": "170px"})],
+                                      style={"width": "170px"}),
+                            # plan §14: one toggle returns everything to watch mode and stops every action (token required)
+                            dbc.Button(t("killswitch"), id="killswitch", color="danger", size="sm", outline=True)],
                            style={"display": "flex", "gap": "10px", "alignItems": "center"})], className="hero"),
         html.Div(id="statusbar", style={"marginBottom": "10px", "minHeight": "26px"}),
         html.Div(id="mode_msg", className="muted"),
+        html.Div(id="kill_msg", className="muted"),
         dbc.Row([
             dbc.Col(card([html.Div(id="t_map"), dcc.Graph(id="map", config={"displayModeBar": False})]), lg=7),
             dbc.Col([card([html.Div(id="t_report"), html.Div(id="report")], id="report_card"),
@@ -192,6 +195,10 @@ def refresh(_, lang):
     bar = [views.status_view(state, text), views.pill(status["mode"], "info"),
            views.pill(t("models_ok", lang) if not fallback else f"{t('models_fallback', lang)}: {', '.join(fallback)}",
                       "ok" if not fallback else "warn")]
+    if status.get("kill_switch"):
+        bar.append(views.pill(t("kill_active", lang), "bad"))
+    if (status.get("policy") or {}).get("file"):
+        bar.append(views.pill(f"{t('rulebook', lang)}: {status['policy']['file']}", "info"))
     if status["breakers_open"]:
         bar.append(views.pill(f"{t('breakers_open', lang)}: {', '.join(status['breakers_open'])}", "bad"))
     rcls = "panel glow-bad" if inc and inc["status"] in ("open", "awaiting_approval", "executing", "verifying") else (
@@ -247,6 +254,16 @@ def decide(_a, _r, token, lang):
 def set_mode(mode, token, lang):
     code, body = post("/mode", token, {"mode": mode})
     return "" if code == 200 else f"{t('mode_failed', lang)} ({code}): {body.get('detail', '')}"
+
+
+@app.callback(Output("kill_msg", "children"), Input("killswitch", "n_clicks"), State("token", "value"), State("lang", "value"),
+              prevent_initial_call=True)
+def toggle_killswitch(_n, token, lang):
+    on = not bool((poller.get("status") or {}).get("kill_switch"))
+    code, body = post("/killswitch", token, {"on": on})
+    if code != 200:
+        return f"{t('kill_failed', lang)} ({code}): {body.get('detail', '')}"
+    return t("kill_now_on" if body.get("kill_switch") else "kill_now_off", lang)
 
 
 @app.callback(Output("demo_msg", "children"),
