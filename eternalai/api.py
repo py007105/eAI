@@ -86,6 +86,7 @@ def status():
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
             "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
+            "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
 

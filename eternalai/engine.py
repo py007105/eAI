@@ -101,14 +101,20 @@ class Engine:
     def _observe(self):
         states = self.dv.poll()
         feats, scores, anom, raw = {}, {}, {}, {}
-        frames = {}
+        frames, failed = {}, {}
         for s in config.SERVICES:
             df = self.prom.signals(s, 150)
             frames[s] = df
+            failed[s] = list(df.attrs.get("failed_queries", []))
             base = self.baselines.get(s) or fit_baseline(df.iloc[: len(df) // 2])  # live fallback, flagged in status
             f = window_features(df, base, self.window_s)
             st = states.get(s)
-            down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
+            if "up" in failed[s]:
+                # The `up` QUERY failed (Prometheus error), which says nothing about the service: judge "down" from Docker only.
+                # Otherwise a monitoring outage would make every healthy service look down (and open incidents on them).
+                down = st is not None and not st.running
+            else:
+                down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
             if self.detectors and s in self.detectors:
                 sc = self.detectors[s].score(f)
                 a = service_anomalous(self.detectors[s], f, down)
@@ -131,6 +137,7 @@ class Engine:
                               "score": None if not np.isfinite(sc) else round(sc, 4), "anomalous": bool(a),
                               "state": {"running": st.running, "image_tag": st.image_tag} if st else None}
         self.frames = frames
+        self.telemetry_failed = {s: q for s, q in failed.items() if q}   # reported by /status; empty when all queries worked
         return feats, scores, anom
 
     def _app_snapshot(self, probe: bool) -> dict:
