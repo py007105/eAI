@@ -277,3 +277,57 @@ Existing work that is **not in the plan** and must keep working: independent eva
 ## E. Scale
 
 Phases 2-7 need a cluster, external accounts and the dataset. The hackathon is on 24-25 October 2026. Finishing every row before then is unlikely; Phase 1 (safety) and Phase 2 (Kubernetes driver, Helm, RBAC on kind) are the items with the highest plan priority (P:646-656).
+
+## F. Answers received (2026-10-20) and the resulting scope
+
+| ID | Answer | Effect on rows |
+|---|---|---|
+| D1 | Merge `hardening` into `plan-complete`, no rebase | done: merge commit `4a21f3c` |
+| D2 | Protected services need approval in every mode | P5 |
+| D3 | Plan values as the default rulebook (`auto_allowed_risks: [low]`) plus `benchmark-v2.yaml`; label every number with its policy file | P1, P3, P9, E9 |
+| D4 | Tracked copy `docs/ETERNALAI_PLAN.md`, corrected there; Desktop file untouched. §4/§19/§20 numbers come from the old prototype and are replaced by measured ones | E5, E6, G7 |
+| D5 | Dashboard 8050, shop 8080 | I1: Done differently (accepted) |
+| D6 | Chaos buttons behind `DEMO_CHAOS=1`, token-protected, through the evaluator | I4, I6: roadmap |
+| D7 | Mark "not supported" with a test; do not build | A5 |
+| D8 | Deferred | A6: Not started (roadmap) |
+| C1 | Dataset files: path still to be given (the answer contained a placeholder). RCAEval telemetry not included; ask before downloading | Phase 4 blocked on the path |
+| C2 | kind and helm may be downloaded (pinned versions, checksums verified) | Phase 2 |
+| C3 | One app at a time; Compose stack stopped while kind runs; Online Boutique only. Live Train Ticket not feasible on this machine: use the dataset's Train Ticket test set | E1 (Sock Shop: not started), E2: "not feasible on this machine" |
+| C4 | Telegram only (token and chat id placed in `.env` by the owner). Slack and PagerDuty: not started, documented | N1; N2, N3: Not started |
+| C5 | No SSO; per-user approver tokens instead, documented as a deviation | H6, N5 |
+| C6 | Document only | H8 (cloud identity) |
+| C7 | OK | M3 |
+
+**Priority order to the code freeze (2026-10-23 20:00 IST):** Phase 1 complete -> Phase 2 minimal (Driver interface, KubernetesDriver restart/scale/rollback/delete pod, k8s metrics source, annotation service map with static fallback, Helm chart + namespaced RBAC, one scripted kind end-to-end check with Online Boutique) -> Phase 3 F1/F3 (crash prediction live for memory leak and disk fill, real lead times, or the claim is removed) -> Phase 4 partial (KB files + loader, outcome-ranked fix choice, dataset-A classifier reported next to the current one, close root candidates -> abstain, forest-only anomaly -> no auto action) -> Phase 5 light (SQLite learn store + POST /feedback) -> Phase 6 (Telegram + approve/reject with the same checks) -> Phase 7 partial (re-run the policy-affected scenarios, >= 5 seeds; every number labelled with policy file and system). Everything else stays here as roadmap with its status. Leader election and kube-prometheus-stack install: roadmap.
+
+**Rules added:** every feature runs live end to end (Compose; kind for Phase 2); fakes only inside unit tests; each phase ends with a scripted live check and the report says "verified live" or "verified in tests only" per item; tag `demo-stable-N` locally after every phase that passes its live check.
+
+## G. Phase progress
+
+### Phase 1 (safety and policy): done; live check 17/17 passed (`docs/results/live_check_phase1.md`)
+
+| item | rows | commit | verified |
+|---|---|---|---|
+| Merge of `hardening` | P2, P6, H9, H10, Q4 | `4a21f3c` | see below |
+| Rulebook YAML (`eternalai/rulebook.py`, `rulebooks/default.yaml`, `rulebooks/benchmark-v2.yaml`), loaded and validated at start | P1 | `908e5e0` | **live** (`policy.default_rulebook`) + tests |
+| Rollback and other high-risk actions always need approval, in every mode | P2 | `908e5e0` | **live** (`live.high_risk_needs_approval`: rollback on orders waited, ran only after approval, verified recovered) + tests |
+| Autopilot runs only `auto_allowed_risks: [low]` | P3 | `908e5e0` | **live** (`live.autopilot_low_executes`: crash on web restarted and verified) + tests |
+| Plan risk table (error/latency restarts medium; recreate high on stateful services) | P4 | `908e5e0` | tests only |
+| Protected services need approval in every mode | P5 | `908e5e0` | **live** (`live.protected_waits`: payments restart waited; rejected; nothing executed) + tests |
+| Kill switch (env + token-protected endpoint + dashboard toggle) returns to watch-only and blocks everything | P6 | `908e5e0`, `83b2a85` | **live** (`policy.killswitch_roundtrip`, `live.killswitch_blocks`) + tests; dashboard button: tests only |
+| Hourly action cap | P7 | `908e5e0` | tests only (10 actions in an hour were not triggered live) |
+| `fault_overrides` (cpu_runaway only with user impact, db_slowdown escalate) | P13, X4 | `908e5e0` | tests only (no such fault class in the live classifier) |
+| Plan mode names watch / ask | P16 | `908e5e0` | tests only |
+| Audit: reason and verification result | A8 | `908e5e0` | **live** (`audit.reason_and_verification`) |
+| Engine lock: no I/O while holding it | H10 | `4c0222f` | **live** (`lock.approvals_fast_live`: 1631 polls during four runs, p50 0.0045 s, p95 0.0768 s, max 2.05 s, 0 errors) + tests |
+| Ports on 127.0.0.1; token on fault start; no default chaos token | H9 | `a8c9051` | **live** (`net.ports_localhost`, `net.fault_start_needs_token`, `startup.*`) + tests |
+| Prometheus errors do not lose or stall the tick | Q4 | `8d48de5`, `a24bc69` | **live** (`telemetry.prometheus_outage`, `telemetry.recovers`) + tests. The first live run FAILED this check: with Prometheus down each query took about 3.9 s to fail, so a tick took minutes; fixed in `a24bc69` and re-run |
+| Docker reads skip a container removed mid-poll | - | `a24bc69` | tests; found by the first live run ("No such container") |
+| LLM: redaction, Gemini key in a header, measured default model | M2, M3, M4, H7 | `0874774` | tests only (the outbound request body cannot be observed live without a proxy) |
+| Harness scripts send the evaluator token; benchmark rows record the policy file | H9, E9 | `0fadf0c` | **live** (the live check starts every run through the token-protected `POST /runs`) + tests |
+| Tests for verify, rca, investigate, api | Q2 | `aec8d37` | tests |
+| Full autopilot path tests, every runbook x service, both rulebooks | Q1 | `908e5e0` | tests |
+| Docker socket proxy | H5 | - | **Deferred (roadmap).** Recreate and rollback need container create, which a generic socket proxy must then allow; that is close to the raw socket's power, so the protection gained is small, and it adds a new image to the demo before the freeze. A purpose-built proxy that allows only the four runbooks is the real fix. |
+| Every setting env-overridable | I8 | partial | `POLICY_FILE`, `MODE` accepted; the rest stays roadmap |
+
+Tests after the last Phase 1 commit: 462 passed, 2 deselected (also on a clean clone with `requirements-dev.txt`).
