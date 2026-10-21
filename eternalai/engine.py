@@ -209,8 +209,7 @@ class Engine:
                     to_diagnose = open_inc
         if to_diagnose is not None:   # outside the lock: the API must not wait on telemetry and Docker calls
             self._try_diagnose(to_diagnose, feats, scores, anom)
-        if not open_inc:
-            self._predictive(feats, now)
+        self._predictive(feats, now)   # every tick: a warning attaches to an open incident or opens a predicted one
 
     def reset_run_state(self) -> dict:
         """v2 (harness independence): forget per-run state so the next benchmark run starts clean. v1 carried a cooldown from one run into the
@@ -462,38 +461,66 @@ class Engine:
         self.last_closed = {"t": time.time()}
 
     # ------------------------------------------------------------ prediction
-    def _predictive(self, feats, now):
-        """Open a 'predicted' incident when memory or disk growth is steady and exhaustion is near."""
-        with self.lock:
-            if any(i.status in ("open", "awaiting_approval", "verifying", "executing") for i in self.incidents):
-                return
+    ACTIVE = ("open", "awaiting_approval", "verifying", "executing")
+
+    def _forecast_warnings(self) -> list[tuple]:
+        """(service, evidence, forecast) for every memory/disk forecast that counts as a warning: earliest exhaustion closer
+        than PREDICT_HORIZON_S and the resource above 25% of its limit. Telemetry only; no lock."""
         inv = Investigator(self.prom, self.dv)
+        out = []
         for s in config.SERVICES:
-            for e in inv.forecast(s, self.frames[s]):
+            frame = (getattr(self, "frames", None) or {}).get(s)
+            if frame is None:
+                continue
+            for e in inv.forecast(s, frame):
                 f = e.data
                 if f["eta_earliest_s"] < config.PREDICT_HORIZON_S and f["share_of_limit_now"] > 0.25:
-                    cause = "memory_leak" if f["resource"] == "memory" else "disk_fill"
-                    inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)   # Docker/telemetry: outside the lock
-                    ranking = [{"service": s, "score": 1.0}]
-                    cands = CAUSE_RUNBOOKS[cause]
-                    ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
-                           "ranking": ranking, "evidence": [
-                               {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inv.items]}
-                    rep = template_report(ctx)
-                    with self.lock:
-                        if any(i.status in ("open", "awaiting_approval", "verifying", "executing") for i in self.incidents):
-                            return   # a reactive incident opened meanwhile; it takes precedence
-                        inc = Incident(uuid.uuid4().hex[:8], now, kind="predicted", services=[s])
-                        inc.ranking, inc.likely_cause, inc.forecasts = ranking, cause, [f]
-                        inc.confidence = None
-                        inc.log(f"forecast: {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
-                        inc.evidence = inv.items
-                        inc.report, inc.diagnosed = rep.model_dump(), True
-                        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
-                        self.incidents.append(inc)
-                        self._propose(inc, s, rep.runbook_id)
-                        self._llm_upgrade_async(inc, ctx)
-                    return
+                    out.append((s, e, f))
+        return out
+
+    def _predictive(self, feats, now):
+        """Forecast memory and disk exhaustion on EVERY tick (plan §9.2).
+
+        A warning is attached, with its time, to the active incident on that service (or, if none covers it, to the newest
+        active incident): one warning per service and resource, logged on the timeline. With no active incident a warning
+        opens a 'predicted' incident whose fix goes through the policy as usual. Until 2026-10-21 this ran only when no
+        incident was open; reactive detection always opened one first, so no warning was ever issued live
+        (docs/FORECAST_CHECK.md)."""
+        warnings = self._forecast_warnings()
+        if not warnings:
+            return
+        with self.lock:
+            active = [i for i in self.incidents if i.status in self.ACTIVE]
+            if active:
+                for s, _e, f in warnings:
+                    inc = next((i for i in reversed(active) if s in i.services), active[-1])
+                    if any(x.get("service", s) == s and x["resource"] == f["resource"] for x in inc.forecasts):
+                        continue
+                    inc.forecasts.append({**f, "service": s, "t": now})
+                    inc.log(f"forecast: {s} {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
+                return
+        s, _e, f = warnings[0]
+        inv = Investigator(self.prom, self.dv)
+        cause = "memory_leak" if f["resource"] == "memory" else "disk_fill"
+        inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)   # Docker/telemetry: outside the lock
+        ranking = [{"service": s, "score": 1.0}]
+        cands = CAUSE_RUNBOOKS[cause]
+        ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
+               "ranking": ranking, "evidence": [{"id": x.id, "tool": x.tool, "summary": x.summary} for x in inv.items]}
+        rep = template_report(ctx)
+        with self.lock:
+            if any(i.status in self.ACTIVE for i in self.incidents):
+                return   # a reactive incident opened meanwhile; the next tick attaches the warning to it
+            inc = Incident(uuid.uuid4().hex[:8], now, kind="predicted", services=[s])
+            inc.ranking, inc.likely_cause, inc.forecasts = ranking, cause, [{**f, "service": s, "t": now}]
+            inc.confidence = None
+            inc.log(f"forecast: {s} {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
+            inc.evidence = inv.items
+            inc.report, inc.diagnosed = rep.model_dump(), True
+            inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
+            self.incidents.append(inc)
+            self._propose(inc, s, rep.runbook_id)
+            self._llm_upgrade_async(inc, ctx)
 
     # ------------------------------------------------------------ loop
     def run_forever(self, interval=2.0):
