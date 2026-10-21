@@ -19,7 +19,11 @@ from harness_auth import check_started, evaluator_headers  # noqa: E402
 SCENARIOS = ["memory_leak", "disk_fill", "traffic_surge", "good_deploy"]
 GRADUAL = ["memory_leak", "disk_fill"]
 HEALTHY = ["traffic_surge", "good_deploy"]
-TIMEOUT = {"memory_leak": 120, "disk_fill": 100}
+# v3 (2026-10-21): runs observe the full window (no early end) so the limit is really reached in watch-only mode; disk_fill uses
+# the gradual variant (2-4 MB per 2 s, about 150-300 s to the 300 MB threshold). The default 30 s burst reaches the threshold in
+# under 30 s, faster than any trend forecast can speak (it needs 30 s of steady growth): see docs/FORECAST_CHECK.md, v3.
+TIMEOUT = {"memory_leak": 150, "disk_fill": 330}
+RUN_OPTIONS = {"memory_leak": {"observe_full": True}, "disk_fill": {"observe_full": True, "variant": "gradual"}}
 SCRATCH_LIMIT_BYTES = 300 * 1024 * 1024        # mirrors eternalai.config.SCRATCH_LIMIT_BYTES (SCRATCH_LIMIT_MB default 300)
 MEM_LIMIT_FRACTION = 0.95
 MIN_LEAD_S, MIN_WARNED = 30.0, 4              # pass criteria from FORECAST_CHECK.md: median lead >= 30 s; warned in >= 4 of 5 runs
@@ -35,7 +39,8 @@ def first_crossing(series, threshold, after):
 
 
 def t_limit(run):
-    """First of: memory >= 95% of its limit, scratch disk >= limit, or a restart of the target after injection (an OOM kill or crash)."""
+    """First of: memory >= 95% of its limit, scratch disk >= limit, a restart of the target after injection, or the target no longer
+    scraped (up == 0: the process died, e.g. OOM-killed; containers are not restarted automatically)."""
     sc, t0 = run["scenario"], run["truth"]["t_inject"]
     p = run["prom"]
     cands = []
@@ -52,27 +57,45 @@ def t_limit(run):
             if t >= t0 and v is not None and v != base:
                 cands.append(t)
                 break
+    for t, v in p.get("up", []):
+        if t >= t0 and v is not None and v == 0:
+            cands.append(t)
+            break
     cands = [c for c in cands if c is not None]
     return min(cands) if cands else None
+
+
+def warnings_of(incidents):
+    """Every forecast warning, as (time, service, forecast). v3: the engine attaches a timestamped warning ("t") to whatever incident is
+    active, or opens a predicted incident; older predicted incidents without "t" count at their opening time."""
+    out = []
+    for i in incidents:
+        for f in i.get("forecasts") or []:
+            if "t" in f:
+                out.append((f["t"], f.get("service") or (i.get("services") or [None])[0], f))
+            elif i.get("kind") == "predicted":
+                out.append((i["opened_t"], (i.get("services") or [None])[0], f))
+    return sorted(out, key=lambda w: w[0])
 
 
 def analyse_run(run):
     t0, t_end, target = run["truth"]["t_inject"], run["score"].get("t_end", run["truth"]["t_inject"] + 1e9), run["truth"]["target"]
     inc = [i for i in run["incidents"] if t0 - 1 <= i["opened_t"] <= t_end]
     predicted = sorted((i for i in inc if i.get("kind") == "predicted"), key=lambda i: i["opened_t"])
-    warn = predicted[0] if predicted else None
+    warns = warnings_of(inc)
+    warn = warns[0] if warns else None                      # (time, service, forecast)
     ev_forecast = [e for i in inc if i.get("kind") != "predicted" for e in (i.get("evidence") or []) if e.get("tool") == "forecast"]
     tl = t_limit(run) if run["scenario"] in GRADUAL else None
-    fc = (warn.get("forecasts") or [None])[0] if warn else None
-    lead = (tl - warn["opened_t"]) if (warn and tl is not None) else None
+    fc = warn[2] if warn else None
+    lead = (tl - warn[0]) if (warn and tl is not None) else None
     executed = sum(1 for i in inc for a in (i.get("actions") or []) if a.get("executed")) + sum(1 for a in run.get("audit", []) if a.get("t", 0) >= t0)
     inside = None
     if fc and lead is not None:
         inside = bool(fc["eta_earliest_s"] <= lead <= fc["eta_latest_s"])
     return {"scenario": run["scenario"], "seed": run["seed"], "target": target, "incidents": len(inc), "predicted incidents": len(predicted),
-            "warned": warn is not None, "warning service": (warn["services"][0] if warn and warn.get("services") else None),
-            "wrong service": bool(warn and warn.get("services") and warn["services"][0] != target),
-            "t_warn_after_inject_s": round(warn["opened_t"] - t0, 1) if warn else None,
+            "warnings": len(warns), "warned": warn is not None, "warning service": warn[1] if warn else None,
+            "wrong service": bool(warn and warn[1] != target),
+            "t_warn_after_inject_s": round(warn[0] - t0, 1) if warn else None,
             "t_limit_after_inject_s": round(tl - t0, 1) if tl is not None else None, "limit_reached": tl is not None,
             "lead_s": round(lead, 1) if lead is not None else None, "stated_window_s": (round(fc["eta_earliest_s"]), round(fc["eta_latest_s"])) if fc else None,
             "actual_inside_window": inside, "forecast_evidence_on_reactive": len(ev_forecast), "executed_actions": executed}
@@ -91,8 +114,8 @@ def evaluate(rows):
         crit.append((f"{sc}: warnings on the wrong service", not any(x["wrong service"] for x in r), f"{sum(x['wrong service'] for x in r)} in {len(r)} runs"))
     for sc in HEALTHY:
         r = [x for x in rows if x["scenario"] == sc]
-        n = sum(x["predicted incidents"] for x in r)
-        crit.append((f"{sc}: warnings (predicted incidents)", n == 0, f"{n} warnings in {len(r)} healthy runs"))
+        n = sum(x["warnings"] for x in r)
+        crit.append((f"{sc}: warnings (any forecast warning)", n == 0, f"{n} warnings in {len(r)} healthy runs"))
     allr = rows
     crit.append(("watch-only: executed actions in every run", all(x["executed_actions"] == 0 for x in allr),
                  f"{sum(x['executed_actions'] for x in allr)} executed actions in {len(allr)} runs"))
@@ -112,8 +135,9 @@ def render(rows, crit, fixture=False):
     R += [f"| {c} | {'PASS' if ok else 'FAIL'} | {d} |" for c, ok, d in crit]
     R.append("\n## Per run\n")
     R.append(pd.DataFrame(rows).sort_values(["scenario", "seed"]).to_markdown(index=False))
-    R.append("\n`lead_s` = limit time minus first warning time; empty when no warning or the limit was never reached before the run ended (censored). "
-             "`forecast_evidence_on_reactive` counts forecast evidence items attached to reactive incidents; they are not warnings.")
+    R.append("\n`lead_s` = limit time (95% memory, disk threshold, restart or process death) minus first warning time; empty when no warning or the limit was never reached before the run ended (censored). "
+             "`forecast_evidence_on_reactive` counts forecast evidence items attached to reactive incidents; they are not warnings. "
+             "A warning is a timestamped forecast the engine attached to an incident, or a predicted incident (v3, docs/FORECAST_CHECK.md).")
     return "\n".join(R) + "\n"
 
 
@@ -137,7 +161,7 @@ def collect(a):
         f = out / f"{sc}_{seed}.json"
         if f.exists():
             continue
-        r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": sc, "seed": seed, "timeout_s": TIMEOUT.get(sc, 90), "healthy_s": 60}, timeout=20))
+        r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": sc, "seed": seed, "timeout_s": TIMEOUT.get(sc, 90), "healthy_s": 60, **RUN_OPTIONS.get(sc, {})}, timeout=20))
         if r.status_code != 200:
             print(f"{sc} {seed}: could not start ({r.status_code})", flush=True)
             continue
@@ -153,7 +177,8 @@ def collect(a):
         prom = {"mem": prom_range(f'app_memory_bytes{{service="{tgt}"}}', t0 - 30, t_end + 5),
                 "mem_limit": prom_range(f'app_memory_limit_bytes{{service="{tgt}"}}', t0 - 30, t_end + 5),
                 "scratch": prom_range(f'app_scratch_disk_bytes{{service="{tgt}"}}', t0 - 30, t_end + 5),
-                "start": prom_range(f'app_start_time_seconds{{service="{tgt}"}}', t0 - 30, t_end + 5)}
+                "start": prom_range(f'app_start_time_seconds{{service="{tgt}"}}', t0 - 30, t_end + 5),
+                "up": prom_range(f'up{{job="app",instance_name="{tgt}"}}', t0 - 30, t_end + 5)}
         row = {"scenario": sc, "seed": seed, "truth": truth, "score": score, "incidents": httpx.get(f"{EAI}/incidents", timeout=10).json(),
                "audit": httpx.get(f"{EAI}/audit", timeout=10).json(), "prom": prom, "finished_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
         f.write_text(json.dumps(row))
