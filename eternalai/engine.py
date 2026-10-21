@@ -19,7 +19,7 @@ from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
 from .collector import DockerView, Prom
 from .dedupe import ReleaseGrace, Suppressor, downstream_of
-from .detect import Persistence, service_anomalous
+from .detect import Persistence, anomaly_source, service_anomalous
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
 from .investigate import Investigator, remember_verified
@@ -307,7 +307,7 @@ class Engine:
             inc.report, inc.diagnosed = d["report"].model_dump(), True
             inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
             inc.log(f"diagnosed {d['label']} on {d['root']}")
-            self._propose(inc, d["root"], d["report"].runbook_id if not d["abstained"] else None)
+            self._propose(inc, d["root"], d["report"].runbook_id if not d["abstained"] else None, unusual=d.get("unusual", False))
             self._llm_upgrade_async(inc, d["ctx"])
 
     def _diagnose_compute(self, services: list, onset: dict, feats, scores, anom) -> dict:
@@ -335,6 +335,9 @@ class Engine:
         else:
             label, conf, abst, probs = rule_diagnose(feats[root]), None, False, {}
             diagnosis = {"root": root, "rule_label": label}
+        down = (st is not None and not st.running) or feats[root].get("up_frac") == 0
+        source = anomaly_source((self.detectors or {}).get(root), feats[root], down)
+        diagnosis = {**diagnosis, "anomaly_source": source}
         if st is not None and not st.running and st.oom_killed:
             label, abst = "memory_leak", False  # container was OOM-killed: direct evidence
         if label == "healthy":                  # anomalous but classified healthy => do not guess
@@ -345,6 +348,7 @@ class Engine:
         ctx = {"cause": label, "confidence": conf or 0.0, "candidates": cands, "alternatives": alts,
                "ranking": ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary} for e in inv.items]}
         return {"ranking": ranking, "root": root, "diagnosis": diagnosis, "label": label, "confidence": conf,
+                "unusual": source == "forest_only",
                 "abstained": abst, "evidence": inv.items, "ctx": ctx, "report": template_report(ctx)}
 
     def _llm_upgrade_async(self, inc: Incident, ctx: dict):
@@ -366,13 +370,13 @@ class Engine:
                 inc.log(f"report by {meta['provider']} ({meta['latency_s']}s)")
         threading.Thread(target=work, daemon=True).start()
 
-    def _propose(self, inc: Incident, service: str, runbook: str | None):
+    def _propose(self, inc: Incident, service: str, runbook: str | None, unusual: bool = False):
         if runbook is None:
             inc.status, inc.closed_t = "escalated", time.time()
             inc.log("no safe automatic action: escalated to a human with evidence preserved")
             self._preserve(inc)
             return
-        d = self.policy.evaluate(runbook, service, fault=inc.likely_cause, user_impact=self._user_impact())
+        d = self.policy.evaluate(runbook, service, fault=inc.likely_cause, user_impact=self._user_impact(), unusual=unusual)
         act = {"t": time.time(), "runbook_id": runbook, "service": service, "verdict": d.verdict,
                "reason": d.reason, "risk": d.risk, "executed": False, "approved_by": None}
         inc.actions.append(act)
