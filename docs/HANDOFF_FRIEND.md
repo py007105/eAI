@@ -1,13 +1,22 @@
-# EternalAI: handoff for a second developer (Phase 2, Phase 4 partial, Phase 6)
+# EternalAI: handoff for the Codex session (Phase 2, Phase 4 partial, Phase 6)
 
-This file is everything you need to work on EternalAI from your own machine and your own AI coding CLI, in parallel with
-the main session, and to deliver your work back through GitHub without breaking anything. Read it once, fully, before
-you type a command. The prompts for your CLI are in section 11.
+This file is everything a second AI coding session (OpenAI Codex CLI, in a second terminal **on this same machine**)
+needs to build three work packages in parallel with the main session (Claude Code) without the two disturbing each
+other. Read it once, fully, before typing a command. Codex also reads `AGENTS.md` at the repository root automatically;
+that file points here. The prompts to paste into Codex are in section 11.
 
-- Repository: https://github.com/py007105/eAI
-- Base branch for your work: `plan-complete`
+| | Main session (Claude Code) | Codex session |
+|---|---|---|
+| Folder | `D:\eAI\eAI-release` | `D:\eAI\eAI-codex` (a git worktree of the same repository) |
+| Branch | `plan-complete` | `friend/phase6-telegram`, later `friend/phase2-k8s`, `friend/phase4-kb` |
+| Python venv | `D:\eAI\eAI-workspace\eAI\.venv` | its own: `D:\eAI\eAI-codex\.venv` |
+| `.env` | `D:\eAI\eAI-release\.env` | its own copy: `D:\eAI\eAI-codex\.env` (made by the owner by hand) |
+| Docker, ports, RAM, image names | **shared**: one stack at a time, by the lock in section 1.5 | **shared** |
+
+- Repository: https://github.com/py007105/eAI (GitHub is not needed for this handoff: both folders share one local `.git`).
+- Base for your work: the local branch `plan-complete`.
 - Code freeze: **2026-10-23 20:00 IST**. Hackathon: 24-25 October 2026.
-- Owner and final decision on every merge: the repository owner. You never merge into shared branches yourself.
+- The owner decides every merge. The main session merges your finished branch into `plan-complete`; you never do.
 
 ---
 
@@ -18,20 +27,20 @@ Prometheus metrics every 2 s, finds the root-cause service, classifies the fault
 rulebook whether a fix may run, runs it through Docker, and verifies recovery. An independent evaluator injects faults
 and scores the brain without the brain seeing the answer.
 
-The plan (`docs/ETERNALAI_PLAN.md` once added; original outside the repo) wants more. You own three work packages:
+The plan (`docs/ETERNALAI_PLAN.md` once added; the original is outside the repo) wants more. The Codex session owns
+three work packages:
 
-| Package | Plan phase | Branch name you use | Size | Needs from the owner |
+| Package | Plan phase | Branch | Size | Needs from the owner |
 |---|---|---|---|---|
-| **A. Kubernetes (minimal)** | Phase 2 | `friend/phase2-k8s` | largest | permission to download kind + helm (already given: pinned versions, checksums verified); a machine with about 8 GB free RAM |
-| **B. Telegram notifications + approvals** | Phase 6 | `friend/phase6-telegram` | medium | a Telegram bot token and chat id, put in YOUR `.env` by you (never committed) |
-| **C. Knowledge base + outcome-ranked fixes + dataset-A classifier** | Phase 4 (partial) | `friend/phase4-kb` | medium | the dataset files from the owner (path / copy) |
+| **B. Telegram notifications + approvals** | Phase 6 | `friend/phase6-telegram` | medium | a Telegram bot token and chat id, typed by the owner into `D:\eAI\eAI-codex\.env` (never committed, never shown to Codex) |
+| **A. Kubernetes (minimal)** | Phase 2 | `friend/phase2-k8s` | largest | kind + helm downloads (allowed: pinned versions, checksums verified); the Docker lock for long periods (kind needs the RAM the Compose stack uses) |
+| **C. Knowledge base + outcome-ranked fixes + dataset-A classifier** | Phase 4 (partial) | `friend/phase4-kb` | medium | the dataset files' folder path |
 
-Do them in this order unless the owner says otherwise: **B first** (smallest, demo-visible), then **A**, then **C**
-(C is blocked until you have the dataset files).
+Order: **B first** (smallest, demo-visible), then **A**, then **C** (C is blocked until the dataset path is given).
 
-The main session meanwhile works on: Phase 1 finish (safety), Phase 3 (prediction live), the parts of Phase 4 that
-change the engine core (close root candidates -> abstain, forest-only anomaly -> no auto action), Phase 5 light (learn
-store + feedback), Phase 7 (benchmark re-runs). **Do not do those.**
+The main session meanwhile works on: Phase 3 (prediction live), the engine-core parts of Phase 4 (close root
+candidates -> abstain, forest-only anomaly -> no auto action), Phase 5 light (learn store + feedback), Phase 7
+(benchmark re-runs). **Do not do those.**
 
 ---
 
@@ -39,150 +48,166 @@ store + feedback), Phase 7 (benchmark re-runs). **Do not do those.**
 
 ### 1.1 Git rules: the ones that cause real damage
 
-1. **Never push to `main`, `release-candidate` or `plan-complete`.** You push only your own `friend/...` branches.
-2. **Never force-push** (`git push -f`, `--force`, `--force-with-lease`). Not even to your own branch once pushed.
-3. **Never rebase a branch you already pushed.** To get new work from `plan-complete`, *merge* it into your branch
-   (section 3.4). Never `git rebase`, never `git reset --hard` on pushed commits, never `git commit --amend` on pushed commits.
-4. **Never create, move or delete tags.** Tags (`benchmark-system-v1`, `benchmark-system-v2`, `models-v1`, `models-v2`,
-   `v1.0.0-rc.*`, `demo-stable-*`) mark measured systems; moving one invalidates published numbers.
-5. **Never merge your own pull request.** Open it against `plan-complete`; the owner merges.
-6. **One branch per package.** Do not mix Telegram and Kubernetes changes on one branch.
-7. **Small commits, one logical change each,** with a message that says what changed and why (section 3.3).
-8. **Never commit:** `.env`, tokens, keys, `data/runs/`, `data/raw/`, `runtime/`, `results/demo-export/`, `.venv/`,
-   `__pycache__/`, kubeconfig files, `*.tgz` chart packages, large binaries, the dataset workbook (unless the owner says so).
-   Run `git status` before every `git add` and add files **by name**, never `git add .` or `git add -A` at the repo root.
-9. **Do not touch** these unless your package says so, and then only the lines it says:
-   `eternalai/engine.py`, `eternalai/policy.py`, `eternalai/rulebook.py`, `eternalai/api.py`, `eternalai/config.py`,
-   `docker-compose.yml`, `dashboard/app.py`, `evaluator/*`, `models/artifacts/*`, `results/*`, `docs/results/*` (except
-   files your scripts generate), `tests/test_autopilot_path.py`, `tests/test_policy.py`.
-   Edits to these "shared files" go in **separate, small commits** whose message starts with `shared:` so the owner can
-   review them line by line.
-10. **Never delete Docker volumes** (`docker compose down -v`, `docker volume rm`, `docker system prune --volumes`).
-    `docker compose -p eai stop` is the safe way to stop the stack.
+Both folders share **one** `.git` directory. A wrong git command in `D:\eAI\eAI-codex` can change branches, tags or
+history that the main session depends on. Therefore:
+
+1. **Work only inside `D:\eAI\eAI-codex`.** Never `cd` into, edit, or run git in `D:\eAI\eAI-release` or
+   `D:\eAI\eAI-workspace\eAI`.
+2. **Commit only to your own `friend/...` branch.** Never commit to, reset, or merge into `plan-complete`, `main`,
+   `release-candidate`, `v2-dev`, `hardening` (git refuses to check out `plan-complete` here anyway, because the main
+   session has it checked out; do not work around that with `--force` or `--ignore-other-worktrees`).
+3. **Never push** unless the owner explicitly says "push friend/<branch>". Never force-push anything.
+4. **Never rewrite history:** no `git rebase`, no `git reset --hard` (except the one recovery case in 3.7), no
+   `git commit --amend` on a commit the main session may already have merged, no `git filter-branch`.
+5. **Never create, move or delete tags.** Tags (`benchmark-system-v1/-v2`, `models-v1/-v2`, `v1.0.0-rc.*`,
+   `demo-stable-*`) mark measured systems.
+6. **Never delete branches** and never run `git worktree remove`, `git worktree prune`, `git gc --prune=now`,
+   `git clean -fdx`, `git stash clear`, `git branch -D`.
+7. **One branch per package.** Do not mix Telegram and Kubernetes changes.
+8. **Small commits, one logical change each,** message format in 3.3.
+9. **Never commit:** `.env`, tokens, keys, kubeconfig files, `data/runs/`, `data/raw/`, `runtime/`,
+   `results/demo-export/`, `.venv/`, `__pycache__/`, `*.tgz` chart packages, large binaries, dataset files.
+   Run `git status` before every `git add`; add files **by name**, never `git add .` or `git add -A`.
+10. **Shared files** (section 5): `eternalai/engine.py`, `eternalai/policy.py`, `eternalai/rulebook.py`,
+    `eternalai/api.py`, `eternalai/config.py`, `docker-compose.yml`, `dashboard/app.py`, `evaluator/*`,
+    `models/artifacts/*`, `results/*`, `docs/results/*` (except files your scripts generate), `tests/test_autopilot_path.py`,
+    `tests/test_policy.py`, `docs/PLAN_GAP_CLOSURE.md`. Touch them only as section 5 allows, each in its own small commit
+    whose message starts with `shared:`.
 
 ### 1.2 Secrets
 
-- Never print, log, echo, commit or paste into a CLI prompt: `.env` contents, `ETERNALAI_APPROVAL_TOKEN`,
-  `CHAOS_TOKEN`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, kubeconfig contents, cluster tokens.
-- Tell your AI CLI explicitly not to read `.env` (prompt 11.1 does this).
-- The Telegram bot token is part of every Bot API URL (`https://api.telegram.org/bot<TOKEN>/...`). httpx exceptions
-  include the URL. **Never log an exception message from a Telegram call as is**; log only the exception type name.
-  There is a test pattern for this in `tests/test_dashboard_fixes.py` (the dashboard never shows request errors that
-  contain the token).
+- Codex must never read, print, log, copy or commit: `.env` (in any folder), `ETERNALAI_APPROVAL_TOKEN`, `CHAOS_TOKEN`,
+  `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, kubeconfig contents, cluster tokens. If a step needs a secret,
+  Codex asks the owner to set an environment variable or to edit `.env` by hand.
+- The Telegram bot token is inside every Bot API URL (`https://api.telegram.org/bot<TOKEN>/...`) and httpx exceptions
+  contain the URL. **Never log a Telegram exception message;** log only `type(e).__name__`. Pattern:
+  `tests/test_dashboard_fixes.py`.
 - Everything that leaves the machine (Telegram text) goes through `eternalai/redact.py: redact()` first.
 
 ### 1.3 Honesty rules for results
 
-- **Never invent a number.** Every number in docs comes from a script you ran, written to a results file by that script.
+- **Never invent a number.** Every number in docs comes from a script that ran and wrote a results file.
 - If a measurement disagrees with the plan, write the measured number and say it disagrees.
-- If something does not work, say "does not work" with the error, do not hide it or fake it.
-- **No fakes or mocks in the running system or the demo.** Fakes are allowed only inside unit tests.
-- Every feature you deliver must run **live, end to end** on the real stack (Compose; kind for package A), checked by a
-  script you commit. Your final report says, per item, "verified live" or "verified in tests only".
+- If something does not work, say so with the error; do not hide it or fake it.
+- **No fakes or mocks in the running system or the demo.** Fakes only inside `tests/`.
+- Every feature runs **live, end to end** on the real stack (Compose; kind for package A), checked by a committed
+  script. The final report says, per item, "verified live" or "verified in tests only".
 
 ### 1.4 Code rules (from the plan §22 and this repo)
 
-- Python 3.12, type hints where useful, small modules, no heavy frameworks.
-- The LLM never calls actions. Never auto-execute high-risk fixes or anything on protected services; every action goes
-  through `PolicyEngine.evaluate` (the rulebook) and the executor's audit log.
+- Python 3.12+ (containers use 3.12; the suite runs on 3.14 here), type hints where useful, small modules.
+- The LLM never calls actions. Never auto-execute high-risk fixes or anything on protected services; every action
+  goes through `PolicyEngine.evaluate` (the rulebook) and the executor's audit log.
 - Never read Kubernetes Secrets; never write to databases.
 - Plain-English user messages; never show raw anomaly scores to users.
-- Every new module gets tests in `tests/`. The full suite must pass after every commit:
-  `python -m pytest -q -p no:cacheprovider` (2 tests marked `live` are deselected by default; that is normal).
+- Every new module gets tests. The full suite passes after every commit:
+  `.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` (2 `live` tests are deselected by default).
+
+### 1.5 Sharing this machine with the main session (Docker, ports, RAM, images)
+
+Both sessions use the **same Docker daemon**, the same Compose project name (`eai`, fixed in `docker-compose.yml`),
+the same host ports and the same image names (`eai/eternalai:v2`, `eai/web:v1`, ...). Running `docker compose up`
+from `D:\eAI\eAI-codex` **replaces the main session's containers with your code.** So:
+
+1. **The Docker lock file: `D:\eAI\STACK_LOCK.md`.** Before any `docker compose up/build/stop/start/restart`, any
+   `docker run`, any `kind create/delete`, read the file.
+   - If it says `FREE`, write: `HELD by codex | <what> | since <YYYY-MM-DD HH:MM IST> | expected until <HH:MM> | images built from <branch>@<hash>`.
+   - If it says `HELD by main`, **do not touch Docker**; tell the owner and wait.
+   - When done: stop what you started (`docker compose -p eai stop`, `kind delete cluster --name eai`) and write
+     `FREE | last: codex | images now built from <branch>@<hash>`.
+   - Read-only commands (`docker ps`, `docker images`, `docker compose ps`) need no lock.
+2. **Images:** if you build `eai/*` images, they now contain your branch's code. Record that in the lock file, as
+   above. Whoever takes the lock next rebuilds before trusting the images. For kind, build the brain under a separate
+   tag, `eai/eternalai:k8s-dev`, never `:v2`.
+3. **Ports in use by the Compose stack:** 8000, 8050, 8080, 8200, 9090, 16686. For kind port-forwards use 18000-18099.
+4. **RAM:** about 15.7 GB in total, often only 2-6 GB free.
+   - Never run kind and the Compose stack at the same time.
+   - Check free RAM before starting anything heavy (PowerShell:
+     `(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB`). Kind + Online Boutique needs about 6 GB free.
+5. **Runtime files** (`runtime/audit.jsonl`, evidence) are written relative to the folder you run from; yours stay
+   in `D:\eAI\eAI-codex\runtime\` (git-ignored). The brain in a container writes to the `eternalai-runtime` volume:
+   never delete volumes (`down -v`, `docker volume rm`, `docker system prune --volumes`).
+6. **Unit tests need no lock:** they never touch Docker.
 
 ---
 
 ## 2. One-time setup
 
-### 2.1 Tools
+### 2.1 Create the Codex worktree (the owner runs this once, in a normal PowerShell, not inside either AI session)
 
-- Git, Python 3.12 or newer (the containers use 3.12; the suite was verified on a clean clone with 3.14), Docker Desktop (or Docker Engine) with Compose v2, an AI coding CLI.
-- For package A also: `kind`, `helm`, `kubectl` (section 6.2).
-
-### 2.2 Clone and branch
-
-```bash
-git clone https://github.com/py007105/eAI.git
-cd eAI
-git fetch origin
-git switch plan-complete                 # the base; if this fails, the owner has not pushed it yet: stop and ask
-git log --oneline -5                     # note the top commit hash in your notes
-git switch -c friend/phase6-telegram     # or friend/phase2-k8s / friend/phase4-kb
-git config user.name  "<your name>"
-git config user.email "<your email>"
-```
-
-### 2.3 Python environment
-
-Windows (PowerShell):
 ```powershell
-py -3.12 -m venv .venv          # or py -3.14
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
+cd D:\eAI\eAI-release
+git worktree add D:\eAI\eAI-codex -b friend/phase6-telegram plan-complete
+git -C D:\eAI\eAI-codex log --oneline -3          # the top commit must equal plan-complete's
+if (-not (Test-Path D:\eAI\STACK_LOCK.md)) { "FREE | last: none" | Set-Content -Encoding utf8 D:\eAI\STACK_LOCK.md }
 ```
-macOS / Linux:
-```bash
-python3.12 -m venv .venv        # or python3.14
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
+Then the owner, by hand (not through any AI): copy `D:\eAI\eAI-release\.env` to `D:\eAI\eAI-codex\.env` and add
+`TELEGRAM_BOT_TOKEN=` and `TELEGRAM_CHAT_ID=` there (section 7.2). Check that git ignores it:
+`git -C D:\eAI\eAI-codex check-ignore .env` must print `.env`.
+
+### 2.2 Python environment (Codex may run this)
+
+```powershell
+cd D:\eAI\eAI-codex
+py -3.14 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 ```
+Expected (verified 2026-10-21 on a clean clone): `462 passed, 2 deselected` or more. **If anything fails before you
+changed anything, stop and tell the owner** with the failing test names.
 
-Then run the tests once, before you change anything:
-```bash
-python -m pytest -q -p no:cacheprovider
+New packages (e.g. `kubernetes` for package A) are installed **only into `D:\eAI\eAI-codex\.venv`**, pinned in the
+requirements file in the same commit. Never install into `D:\eAI\eAI-workspace\eAI\.venv` (the main session's).
+
+### 2.3 Start Codex
+
+```powershell
+cd D:\eAI\eAI-codex
+codex
 ```
-Expected (verified 2026-10-21 on a clean clone): `462 passed, 2 deselected` (more once new work lands). **If anything fails on a clean clone, stop and report it to the owner** with the
-failing test names; do not "fix" it on your branch.
+- Use an approval mode in which Codex **asks before** running commands that touch the network, Docker or anything
+  outside the workspace (in Codex: `/approvals`).
+- Do not use any "full access" or "bypass approvals and sandbox" mode for this project.
+- If your Codex version supports the flags, `codex --sandbox workspace-write --ask-for-approval on-request` does this
+  at start.
+- Paste prompt 11.1 first.
 
-### 2.4 `.env` (your own, never committed)
+### 2.4 Check that the shared stack works (needs the Docker lock)
 
-```bash
-cp .env.example .env        # Windows: copy .env.example .env
-```
-Edit `.env` by hand (not with your AI CLI):
-- `ETERNALAI_APPROVAL_TOKEN=` a long random value (e.g. `python -c "import secrets;print(secrets.token_urlsafe(24))"`).
-- `CHAOS_TOKEN=` another long random value. The stack refuses to start without it, and refuses `evaluator-only`.
-- Package B: `TELEGRAM_BOT_TOKEN=` and `TELEGRAM_CHAT_ID=` (section 7.2).
-- Leave `GEMINI_API_KEY` / `GROQ_API_KEY` empty unless you have your own; reports then use the built-in template.
-
-`.env` is in `.gitignore`. Check with `git check-ignore .env` (it must print `.env`).
-
-### 2.5 Start the Compose demo once (proves your machine works)
-
-```bash
-docker compose --profile releases build      # first time: several minutes
+Only when `D:\eAI\STACK_LOCK.md` says FREE and you have written your HELD line:
+```powershell
+docker compose --profile releases build
 docker compose up -d
-python scripts/stock_gate.py --restock --force
-python scripts/preflight.py                   # 8 checks; all must pass
+.\.venv\Scripts\python.exe scripts\stock_gate.py --restock --force
+.\.venv\Scripts\python.exe scripts\preflight.py
+docker compose -p eai stop
 ```
-Open http://localhost:8050 (dashboard), http://localhost:8000/status (brain). All ports are bound to 127.0.0.1.
-Stop with `docker compose -p eai stop`. **Never** `down -v`.
+Then write FREE in the lock file. All ports are bound to 127.0.0.1. **Never** `down -v`.
 
 ---
 
-## 3. Git workflow, step by step
+## 3. Git workflow, step by step (all inside `D:\eAI\eAI-codex`)
 
-### 3.1 Daily start
+### 3.1 Start of each session
 
-```bash
-git switch friend/<your-branch>
-git status                         # must be clean; if not, commit or stash your own work first
-git fetch origin
-git merge origin/plan-complete     # bring in the owner's new work (a merge, never a rebase)
-python -m pytest -q -p no:cacheprovider
+```powershell
+git branch --show-current          # must be your friend/... branch
+git status                         # must be clean; if not, commit your own work first
+git merge plan-complete            # bring in the main session's new work (local branch; a merge, never a rebase)
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 ```
-If the merge reports conflicts, see 3.6.
+If the merge reports conflicts, see 3.6. No `git fetch` is needed: `plan-complete` is the same local branch the main
+session commits to.
 
 ### 3.2 While working
 
-```bash
+```powershell
 git status
-git diff                           # read your own diff before every commit
-git add path/to/file1 path/to/file2   # by name
+git diff                           # read the diff before every commit
+git add path\to\file1 path\to\file2   # by name
 git commit                         # message format below
-python -m pytest -q -p no:cacheprovider   # after EVERY commit
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider   # after EVERY commit
 ```
 
 ### 3.3 Commit messages
@@ -196,44 +221,52 @@ python -m pytest -q -p no:cacheprovider   # after EVERY commit
 Examples: `Telegram: send incident messages with approve/reject buttons`,
 `shared: engine.py calls the notifier after each status change (3 lines)`.
 
-### 3.4 Pushing your branch
+### 3.4 Handing a finished package back (instead of a pull request)
 
-```bash
-git push -u origin friend/<your-branch>      # first time
-git push                                     # later
-```
-Push at least once a day so work is not lost. Pushing your own branch never affects anyone else.
+When the package meets its definition of done (section 9):
+1. `git merge plan-complete`, run the full suite and the package's live check again.
+2. Write the hand-back note from the template in section 10 to `docs/handback/<branch-name>.md` and commit it on your
+   branch.
+3. Tell the owner: "package <X> is ready on friend/<branch> at <hash>". The owner tells the main session, which reviews,
+   merges into `plan-complete`, re-runs the suite and its live checks, and reports back.
+4. Start the next package on a **new** branch from the current `plan-complete`:
+   ```powershell
+   git status                                      # clean
+   git switch -c friend/phase2-k8s plan-complete
+   ```
+   Never reuse a finished branch for new work.
 
-### 3.5 Pull request
+Pushing to GitHub: only when the owner says "push friend/<branch>" (e.g. as a backup):
+`git push -u origin friend/<branch>`. Never push any other branch, never with `--force`.
 
-When a package is done (section 9 definition of done):
-1. `git fetch origin && git merge origin/plan-complete`, run the full suite and your live check again.
-2. Push.
-3. On GitHub: New pull request, **base: `plan-complete`**, compare: `friend/<your-branch>`.
-4. Fill the template in section 10. Do not merge it.
+### 3.5 If the main session asks for changes after review
+
+Commit the fixes on the same `friend/...` branch (new commits; no amend, no rebase) and tell the owner the new hash.
 
 ### 3.6 Merge conflicts
 
-- Conflicts happen when you and the owner changed the same lines. Open each conflicted file, keep **both** intents.
-- In shared files, prefer the owner's version and re-apply your few lines on top.
+- They happen when both sessions changed the same lines. Open each conflicted file and keep **both** intents.
+- In shared files, prefer the main session's version and re-apply your few lines on top.
 - After resolving: `git add <files>`, `git commit` (the merge commit), run the full suite.
-- If unsure, abort and ask: `git merge --abort` restores the state before the merge.
+- If unsure: `git merge --abort` restores the state before the merge. Then ask the owner.
 
 ### 3.7 Mistakes and how to undo them safely
 
 | Mistake | Safe fix |
 |---|---|
-| Committed on `plan-complete` / `main` locally (not pushed) | `git branch friend/<name>` (keeps the commit), then `git switch plan-complete && git reset --hard origin/plan-complete` (only because it was NOT pushed), then `git switch friend/<name>` |
-| Pushed to a shared branch by accident | **Stop. Do not force-push.** Tell the owner immediately with the commit hash; the owner reverts. |
-| Committed a secret, not pushed | `git reset --soft HEAD~1`, remove the secret from the file, recommit. Then rotate the secret anyway. |
-| Committed and **pushed** a secret | Rotate the secret at once (new bot token via @BotFather, new random tokens). Tell the owner. Do not try to rewrite history. |
-| Committed a large or wrong file, not pushed | `git rm --cached <file>`, add a `.gitignore` entry if right, `git commit --amend` (allowed only because not pushed) |
-| Tests fail after merging `plan-complete` | Do not push. Find out whether your change or the owner's broke it; if the owner's, report with the test name. |
+| Committed on the wrong `friend/...` branch, nothing merged yet | `git branch friend/<right-name>` (keeps the commit), then tell the owner; do not reset anything until the owner agrees |
+| Ran a git command in `D:\eAI\eAI-release` by mistake | **Stop.** Tell the owner exactly what ran. Do not try to undo it yourself. |
+| Pushed anything by accident | **Stop. Never force-push.** Tell the owner the branch and hash. |
+| Committed a secret | Tell the owner. The secret is rotated (new bot token via @BotFather, new random tokens) whether or not it was pushed. The owner decides how to remove the commit. |
+| Committed a large or wrong file (no secret), not yet handed back | `git rm --cached <file>`, add a `.gitignore` entry if right, commit again (new commit; no amend) |
+| Tests fail after merging `plan-complete` | Find out whether your change or the main session's broke it; if the main session's, report the test names; do not "fix" their code on your branch |
 | Detached HEAD | `git switch friend/<name>` |
-| Want to throw away uncommitted local edits in one file | `git restore <file>` (only your own uncommitted work) |
+| Want to throw away your own uncommitted edits in one file | `git restore <file>` |
+| Changed the shared stack's containers without the lock | Stop them (`docker compose -p eai stop`), write the lock file honestly, tell the owner |
 
-Commands you never run in this project: `git push --force*`, `git rebase` (on pushed work), `git reset --hard` (on
-pushed work), `git tag -d`, `git push --delete`, `git clean -fdx` (deletes `.env` and venvs), `git filter-branch`.
+Never run: `git push --force*`, `git rebase`, `git reset --hard`, `git tag ...` (create/delete), `git push --delete`,
+`git branch -D`, `git clean -fdx`, `git worktree remove/prune`, `git gc --prune=now`, `git filter-branch`,
+`docker compose down -v`, `docker volume rm`, `docker system prune`.
 
 ---
 
@@ -268,6 +301,8 @@ approval); `payments` is protected (always approval); 10 actions per hour; coold
 
 ## 5. Shared-file contract (to avoid conflicts with the main session)
 
+`docs/PLAN_GAP_CLOSURE.md` is updated only by the main session; list your covered rows in the hand-back note.
+
 | Shared file | Who may change what |
 |---|---|
 | `eternalai/engine.py` | Package B: one hook call per status change (section 7.4). Package A: replace `Executor()` construction by `make_driver()` (one line) and nothing else. Package C: replace the `CAUSE_RUNBOOKS` lookup by one call (section 8.4). Each in its own `shared:` commit. |
@@ -289,7 +324,9 @@ annotation-based service map with static fallback; Helm chart + namespaced RBAC;
 with Online Boutique. **Roadmap, not now:** leader election, kube-prometheus-stack install, Sock Shop, Train Ticket live
 (not feasible on this hardware), Chaos Mesh.
 
-RAM rule from the owner: **one app at a time; stop the Compose stack while kind runs** (`docker compose -p eai stop`).
+RAM rule from the owner: **one app at a time; the Compose stack is stopped while kind runs.** On this shared machine that
+means holding the Docker lock (section 1.5) for the whole kind session and telling the owner, because the main
+session cannot run its stack meanwhile. Batch kind work into few long sessions.
 
 ### 6.1 Target layout (new files)
 
@@ -315,6 +352,7 @@ docs/KUBERNETES.md                 how to run it, what works, what does not
 - Verify the SHA256 against the checksum file published **on the same release page**:
   - Windows: `Get-FileHash .\kind.exe -Algorithm SHA256`;
   - macOS / Linux: `shasum -a 256 kind`.
+- Put the binaries in `D:\eAI\tools\` (outside the repository; never commit them). Ask the owner before each download.
 - Write the version, URL and hash into `deploy/kind/VERSIONS.md`. Never pipe a remote script into a shell.
 - `kubectl` usually comes with Docker Desktop.
 - Pin the Online Boutique release tag (use its `release/kubernetes-manifests.yaml`) and the Prometheus chart version in the same file.
@@ -438,20 +476,21 @@ That is expected for this phase; write it down, do not hide it.
 - Add `config.load_topology()` at the end of `config.py`. It returns the discovered map when `RUNTIME=kubernetes`,
   else the static one.
 - Call it once at Engine start.
-- If this needs more than a few lines in `engine.py`, stop and describe the change in your PR instead of making it.
+- If this needs more than a few lines in `engine.py`, stop and describe the change in the hand-back note instead of making it.
 
 ### 6.8 End-to-end check: `scripts/kind_e2e.py`
 
 Pattern: `scripts/live_check_phase1.py` (PASS/FAIL table, throwaway token in the environment, results file
 `docs/results/kind_e2e.md` + `results/live-checks/kind_e2e.json`). Steps:
-1. Stop the Compose stack (`docker compose -p eai stop`).
+1. Check `D:\eAI\STACK_LOCK.md` is FREE, write `HELD by codex | kind e2e | ...`, confirm the Compose stack is stopped
+   (`docker compose -p eai ps` shows nothing running) and about 6 GB RAM are free; otherwise abort with a clear message.
 2. `kind create cluster --config deploy/kind/kind-cluster.yaml --name eai`.
 3. Install Prometheus (pinned chart, includes kube-state-metrics, scrapes cAdvisor) into `monitoring`.
 4. Install Online Boutique (pinned manifests) into `shop`; annotate; wait for all Deployments Available.
-5. Build the brain image and `kind load docker-image` it.
+5. Build the brain image as `eai/eternalai:k8s-dev` (never `:v2`, which the Compose demo uses) and `kind load docker-image` it.
 6. Create the approval-token Secret from a throwaway value generated by the script (never printed).
 7. `helm install eternalai deploy/helm/eternalai -n eternalai --create-namespace` with `mode=watch`,
-   `namespaces={shop}`. Check: brain Ready, `/status` answers (via `kubectl port-forward`).
+   `namespaces={shop}`. Check: brain Ready, `/status` answers (via `kubectl port-forward` on a port in 18000-18099).
 8. RBAC matrix via `kubectl auth can-i`: allowed verbs yes; secrets / delete deployments / kube-system / pods/exec no.
 9. Discovered topology equals the annotated graph.
 10. Metrics frame from in-cluster Prometheus: cpu/mem/up/restarts present for every Deployment.
@@ -468,23 +507,24 @@ Pattern: `scripts/live_check_phase1.py` (PASS/FAIL table, throwaway token in the
     - approve via `POST /approvals/{id}/approve`;
     - the driver rolls back;
     - Deployment Available; verification recorded.
-13. Teardown: `helm uninstall`, `kind delete cluster --name eai`. Leave the Compose stack stopped; the owner restarts it.
+13. Teardown: `helm uninstall`, `kind delete cluster --name eai`, write `FREE | last: codex | ...` in the lock file.
+    Leave the Compose stack stopped; the main session restarts it.
 
 Verification on Kubernetes: `verify.py` probes the shop's `/api/checkout`, which Online Boutique does not have.
 - Add a generic probe in a **new** module, `eternalai/verify_k8s.py`. It checks that the target Deployment and all its
   callers (from the service map) have every replica Ready, and that the frontend `GET /` returns 200 through a
-  port-forward or the in-cluster Service. It runs for the same observation window.
+  port-forward (port 18000-18099) or the in-cluster Service. It runs for the same observation window.
 - Engine wiring: one `shared:` line choosing the verifier by `RUNTIME`.
 - This also covers plan row L5 ("verify root and callers") for Kubernetes.
 
 ### 6.9 Definition of done (package A)
 
 - [ ] `pytest` passes, new tests for every new module
-- [ ] Docker demo unchanged: `python scripts/preflight.py` passes on Compose after your changes
-- [ ] `scripts/kind_e2e.py` passes end to end on your machine; results file committed
+- [ ] Docker demo unchanged: `scripts\preflight.py` passes on Compose after your changes (under the Docker lock)
+- [ ] `scripts/kind_e2e.py` passes end to end on this machine; results file committed; lock released
 - [ ] `docs/KUBERNETES.md` explains install, what works, what does not (missing HTTP metrics, fallbacks, no leader election)
 - [ ] `deploy/kind/VERSIONS.md` has every version and SHA256
-- [ ] PR opened against `plan-complete` with the template filled
+- [ ] hand-back note `docs/handback/friend-phase2-k8s.md` committed (template in section 10)
 
 ---
 
@@ -508,12 +548,14 @@ Out of scope (documented "not started"): Slack, PagerDuty.
 
 ### 7.2 Bot setup (you, by hand)
 
-1. Telegram: talk to @BotFather -> `/newbot` -> copy the token into your `.env` as `TELEGRAM_BOT_TOKEN=`.
+The owner does these steps by hand; Codex never sees the token.
+
+1. Telegram: talk to @BotFather -> `/newbot` -> copy the token into `D:\eAI\eAI-codex\.env` as `TELEGRAM_BOT_TOKEN=`.
 2. Create a private group or use a private chat with the bot; send it one message.
 3. Get the chat id: open `https://api.telegram.org/bot<TOKEN>/getUpdates` in **your browser only**, read
-   `chat.id`, put it in `.env` as `TELEGRAM_CHAT_ID=`. Do not paste the URL into your CLI.
+   `chat.id`, put it in `D:\eAI\eAI-codex\.env` as `TELEGRAM_CHAT_ID=`. Do not paste the URL into Codex.
 4. Your Telegram numeric user id (same page, `from.id`) goes into the approver list (7.6). It is not secret, but keep
-   it out of public docs; use the rulebook file on your machine for real ids and a placeholder in the committed file.
+   it out of public docs; use the rulebook file on this machine for real ids and a placeholder in the committed file.
 
 ### 7.3 New files
 
@@ -576,8 +618,9 @@ docs/NOTIFICATIONS.md            setup, security model, what is not built (Slack
 
 ### 7.8 Live check `scripts/live_check_telegram.py`
 
-Pattern: `scripts/live_check_phase1.py`. With your real bot (tokens from your environment, never printed):
-1. Start the stack in `ask-first`.
+Pattern: `scripts/live_check_phase1.py`. With the real bot (tokens only from the environment / `.env`, never printed),
+under the Docker lock (section 1.5), run from `D:\eAI\eAI-codex` so the images contain this branch:
+1. Build and start the stack in `ask-first`.
 2. Run `crash` on `web` via the evaluator. A message arrives with Approve/Reject. The script prints
    "tap Approve on your phone" and waits up to 100 s; then checks the audit shows `human:<your approver name>` and the
    message was edited to "approved by ... / verified".
@@ -586,6 +629,7 @@ Pattern: `scripts/live_check_phase1.py`. With your real bot (tokens from your en
 5. Turn the kill switch on, run a fault, tap Approve: refused with the kill-switch reason.
 
 Write `docs/results/live_check_telegram.md`. The human taps are part of the check; the script records what happened.
+Afterwards stop the stack, write `FREE | last: codex | images now built from friend/phase6-telegram@<hash>`.
 
 ### 7.9 Definition of done (package B)
 
@@ -609,6 +653,7 @@ Not yours (main session): "two close root candidates -> abstain", "forest-only a
 
 ### 8.1 Where the data lives
 
+- The owner gives the dataset folder path. Codex reads the files from there; it never copies them into the repository.
 - Ask the owner whether the `B_*` / `C_*` knowledge-base CSVs may be committed (they are small, reviewed text).
   Default until answered: keep them outside git and point to them with `EAI_KB_DIR`.
 - Training/test CSVs: never committed. Scripts take `--data-dir`. Record each file's SHA256 in the results file.
@@ -650,7 +695,7 @@ Not yours (main session): "two close root candidates -> abstain", "forest-only a
   dashboard and `GET /incidents/{id}` show it (plan task 6: "probabilities, chosen fix, backups, KB link").
 - Add `GET /kb/{fault_type}` to `api.py` (read-only, no auth, like `/incidents`).
 - `tests/test_autopilot_path.py` must still pass unchanged. If it does not, your ranking changed which runbook is
-  proposed: report that in the PR as a behaviour change; do not edit that test.
+  proposed: report that in the hand-back note as a behaviour change; do not edit that test.
 
 ### 8.5 Dataset-A classifier, reported next to the current one
 
@@ -683,7 +728,8 @@ Not yours (main session): "two close root candidates -> abstain", "forest-only a
 
 ### 8.6 Live check
 
-- Bring the Compose stack up and run one `memory_leak` and one `bad_deploy` evaluator run.
+- Under the Docker lock (section 1.5), from `D:\eAI\eAI-codex`: build and start the Compose stack and run one
+  `memory_leak` and one `bad_deploy` evaluator run; stop the stack and release the lock afterwards.
 - Check that `GET /incidents/{id}` shows the ranked fixes with measured/prior flags and KB row ids, and that the
   proposed runbook is the top executable fix.
 - Script `scripts/live_check_kb.py`; results `docs/results/live_check_kb.md`.
@@ -691,7 +737,7 @@ Not yours (main session): "two close root candidates -> abstain", "forest-only a
 ### 8.7 Definition of done (package C)
 
 - [ ] KB loader + validation + tests; ranking + tests; fallback to the fixed table when the KB is absent
-- [ ] `tests/test_autopilot_path.py` unchanged and passing (or the behaviour change explained in the PR)
+- [ ] `tests/test_autopilot_path.py` unchanged and passing (or the behaviour change explained in the hand-back note)
 - [ ] dataset-A results file generated by the script, with SHA256 of every input file
 - [ ] live check passed; results file committed
 - [ ] no dataset file committed unless the owner said yes
@@ -700,32 +746,43 @@ Not yours (main session): "two close root candidates -> abstain", "forest-only a
 
 ## 9. Definition of done for every package
 
-1. `python -m pytest -q -p no:cacheprovider` passes after every commit; the final run is in the PR.
-2. The Compose demo still works: `docker compose up -d`, `scripts/stock_gate.py --restock --force`, `scripts/preflight.py` passes.
-3. Your live-check script passes and its results file is committed. Per item, the PR says "verified live" or "verified in tests only".
-4. `docs/PLAN_GAP_CLOSURE.md`: in **your PR only**, append rows to section G (do not edit other rows; the owner updates statuses at merge time).
-5. No secrets anywhere: `git log -p origin/plan-complete..HEAD | grep -nE "(api_key|token|secret|password)\s*[:=]\s*['\"]?[A-Za-z0-9_\-]{12,}"` returns nothing meaningful.
-6. `git status` clean, branch pushed, PR open against `plan-complete`, not merged by you.
+1. `.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` passes after every commit; the final run is in the hand-back note.
+2. The Compose demo still works with your branch (under the Docker lock):
+   - `docker compose --profile releases build`;
+   - `docker compose up -d`;
+   - `scripts\stock_gate.py --restock --force`;
+   - `scripts\preflight.py` passes;
+   - then stop the stack and release the lock.
+3. Your live-check script passed and its results file is committed. The hand-back note says, per item, "verified
+   live" or "verified in tests only".
+4. Do **not** edit `docs/PLAN_GAP_CLOSURE.md`. Put the plan rows you covered in the hand-back note; the main session
+   updates the gap document when it merges.
+5. No secrets anywhere:
+   - `git log -p plan-complete..HEAD | Select-String -Pattern "(api_key|token|secret|password)\s*[:=]\s*['\"]?[A-Za-z0-9_\-]{12,}"`
+     shows nothing meaningful;
+   - `git grep -n "bot[0-9]\{6,\}:"` finds nothing.
+6. `git status` is clean on your `friend/...` branch, and the lock file says FREE.
 
 ---
 
-## 10. Pull request template
+## 10. Hand-back note template (`docs/handback/<branch-name>.md`)
 
 ```markdown
-## Package
-A / B / C: <name>  Branch: friend/<...>  Base: plan-complete @ <hash you merged last>
+# Hand-back: <package A / B / C> — branch friend/<...> at <hash>
+Merged plan-complete last at: <hash>
 
 ## What changed
 - <file or module>: <what, one line>
-- shared files touched (each its own `shared:` commit): <file: lines, why>
+- shared files (each its own `shared:` commit): <file: lines, why>
 
 ## Verification
 | item | verified live / tests only | evidence |
 |---|---|---|
 | ... | verified live | docs/results/<file>.md, check `<id>` |
 
-Full test suite: <N> passed, 2 deselected (paste the last line)
-Compose demo preflight: PASS / FAIL (paste summary)
+Full test suite: <N> passed, 2 deselected (last line pasted)
+Compose demo preflight with this branch: PASS / FAIL (summary)
+Images left in Docker: built from <branch>@<hash> (the main session must rebuild before trusting them)
 
 ## Measured numbers (if any)
 | metric | value | conditions | results file |
@@ -739,130 +796,136 @@ Compose demo preflight: PASS / FAIL (paste summary)
 
 ---
 
-## 11. Prompts for your AI CLI
+## 11. Prompts for Codex
 
-Paste these one at a time. Replace `<...>`. They are written for an agentic coding CLI (e.g. Claude Code); adjust
-the wording if yours differs.
+Paste one at a time into Codex running in `D:\eAI\eAI-codex`. Replace `<...>`.
 
-### 11.1 First prompt of every session
+### 11.1 First prompt of every Codex session
 
 ```
-You are working in a clone of https://github.com/py007105/eAI on branch friend/<PACKAGE-BRANCH>.
-Read docs/HANDOFF_FRIEND.md fully, then docs/PLAN_GAP_CLOSURE.md sections A, F and G.
-Hard rules for this session:
-- Never read, print or log .env or any token, key or kubeconfig. If you need a secret, ask me to set an environment variable.
-- Never push to main, release-candidate or plan-complete. Never force-push, never rebase pushed commits, never touch tags.
-- Never run git add -A or git add . at the repo root; add files by name after showing me git status.
-- Never delete Docker volumes; stop the stack only with `docker compose -p eai stop`.
-- No fakes or mocks outside tests/. No invented numbers: every number comes from a script you run.
-- Run `python -m pytest -q -p no:cacheprovider` after every commit and show me the last line.
-- Changes to shared files (listed in section 5 of the handoff) go in separate small commits starting with "shared:".
-Before changing anything: run `git status`, `git log --oneline -3`, and the test suite, and tell me the results.
-Then summarise in 10 lines what my package is and list the first three commits you plan. Wait for my OK.
+You are working in D:\eAI\eAI-codex, a git worktree of the EternalAI repository, on branch friend/<PACKAGE-BRANCH>.
+Another AI session (Claude Code) works at the same time in D:\eAI\eAI-release on branch plan-complete, sharing the same
+.git, the same Docker daemon, ports and RAM.
+Read AGENTS.md and docs/HANDOFF_FRIEND.md fully, then docs/PLAN_GAP_CLOSURE.md sections A, F and G.
+Hard rules for this whole session:
+- Work only inside D:\eAI\eAI-codex. Never read, edit or run git in D:\eAI\eAI-release or D:\eAI\eAI-workspace.
+- Never read, print or log any .env file or any token, key or kubeconfig. If you need a secret, ask me.
+- Commit only to my friend/ branch. Never push. Never rebase, reset --hard, amend, tag, delete branches, or run
+  git worktree remove/prune, git clean, git gc.
+- Never git add -A or git add . ; show me git status and add files by name.
+- Before ANY docker or kind command that starts, stops, builds or changes something, read D:\eAI\STACK_LOCK.md and follow
+  section 1.5 of the handoff (write HELD, release with FREE). Never docker compose down -v, never delete volumes.
+- Use only D:\eAI\eAI-codex\.venv for Python; install new packages only there and pin them.
+- No fakes or mocks outside tests/. No invented numbers: every number comes from a script you ran.
+- Run `.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` after every commit and show me the last line.
+- Changes to shared files (handoff section 5) go in separate small commits starting with "shared:".
+First: run `git branch --show-current`, `git status`, `git log --oneline -3`, merge plan-complete if it has new commits
+(merge, never rebase), and run the test suite. Report the results. Then summarise my package in 10 lines and list the
+first three commits you plan. Wait for my OK before changing anything.
 ```
 
-### 11.2 Package B (Telegram), first build prompt
+### 11.2 Package B (Telegram), build prompt
 
 ```
 Implement package B from docs/HANDOFF_FRIEND.md section 7, in this order, one commit each, tests with each:
 1. eternalai/notify/format.py (plan §15.3 message, redact() on all text) + tests/test_notify_format.py
 2. eternalai/notify/telegram.py (sendMessage, editMessageText, inline Approve/Reject, getUpdates long-poll thread,
-   callback validation rules from 7.5, never log URLs or exception messages, only exception type names) + tests with
+   callback validation per 7.5; never log URLs or exception messages, only exception type names) + tests with
    httpx.MockTransport, including a test that the bot token never appears in any recorded error or log line
-3. eternalai/notify/__init__.py make_notifier() (NullNotifier when env vars are empty) + tests
+3. eternalai/notify/__init__.py make_notifier() (NullNotifier when the env vars are empty) + tests
 4. shared: rulebook `approvers` key with validation + tests in tests/test_rulebook.py
 5. shared: api._auth accepts per-user token hashes, approver name taken from the token + tests
 6. shared: engine hooks (7.4) with failure isolation + tests using make_engine from tests/test_autopilot_path.py
 7. shared: docker-compose.yml passes TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID as ${VAR:-}
 8. scripts/hash_token.py and docs/NOTIFICATIONS.md
-Stop after each commit, show me the diff summary and the test result line.
+No Docker needed for steps 1-8 (unit tests only). Stop after each commit, show me the diff summary and the test line.
 ```
 
 ### 11.3 Package B live check prompt
 
 ```
-Write scripts/live_check_telegram.py following the pattern of scripts/live_check_phase1.py (read it first) and section 7.8
-of the handoff. Tokens come only from my environment; never print them. The script must wait for my real taps and record
-what happened. Then tell me the exact command to run it; I will run it myself and paste you the PASS/FAIL table.
+Write scripts/live_check_telegram.py following scripts/live_check_phase1.py (read it first) and section 7.8 of the
+handoff. Tokens come only from the environment / .env read by docker compose; the script never prints them. It must
+wait for my real taps on the phone and record what happened. Then tell me the exact commands to run it. Before I run it:
+check D:\eAI\STACK_LOCK.md is FREE, write the HELD line, and remind me the images will be built from this branch.
+After it finishes: stop the stack, write FREE with the image note, and commit only the script and its results files.
 ```
 
-### 11.4 Package A (Kubernetes), first build prompt
+### 11.4 Package A (Kubernetes), build prompt
 
 ```
-Implement package A from docs/HANDOFF_FRIEND.md section 6, one commit each, tests with each:
+Start package A on a new branch: git status must be clean, then `git switch -c friend/phase2-k8s plan-complete`.
+Implement docs/HANDOFF_FRIEND.md section 6, one commit each, tests with each:
 1. eternalai/drivers/base.py (Driver protocol, NotSupported, UNSUPPORTED list per D7) + tests
 2. eternalai/drivers/docker.py: DockerDriver delegating to the existing Executor with NO behaviour change + tests proving
    identical calls and audit records
 3. eternalai/drivers/k8s.py: KubernetesDriver with the official kubernetes client (restart via restartedAt annotation,
    scale_to, delete_pod, rollback to the previous ReplicaSet template, namespace allow-list, audit, no Secret API) + tests
-   with a fake AppsV1Api/CoreV1Api
+   with fake AppsV1Api/CoreV1Api; pin `kubernetes` in eternalai/requirements.txt (install into .venv only)
 4. eternalai/drivers/__init__.py make_driver() by RUNTIME + shared: one-line change in engine.py
 5. eternalai/sources/k8s_metrics.py with the PromQL table in 6.6, same columns as collector.Q, NaN for unavailable
    signals + tests with httpx.MockTransport
 6. eternalai/sources/service_map.py (annotations, static fallback) + shared: config.load_topology() + tests
 7. eternalai/verify_k8s.py (root + callers Ready + frontend GET /) + tests
 8. deploy/helm/eternalai chart + RBAC exactly as section 6.4 + tests/test_helm_chart.py (skips without helm)
-9. deploy/kind/kind-cluster.yaml, deploy/kind/VERSIONS.md (ask me to download kind/helm; I verify checksums), Online
-   Boutique annotate script
+9. deploy/kind/kind-cluster.yaml, deploy/kind/VERSIONS.md: ask me before each download; verify SHA256 against the
+   release's published checksums; put the tools in D:\eAI\tools (not in the repository)
 10. scripts/kind_e2e.py per section 6.8 and docs/KUBERNETES.md
-Check after every commit that the Docker path is unchanged: the full test suite passes, especially tests/test_autopilot_path.py.
-Stop after each commit and show me the diff summary and test line.
+After every commit the Docker path must be unchanged: the full suite passes, especially tests/test_autopilot_path.py.
+Stop after each commit and show me the diff summary and the test line.
 ```
 
 ### 11.5 Package A live run prompt
 
 ```
-Before running scripts/kind_e2e.py: check free RAM (need about 8 GB), make sure the Compose stack is stopped with
-`docker compose -p eai stop`, and show me the versions in deploy/kind/VERSIONS.md. Then run the script, show me the
-PASS/FAIL table, and for every FAIL find the real cause; do not change the check to make it pass.
+Before running scripts/kind_e2e.py: read D:\eAI\STACK_LOCK.md (must be FREE), check free RAM (need about 6 GB), confirm
+the Compose stack is stopped (`docker compose -p eai ps` shows nothing running), write the HELD line, and show me the
+versions in deploy/kind/VERSIONS.md. Build the brain as eai/eternalai:k8s-dev, never :v2. Use port-forwards on
+18000-18099 only. Then run the script, show me the PASS/FAIL table, and for every FAIL find the real cause; do not
+change the check to make it pass. At the end: kind delete cluster --name eai, write FREE in the lock file.
 ```
 
-### 11.6 Package C (KB) prompts
+### 11.6 Package C (KB) prompt
 
 ```
+Start package C on a new branch: git status clean, then `git switch -c friend/phase4-kb plan-complete`.
 The dataset files are in <DATA DIR>. Do not copy them into the repository and do not commit them.
-Implement package C from docs/HANDOFF_FRIEND.md section 8, one commit each with tests:
+Implement docs/HANDOFF_FRIEND.md section 8, one commit each with tests:
 1. eternalai/kb/labels.py (explicit plan<->live label map; unmapped types stated)
 2. eternalai/kb/loader.py (validation per 8.2) + tests with small fixture CSVs written in the test
 3. eternalai/kb/ranking.py (order per 8.3, measured vs prior, fallback to CAUSE_RUNBOOKS) + tests
 4. shared: engine uses ranked_runbooks(); api GET /kb/{fault_type}; tests/test_autopilot_path.py must pass unchanged
 5. models/train_dataset_a.py + tests/test_dataset_a_splits.py; thresholds from val_real.csv only; test score computed once
 6. run it and commit only docs/results/dataset_a_classifier.md and the model artifact + metadata
-7. scripts/live_check_kb.py per 8.6
+7. scripts/live_check_kb.py per 8.6 (Docker lock rules apply)
 Stop after each commit.
 ```
 
-### 11.7 Before every push
+### 11.7 Before handing a package back
 
 ```
-Run: git status; git diff --stat origin/plan-complete...HEAD; the full test suite; and the secret check from section 9
-item 5 of the handoff. Confirm I am on a friend/ branch and that no .env, data, runtime or results/demo-export file is
-staged or committed. Show me the output. Do not push until I say "push".
+Run: git status; git log --oneline plan-complete..HEAD; git diff --stat plan-complete...HEAD; the full test suite; and
+the secret checks from section 9 item 5 of the handoff. Confirm I am on a friend/ branch, that no .env, data, runtime,
+kubeconfig or results/demo-export file is committed, and that D:\eAI\STACK_LOCK.md says FREE. Then write
+docs/handback/<branch>.md from the template in section 10, filled only from real commits, test output and results files,
+commit it, and give me the one-line message for the owner: "package <X> ready on friend/<branch> at <hash>".
+Do not push.
 ```
 
-### 11.8 Getting the owner's new work
+### 11.8 Getting the main session's new work
 
 ```
-Run git fetch origin, then git merge origin/plan-complete into my current friend/ branch (merge, NOT rebase).
-If there are conflicts, show me each conflicted hunk, propose a resolution that keeps both sides' intent (prefer the
-owner's version in shared files and re-apply my lines), and wait for my OK before committing the merge. Then run the
-full test suite.
+Run `git merge plan-complete` on my current friend/ branch (merge, NOT rebase). If there are conflicts, show me each
+conflicted hunk, propose a resolution that keeps both sides' intent (prefer plan-complete's version in shared files and
+re-apply my lines), and wait for my OK before committing the merge. Then run the full test suite.
 ```
 
-### 11.9 Opening the PR
+### 11.9 If something goes wrong
 
 ```
-Write the pull request description for friend/<branch> -> plan-complete using the template in section 10 of
-docs/HANDOFF_FRIEND.md, filled from the actual commits, test results and results files. Every number must come from a
-committed results file. List what is verified live and what only in tests. Do not open or merge the PR yourself; give
-me the text.
-```
-
-### 11.10 If something goes wrong
-
-```
-Stop. Show me git status, git log --oneline -5 and git branch -vv. Do not run any command that rewrites history,
-deletes files or pushes. Explain what state we are in and propose the safest fix from section 3.7 of the handoff.
+Stop. Show me git branch --show-current, git status, git log --oneline -5 and the content of D:\eAI\STACK_LOCK.md.
+Do not run any command that rewrites history, deletes files, pushes, or changes Docker. Explain what state we are in and
+propose the safest fix from section 3.7 of the handoff.
 ```
 
 ---
@@ -871,24 +934,30 @@ deletes files or pushes. Explain what state we are in and propose the safest fix
 
 | Don't | Do |
 |---|---|
-| `git add -A` and push a `.env` or `data/runs` | add files by name; `git status` first |
+| run git or edit files in `D:\eAI\eAI-release` | work only in `D:\eAI\eAI-codex` |
+| `docker compose up` without the lock | read and write `D:\eAI\STACK_LOCK.md` first |
+| build the kind brain as `eai/eternalai:v2` | use `eai/eternalai:k8s-dev` |
+| run kind while the Compose stack runs | one at a time (RAM) |
+| `git add -A` and commit a `.env` or `data/runs` | add files by name; `git status` first |
 | fix a failing test by changing what it asserts | find why it fails; if the old behaviour was right, fix the code |
-| make the live check pass by loosening it | report the FAIL with its cause |
+| make a live check pass by loosening it | report the FAIL with its cause |
 | copy numbers from the plan into docs | run the script; write the measured number |
 | edit `engine.py` broadly "while you are there" | one small `shared:` commit with only the agreed lines |
-| leave the Compose stack and kind running together | one at a time (RAM) |
 | `docker compose down -v` to "reset" | `docker compose -p eai stop` |
 | retrain or overwrite `models/artifacts/classifier.*` | new artifacts get new names |
 | log a Telegram/Kubernetes exception message | log `type(e).__name__` only |
-| rebase onto new `plan-complete` | merge it |
+| `git rebase plan-complete` | `git merge plan-complete` |
+| pip install into the main session's venv | only `D:\eAI\eAI-codex\.venv` |
 
 ---
 
-## 13. Contacts and timeline
+## 13. Coordination and timeline
 
-- Questions, blocked items, accidental pushes: tell the owner immediately; do not work around a rule.
+- The owner relays between the two sessions; the lock file `D:\eAI\STACK_LOCK.md` is the only shared state besides git.
+- The main session also follows the lock file: it writes `HELD by main | ...` before using Docker.
 - Suggested timeline:
-  - Package B by 2026-10-22 evening;
+  - package B by 2026-10-22 evening;
   - package A minimal by 2026-10-23 16:00 IST;
-  - package C as soon as the data arrives.
-- Last PR by **2026-10-23 18:00 IST**, two hours before the freeze, so there is time to merge and re-run the live checks.
+  - package C as soon as the dataset path arrives.
+- Last hand-back by **2026-10-23 18:00 IST**, two hours before the freeze, so there is time to merge and re-run the
+  live checks.
