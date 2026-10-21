@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import logging
 import os
+import queue
 import re
 import threading
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable
 
@@ -52,6 +54,11 @@ class TelegramNotifier:
         self._last_update_id = self._load_update_id()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._delivery_thread: threading.Thread | None = None
+        self._send_queue: queue.Queue[tuple[str, tuple, dict]] = queue.Queue(maxsize=64)
+        self._delivery_lock = threading.Lock()
+        self._message_ids: dict[str, int] = {}
+        self._visible_states: dict[str, tuple] = {}
 
     def configure_callbacks(self, *, approve: Callable[[str, str], object],
                             reject: Callable[[str, str], object],
@@ -119,6 +126,60 @@ class TelegramNotifier:
                    "text": format_incident(incident_dict, show_probability=self.show_probability),
                    "reply_markup": self._keyboard(incident_dict) or {"inline_keyboard": []}}
         return self._request("editMessageText", payload) is not None
+
+    @staticmethod
+    def _visible_state(incident: dict) -> tuple:
+        action = (incident.get("actions") or [{}])[-1]
+        verification = incident.get("verification") or {}
+        return (incident.get("status"), action.get("verdict"), action.get("approved_by"),
+                verification.get("outcome"))
+
+    def incident_changed(self, incident: dict) -> None:
+        """Queue one snapshot only when a user-visible state field changes."""
+        iid = incident.get("id")
+        if not isinstance(iid, str) or not iid:
+            return
+        state = self._visible_state(incident)
+        with self._delivery_lock:
+            if self._visible_states.get(iid) == state:
+                return
+            try:
+                self._send_queue.put_nowait((iid, state, deepcopy(incident)))
+            except queue.Full as exc:
+                self.last_error = type(exc).__name__
+                LOG.warning("Telegram delivery error: %s", self.last_error)
+                return
+            self._visible_states[iid] = state
+
+    def _send_loop(self) -> None:
+        while not self._stop.is_set() or not self._send_queue.empty():
+            try:
+                iid, state, incident = self._send_queue.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            try:
+                with self._delivery_lock:
+                    message_id = self._message_ids.get(iid)
+                if message_id is None:
+                    message_id = self.send_incident(incident)
+                    ok = message_id is not None
+                    if ok:
+                        with self._delivery_lock:
+                            self._message_ids[iid] = message_id
+                else:
+                    ok = self.update_incident(message_id, incident)
+                if not ok:
+                    with self._delivery_lock:
+                        if self._visible_states.get(iid) == state:
+                            self._visible_states.pop(iid, None)
+            except Exception as exc:
+                self.last_error = type(exc).__name__
+                LOG.warning("Telegram delivery error: %s", self.last_error)
+                with self._delivery_lock:
+                    if self._visible_states.get(iid) == state:
+                        self._visible_states.pop(iid, None)
+            finally:
+                self._send_queue.task_done()
 
     def _handle_callback(self, query: dict) -> dict:
         callback_id = query.get("id")
@@ -191,6 +252,8 @@ class TelegramNotifier:
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
+        self._delivery_thread = threading.Thread(target=self._send_loop, name="telegram-send", daemon=True)
+        self._delivery_thread.start()
         self._thread = threading.Thread(target=self._poll_loop, name="telegram-poll", daemon=True)
         self._thread.start()
 
@@ -208,5 +271,7 @@ class TelegramNotifier:
         self._stop.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=26)
+        if self._delivery_thread and self._delivery_thread.is_alive():
+            self._delivery_thread.join(timeout=30)
         if self._own_client:
             self.client.close()
