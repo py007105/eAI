@@ -227,3 +227,62 @@ def test_killswitch_endpoint_needs_the_token_and_returns_to_watch_mode(monkeypat
     assert c.post("/mode", json={"mode": "autopilot"}, headers=h).status_code == 409   # cannot leave watch-only while on
     c.post("/killswitch", json={"on": False}, headers=h)
     assert c.post("/mode", json={"mode": "ask"}, headers=h).json() == {"mode": "ask-first"}
+
+
+class ForestOnlyDetector:
+    """High joint score, every single signal inside its learned limits."""
+    threshold, limits = 0.5, {}
+
+    def score(self, feats):
+        return 0.9
+
+    def out_of_range(self, feats):
+        return []
+
+
+def test_forest_only_anomaly_never_runs_automatically(monkeypatch):
+    e = make_engine("autopilot", "web", "down", monkeypatch)
+    e.detectors = {"web": ForestOnlyDetector()}
+    feats_ok = {"up_frac": 1.0}
+    inc = Incident("u", 1000.0)
+    inc.services = ["web"]
+    e.incidents.append(inc)
+    e._try_diagnose(inc, {s: dict(feats_ok) for s in SERVICES}, {s: 0.0 for s in SERVICES}, {s: s == "web" for s in SERVICES})
+    act = inc.actions[-1]
+    assert inc.diagnosis["anomaly_source"] == "forest_only"
+    assert act["verdict"] == "needs_approval" and "unusual combination" in act["reason"] and e.executor.calls == []
+
+
+def test_anomaly_source():
+    from eternalai.detect import anomaly_source
+
+    class Lim(ForestOnlyDetector):
+        def out_of_range(self, feats):
+            return ["error_ratio"]
+    assert anomaly_source(ForestOnlyDetector(), {}, down=True) == "down"
+    assert anomaly_source(Lim(), {}, down=False) == "limits"
+    assert anomaly_source(ForestOnlyDetector(), {}, down=False) == "forest_only"
+    assert anomaly_source(None, {}, down=False) == "none"
+
+
+class CloseRanker:
+    def rank(self, table):
+        return [{"service": "inventory", "score": 0.46}, {"service": "orders", "score": 0.40},
+                {"service": "payments", "score": 0.08}, {"service": "web", "score": 0.06}]
+
+
+def test_two_close_root_candidates_abstain(monkeypatch):
+    e = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e.ranker, e.root_margin = CloseRanker(), 0.1
+    inc = diagnose(e, "inventory")
+    assert inc.abstained and inc.actions == [] and inc.status == "escalated" and e.executor.calls == []
+    assert "two close root candidates" in inc.diagnosis["abstain_reason"] and inc.diagnosis["root_gap"] == 0.06
+
+
+def test_a_clear_root_or_no_margin_file_does_not_abstain(monkeypatch):
+    e = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e.ranker, e.root_margin = CloseRanker(), 0.05          # gap 0.06 >= margin
+    assert not diagnose(e, "inventory").abstained
+    e2 = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e2.ranker, e2.root_margin = CloseRanker(), None         # no margin artifact: rule off
+    assert not diagnose(e2, "inventory").abstained

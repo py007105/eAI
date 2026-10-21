@@ -89,6 +89,7 @@ def status():
             "last_error_t": getattr(engine, "last_error_t", None),
             "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
             "policy": engine.policy.rulebook.summary(),
+            "root_margin": getattr(engine, "root_margin", None),
             "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}

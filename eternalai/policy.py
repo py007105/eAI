@@ -2,7 +2,7 @@
 
 The rules come from the rulebook YAML (eternalai/rulebook.py, plan §15.5). Decision order:
 allow-list -> target -> kill switch -> fault override "escalate" -> circuit breaker -> cooldown -> hourly cap -> watch-only
--> "act only if users are affected" -> protected service (approval) -> autopilot with an allowed risk (execute) -> approval.
+-> unusual combination (approval) -> "act only if users are affected" -> protected service (approval) -> autopilot with an allowed risk (execute) -> approval.
 High-risk actions are never executed automatically: the loader refuses "high" in auto_allowed_risks.
 """
 from __future__ import annotations
@@ -57,7 +57,7 @@ class PolicyEngine:
         return sum(1 for t in self.executed if now - t < HOUR_S)
 
     def evaluate(self, runbook_id: str, service: str, now: float | None = None, fault: str | None = None,
-                 user_impact: bool | None = None) -> Decision:
+                 user_impact: bool | None = None, unusual: bool = False) -> Decision:
         now = now or time.time()
         rb = self.rulebook
         if runbook_id not in RUNBOOKS:
@@ -81,6 +81,9 @@ class PolicyEngine:
             return Decision("blocked", f"hourly cap: {rb.max_actions_per_hour} actions already executed in the last hour", risk)
         if self.mode == "watch-only":
             return Decision("observe_only", "watch-only mode: proposal recorded, nothing executed", risk)
+        if unusual:   # plan §9.1: only the joint score is abnormal, no single signal explains it -> never automatic
+            return Decision("needs_approval", "unusual combination: only the joint anomaly score is high and no single signal "
+                            "explains it, so nothing runs automatically", risk)
         if fo.get("act_only_if_user_impact") and user_impact is False:
             return Decision("observe_only", f"rulebook: {fault} is acted on only when users are affected; they are not", risk)
         if service in self.protected:

@@ -185,6 +185,18 @@ def setup(app: FastAPI) -> logging.Logger:
                         f.write(os.urandom(1024 * 1024) * mb)
                     time.sleep(2)
             threading.Thread(target=_burst, daemon=True).start()
+        elif kind == "disk_stream":  # a slow, steady writer (log or cache growth): grows until stopped; files stay until cleaned
+            import threading
+            chaos["stream"] = True
+            mb = int(val)
+
+            def _stream():
+                # stops by itself a little past the "disk full" threshold so the host's own disk is never filled
+                while chaos["stream"] and _scratch_bytes() < SCRATCH_LIMIT * 1.2:
+                    with open(SCRATCH / f"fill-{time.time_ns()}.bin", "wb") as f:
+                        f.write(os.urandom(1024 * 1024) * mb)
+                    time.sleep(2)
+            threading.Thread(target=_stream, daemon=True).start()
         elif kind == "reset":
             chaos.update(latency_ms=0, error_rate=0.0, leak=[], cpu_burn=False, stream=False)
         else:
