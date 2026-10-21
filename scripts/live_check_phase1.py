@@ -377,4 +377,12 @@ def finish(out, a, env=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import stack_lock
+    _commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    stack_lock.take("main", "Phase 1 live check", f"plan-complete@{_commit}")
+    try:
+        _rc = main()
+    finally:
+        stack_lock.release("main", f"plan-complete@{_commit}")
+    sys.exit(_rc)
