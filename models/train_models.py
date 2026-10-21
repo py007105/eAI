@@ -356,6 +356,8 @@ def main():
     ap.add_argument("--sweep", type=int, nargs="*", help="compare these window lengths and exit")
     ap.add_argument("--detector-sweep", action="store_true", help="compare detector configurations and exit")
     ap.add_argument("--no-save", action="store_true")
+    ap.add_argument("--oof-rank-out", help="also write each out-of-fold incident's ranker support (sorted, normalised as Ranker.rank "
+                    "does live) and whether its top-1 was right; input for models/choose_root_margin.py")
     a = ap.parse_args()
     runs, excluded = load_runs(a.runs)
     if len(runs) < 20:
@@ -556,7 +558,9 @@ def main():
         for (run, rel), g in ter.groupby(["run", "rel"]):
             p = m.predict_proba(g[EVIDENCE].values)[:, 1]
             feats, an = key_to_rec[(run, rel)]
+            support = p / p.sum() if p.sum() > 0 else np.full(len(p), 1 / len(p))
             rr.append({"run": run, "rel": rel, "learned": list(g.service.values[np.argsort(-p)]),
+                       "support_sorted": sorted((float(x) for x in support), reverse=True),
                        "tgt": g.service[g.is_root == 1].iloc[0], "rule": deepest_anomalous(an) or list(config.SERVICES),
                        "baro": baro_rank(feats, base),
                        "random": list(np.random.default_rng(zlib.crc32(f"{run}{rel}".encode())).permutation(config.SERVICES))})
@@ -568,6 +572,10 @@ def main():
         t3 = np.mean([x["tgt"] in x[k][:3] for x in rr])
         R.append(f"| {label} | {t1:.3f} | {t3:.3f} | {len(rr)} |")
 
+    if a.oof_rank_out:
+        Path(a.oof_rank_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.oof_rank_out).write_text(json.dumps([{"run": str(x["run"]), "rel": x["rel"], "support_sorted": x["support_sorted"],
+                                                     "top1_correct": x["learned"][:1] == [x["tgt"]]} for x in rr]), encoding="utf-8")
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text("\n".join(R) + "\n", encoding="utf-8")
     print("\n".join(R))

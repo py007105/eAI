@@ -263,3 +263,26 @@ def test_anomaly_source():
     assert anomaly_source(Lim(), {}, down=False) == "limits"
     assert anomaly_source(ForestOnlyDetector(), {}, down=False) == "forest_only"
     assert anomaly_source(None, {}, down=False) == "none"
+
+
+class CloseRanker:
+    def rank(self, table):
+        return [{"service": "inventory", "score": 0.46}, {"service": "orders", "score": 0.40},
+                {"service": "payments", "score": 0.08}, {"service": "web", "score": 0.06}]
+
+
+def test_two_close_root_candidates_abstain(monkeypatch):
+    e = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e.ranker, e.root_margin = CloseRanker(), 0.1
+    inc = diagnose(e, "inventory")
+    assert inc.abstained and inc.actions == [] and inc.status == "escalated" and e.executor.calls == []
+    assert "two close root candidates" in inc.diagnosis["abstain_reason"] and inc.diagnosis["root_gap"] == 0.06
+
+
+def test_a_clear_root_or_no_margin_file_does_not_abstain(monkeypatch):
+    e = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e.ranker, e.root_margin = CloseRanker(), 0.05          # gap 0.06 >= margin
+    assert not diagnose(e, "inventory").abstained
+    e2 = make_engine("autopilot", "inventory", "error_spike", monkeypatch)
+    e2.ranker, e2.root_margin = CloseRanker(), None         # no margin artifact: rule off
+    assert not diagnose(e2, "inventory").abstained

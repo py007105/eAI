@@ -29,6 +29,14 @@ from .rca import deepest_anomalous, evidence_table
 from .verify import verify_recovery
 
 CLOSED = ("recovered", "partially_recovered", "unresolved", "escalated")
+
+
+def load_root_margin() -> float | None:
+    path = artifacts.ARTIFACT_DIR / "root_margin.json"
+    try:
+        return float(json.loads(path.read_text(encoding="utf-8"))["margin"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 EVIDENCE_DIR = Path("runtime/evidence")
 
 
@@ -92,6 +100,9 @@ class Engine:
             self.baselines = {}
         # The feature window must be the one the models were trained with (train/serve consistency).
         self.window_s = float((self.cls_meta or self.det_meta or {}).get("window_s", 30.0))
+        # plan §9.4: two strong root candidates -> unknown. The margin comes from out-of-fold training incidents
+        # (models/choose_root_margin.py); without the file the rule is off and /status says so.
+        self.root_margin = load_root_margin() if self.use_models else None
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
                               "ranker": self.ranker is not None, "baselines": bool(self.baselines)}
         self.busy: set[str] = set()   # services with an action in flight
@@ -321,6 +332,9 @@ class Engine:
             order = deepest_anomalous(anom) or list(config.SERVICES)
             ranking = [{"service": s, "score": round(1 / (i + 1), 3)} for i, s in enumerate(order)]
         root = ranking[0]["service"]
+        gap = ranking[0]["score"] - ranking[1]["score"] if len(ranking) > 1 else 1.0
+        margin = getattr(self, "root_margin", None)
+        close = bool(self.ranker) and margin is not None and gap < margin
         inv = Investigator(self.prom, self.dv)
         for s in {root, *services}:
             inv.metrics(s, feats[s]); inv.container(s); inv.error_logs(s); inv.deploy_history(s)
@@ -335,6 +349,11 @@ class Engine:
         else:
             label, conf, abst, probs = rule_diagnose(feats[root]), None, False, {}
             diagnosis = {"root": root, "rule_label": label}
+        if close and not abst:   # two strong candidates: a single-fault model can be fooled, do not guess (plan §9.4)
+            label, abst = ABSTAIN, True
+            diagnosis = {**diagnosis, "abstain_reason": f"two close root candidates: {ranking[0]['service']} and "
+                         f"{ranking[1]['service']} (support gap {gap:.3f} < margin {margin:.3f})"}
+        diagnosis = {**diagnosis, "root_gap": round(float(gap), 4), "root_margin": margin}
         down = (st is not None and not st.running) or feats[root].get("up_frac") == 0
         source = anomaly_source((self.detectors or {}).get(root), feats[root], down)
         diagnosis = {**diagnosis, "anomaly_source": source}
