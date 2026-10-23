@@ -26,6 +26,7 @@ from eternalai.drivers.k8s import KubernetesDriver  # noqa: E402
 from eternalai.sources.k8s_metrics import KubernetesProm, QUERIES  # noqa: E402
 from eternalai.sources.service_map import discover_topology  # noqa: E402
 from scripts.stack_lock import is_free, take, release  # noqa: E402; atomic shared lock
+from scripts.k8s_window_deadline import bounded_timeout, remaining_work_seconds  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 TOOLS = Path(r"D:\eAI\tools")
@@ -53,9 +54,9 @@ def check(name: str, ok: bool, detail: str = ""):
     return ok
 
 
-def cmd(args, *, input_text=None, timeout=900):
+def cmd(args, *, input_text=None, timeout=900, cleanup=False):
     process = subprocess.run([str(arg) for arg in args], cwd=ROOT, input=input_text,
-                             capture_output=True, text=True, timeout=timeout)
+                             capture_output=True, text=True, timeout=bounded_timeout(timeout, cleanup=cleanup))
     if process.returncode:
         raise RuntimeError(f"{Path(str(args[0])).name} {args[1]} exited {process.returncode}")
     return process.stdout.strip()
@@ -76,6 +77,9 @@ def free_memory_gb():
 
 
 def wait_until(predicate, seconds=240, step=3):
+    remaining = remaining_work_seconds()
+    if remaining is not None:
+        seconds = min(seconds, max(0, remaining))
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
         try:
@@ -89,6 +93,7 @@ def wait_until(predicate, seconds=240, step=3):
 
 
 def port_forward(namespace, target, local, remote):
+    bounded_timeout(1)
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     return subprocess.Popen([KUBECTL, "-n", namespace, "port-forward", target, f"{local}:{remote}"],
                             cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -96,6 +101,7 @@ def port_forward(namespace, target, local, remote):
 
 
 def api_proxy():
+    bounded_timeout(1)
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     return subprocess.Popen([KUBECTL, "proxy", "--address=127.0.0.1", "--port=18082"],
                             cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -121,7 +127,8 @@ def pods(name):
 
 def api(method, path, token=None, **kwargs):
     headers = {"X-Approval-Token": token} if token else {}
-    response = httpx.request(method, "http://127.0.0.1:18080" + path, headers=headers, timeout=15, **kwargs)
+    response = httpx.request(method, "http://127.0.0.1:18080" + path, headers=headers,
+                             timeout=bounded_timeout(15), **kwargs)
     response.raise_for_status()
     return response.json()
 
@@ -231,7 +238,7 @@ def main():
         check("prometheus", True, f"chart {PROM_CHART} Ready")
 
         cmd([KUBECTL, "create", "namespace", "shop"])
-        manifest = urllib.request.urlopen(MANIFEST, timeout=60).read()
+        manifest = urllib.request.urlopen(MANIFEST, timeout=bounded_timeout(60)).read()
         digest = hashlib.sha256(manifest).hexdigest()
         if digest.lower() != MANIFEST_SHA256:
             raise RuntimeError("pinned Online Boutique manifest checksum mismatch")
@@ -357,11 +364,11 @@ def main():
                 forward.kill()
         if cluster_started:
             try:
-                cmd([HELM, "uninstall", "eternalai", "-n", "eternalai"], timeout=120)
+                cmd([HELM, "uninstall", "eternalai", "-n", "eternalai"], timeout=120, cleanup=True)
             except Exception:
                 pass
             try:
-                cmd([KIND, "delete", "cluster", "--name", "eai"], timeout=600)
+                cmd([KIND, "delete", "cluster", "--name", "eai"], timeout=600, cleanup=True)
                 check("teardown", True, "only the eai kind cluster removed")
             except Exception as exc:
                 check("teardown", False, type(exc).__name__)

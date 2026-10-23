@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from eternalai.redact import redact  # noqa: E402
 from scripts.stack_lock import is_free, release, take  # noqa: E402
+from scripts.k8s_window_deadline import bounded_timeout  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 CHECKS: list[dict] = []
@@ -35,12 +36,13 @@ def check(name, ok, detail=""):
     return ok
 
 
-def run(args, timeout=900):
-    return subprocess.run([str(arg) for arg in args], cwd=ROOT, capture_output=True, text=True, timeout=timeout)
+def run(args, timeout=900, cleanup=False):
+    return subprocess.run([str(arg) for arg in args], cwd=ROOT, capture_output=True, text=True,
+                          timeout=bounded_timeout(timeout, cleanup=cleanup))
 
 
-def command(args, timeout=900):
-    process = run(args, timeout)
+def command(args, timeout=900, cleanup=False):
+    process = run(args, timeout, cleanup=cleanup)
     if process.returncode:
         raise RuntimeError(f"{Path(str(args[0])).name} command exited {process.returncode}")
     return process.stdout.strip()
@@ -133,6 +135,7 @@ def main():
             stock = run([sys.executable, "scripts/stock_gate.py", "--restock", "--force"], timeout=180)
             if stock.returncode == 0:
                 break
+            bounded_timeout(5)
             time.sleep(5)
         check("stock_gate", stock.returncode == 0,
               f"attempts {attempt}, exit {stock.returncode}; "
@@ -148,7 +151,8 @@ def main():
     finally:
         if compose_started:
             try:
-                command(["docker", "compose", "-p", "eai", "--profile", "releases", "stop"], timeout=180)
+                command(["docker", "compose", "-p", "eai", "--profile", "releases", "stop"],
+                        timeout=180, cleanup=True)
                 check("compose_stopped", True, "project eai stopped; volumes preserved")
             except Exception as exc:
                 check("compose_stopped", False, type(exc).__name__)
