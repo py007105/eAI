@@ -66,3 +66,18 @@ class KubernetesView:
     def logs(self, service: str, tail: int = 50) -> list[str]:
         # Minimal RBAC intentionally has no pods/log permission.
         return []
+
+    def image_pull_failure(self, service: str) -> bool:
+        """Direct evidence of a failed new image, only when a prior revision exists."""
+        deployment = self.apps.read_namespaced_deployment(service, self.namespace)
+        revision = int((deployment.metadata.annotations or {}).get("deployment.kubernetes.io/revision", "0"))
+        if revision < 2:
+            return False
+        selector = deployment.spec.selector.match_labels or {}
+        if not selector:
+            return False
+        label_selector = ",".join(f"{key}={value}" for key, value in sorted(selector.items()))
+        pods = self.core.list_namespaced_pod(self.namespace, label_selector=label_selector).items
+        reasons = {"ImagePullBackOff", "ErrImagePull", "InvalidImageName"}
+        return any(getattr(getattr(status.state, "waiting", None), "reason", None) in reasons
+                   for pod in pods for status in (pod.status.container_statuses or []))

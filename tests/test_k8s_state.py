@@ -23,3 +23,16 @@ def test_state_reports_readiness_revision_and_oom():
     assert view.poll()["frontend"].running
     assert view.events[-1]["kind"] == "readiness"
     assert view.logs("frontend") == []
+
+
+def test_image_pull_failure_requires_previous_release():
+    deployment = NS(metadata=NS(annotations={"deployment.kubernetes.io/revision": "2"}),
+                    spec=NS(selector=NS(match_labels={"app": "catalog"})))
+    pod = NS(status=NS(container_statuses=[NS(state=NS(waiting=NS(reason="ImagePullBackOff")))]))
+    apps, core = Mock(), Mock()
+    apps.read_namespaced_deployment.return_value = deployment
+    core.list_namespaced_pod.return_value.items = [pod]
+    view = KubernetesView("shop", apps, core)
+    assert view.image_pull_failure("catalog")
+    deployment.metadata.annotations["deployment.kubernetes.io/revision"] = "1"
+    assert not view.image_pull_failure("catalog")
