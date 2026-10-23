@@ -69,8 +69,12 @@
 - secret check (assignment section 7 step 6) before every commit: no matches.
 
 ## Submission
-- Not pushed, no PR, no bundle or zip made: Sanskar has not said Prem authorised a push. When authorised: push only this
-  branch and open a PR to `plan-complete`, or make the bundle described in section 7.
+- Push and PR authorised by Prem (relayed by Sanskar) on 2026-10-23. Only `team/sanskar-docs-runbooks-qa` is pushed
+  (no force-push); the PR targets `plan-complete` and is not merged by the author. The PR link is in the PR itself and in
+  the message to Prem. No bundle or zip was made.
+- Checks re-run before the push: 232 distinct citations in range at `65dd9fe` (one scripted false positive,
+  `docker-compose.yml:17,23,29`, checked by hand); 37 checks Not executed, 0 Pass/Fail/Blocked; diff only under
+  `docs/team-qa/`; secret check no matches; `origin/plan-complete` still at `65dd9fe`, so no merge was needed.
 
 ## Integration order and rollback
 - Independent of all other branches (documentation only).
