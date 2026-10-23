@@ -87,9 +87,9 @@ Live verification needed after wiring (Claude): a committed script that injects 
 real stack and records detection with and without the z-score path; until then "implemented only" for the engine path.
 
 ## Submission
-- PR: none; no push was authorised. Bundle for Prem:
-  `git bundle create "$HOME\Desktop\team-rajat-zscore-nab.bundle" 65dd9fe014e2bdfe6cede2cd9f69b0a014604f93..team/rajat-zscore-nab`
-  (not yet sent; Rajat to send via the channel Prem chooses).
+- Prem authorised the push after the work was done: branch `team/rajat-zscore-nab` pushed to origin (no force-push),
+  PR opened with base `plan-complete` and this note as its description. Not merged; Claude reviews and integrates.
+- No bundle needed.
 
 ## Suggested integration order and rollback
 - Integration: independent of the other teammates' branches (all paths are new files owned by Rajat); merge any time
