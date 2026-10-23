@@ -10,7 +10,8 @@ CHART = Path(__file__).resolve().parents[1] / "deploy" / "helm" / "eternalai"
 
 
 def render(*values):
-    helm = shutil.which("helm")
+    local_helm = Path(r"D:\eAI\tools\helm.exe")
+    helm = shutil.which("helm") or (str(local_helm) if local_helm.is_file() else None)
     if not helm:
         pytest.skip("helm is not on PATH")
     result = subprocess.run([helm, "template", "eternalai", str(CHART), "-n", "eternalai", *values],
