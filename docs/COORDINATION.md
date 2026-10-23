@@ -104,3 +104,10 @@ To bring the main session's work into a `friend/...` branch: `git merge plan-com
   the ranker caught it (`docs/postmortems/cpu_burn_seed426.md`). The close-candidates margin (0.1215) would **not** have
   caught it (support gap 0.161). No check that passes on scripted faults establishes general safety on unseen faults.
 - Telegram is not connected to the brain. Kubernetes is not started. The Docker socket proxy is deferred.
+
+## 8. Overnight sequence: executions (append-only)
+| when (IST) | checkout | commit | execution | state |
+|---|---|---|---|---|
+| 23 Oct 21:11 | `D:\eAI\eAI-eval-3208bf0` | `3208bf0` | (no ID) | stopped at 21:22 while still waiting for the lock: it did not hold the lock across steps. Ran nothing |
+| 23 Oct 21:26 | `D:\eAI\eAI-eval-7961c1c` | `7961c1c` | (no ID) | stopped at 22:19 while still waiting for the lock: controlled-check claims and stale-result protection were insufficient. Ran nothing |
+| 23 Oct 22:25 | `D:\eAI\eAI-eval-67211f8` | `67211f8` (image build inputs identical to `7961c1c`) | `20261023T222518-d60e18cd` | waiting for the forecast check to release the lock; this is the current candidate run |
