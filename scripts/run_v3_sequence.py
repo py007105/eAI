@@ -21,6 +21,7 @@ import secrets
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -28,8 +29,11 @@ import stack_lock  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKER_BIN = r"C:\Program Files\Docker\Docker\resources\bin"
-LOG = ROOT / "results" / "v3-sequence.log"
-GATE = ROOT / "results" / "v3-gate.json"
+# One execution = one unique ID: every step receives it (EAI_EXEC_ID) and writes it into its results; the summary accepts a
+# results file only if it names this commit AND this execution ID, so an older run of the same commit is never counted.
+EXEC_ID = f"{time.strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:8]}"
+LOG = ROOT / "results" / f"v3-sequence-{EXEC_ID}.log"
+GATE = ROOT / "results" / f"v3-gate-{EXEC_ID}.json"
 
 
 def log(msg):
@@ -40,7 +44,7 @@ def log(msg):
 
 def step(cmd, timeout):
     env = {**os.environ, "PATH": os.environ.get("PATH", "") + os.pathsep + DOCKER_BIN,
-           stack_lock.PARENT_ENV: "main",
+           stack_lock.PARENT_ENV: "main", "EAI_EXEC_ID": EXEC_ID,
            "CHAOS_TOKEN": secrets.token_urlsafe(24)}          # only for compose interpolation during the build
     with open(LOG, "a", encoding="utf-8") as f:
         try:
@@ -57,7 +61,7 @@ def passed(md: Path, commit: str) -> str | None:
     if not md.exists():
         return None
     text = md.read_text(encoding="utf-8")
-    if f"`{commit}`" not in text:
+    if f"`{commit}`" not in text or f"`{EXEC_ID}`" not in text:
         return None
     m = re.search(r"(\d+) of (\d+) checks passed", text)
     return f"{m.group(1)}/{m.group(2)}" if m else None
@@ -65,12 +69,12 @@ def passed(md: Path, commit: str) -> str | None:
 
 def main():
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    log(f"sequence start at commit {commit}")
+    log(f"sequence start at commit {commit}, execution {EXEC_ID}")
     while not stack_lock.state().startswith("FREE"):
         time.sleep(60)
     stack_lock.take("main", f"overnight sequence (build, gate checks, evaluation v3) at {commit}", f"plan-complete@{commit}")
     log("lock taken")
-    gate = {"commit": commit}
+    gate = {"commit": commit, "execution_id": EXEC_ID}
     try:
         py = sys.executable
         if step(["docker", "compose", "--profile", "releases", "build"], 3600):
