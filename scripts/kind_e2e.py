@@ -104,7 +104,11 @@ def wait_deployment(name, replicas=None, timeout=300):
     def ready():
         body = json.loads(cmd([KUBECTL, "-n", "shop", "get", "deployment", name, "-o", "json"]))
         desired = body["spec"].get("replicas", 1)
-        return body if (replicas is None or desired == replicas) and body["status"].get("readyReplicas", 0) == desired else None
+        status = body.get("status", {})
+        ready = (status.get("readyReplicas", 0) == desired
+                 and status.get("updatedReplicas", 0) == desired
+                 and status.get("observedGeneration", 0) >= body["metadata"].get("generation", 0))
+        return body if (replicas is None or desired == replicas) and ready else None
     return wait_until(ready, timeout, 5)
 
 
@@ -120,17 +124,20 @@ def api(method, path, token=None, **kwargs):
     return response.json()
 
 
-def rbac_matrix():
+def rbac_matrix(watch=True):
     principal = "system:serviceaccount:eternalai:eternalai"
     cases = [("get", "deployments.apps", "shop", True),
-             ("patch", "deployments.apps", "shop", False),
-             ("get", "pods", "shop", True), ("delete", "pods", "shop", False),
+             ("patch", "deployments.apps", "shop", not watch),
+             ("get", "pods", "shop", True), ("delete", "pods", "shop", not watch),
              ("get", "secrets", "shop", False), ("delete", "deployments.apps", "shop", False),
              ("create", "pods/exec", "shop", False), ("get", "deployments.apps", "kube-system", False)]
     results = {}
     for verb, resource, namespace, expected in cases:
-        answer = cmd([KUBECTL, "auth", "can-i", verb, resource, "--as=" + principal,
-                      "-n", namespace]).lower() == "yes"
+        response = subprocess.run([KUBECTL, "auth", "can-i", verb, resource, "--as=" + principal,
+                                   "-n", namespace], cwd=ROOT, capture_output=True, text=True, timeout=30)
+        if response.stdout.strip().lower() not in ("yes", "no"):
+            raise RuntimeError("kubectl auth can-i gave no yes/no answer")
+        answer = response.stdout.strip().lower() == "yes"
         results[f"{namespace}:{verb}:{resource}"] = answer == expected
     return results
 
@@ -170,8 +177,8 @@ def main():
         held = True
         check("preflight", True, f"Compose stopped, no eai kind cluster, {available:.2f} GiB free")
 
-        cmd([KIND, "create", "cluster", "--config", "deploy/kind/kind-cluster.yaml", "--name", "eai"], timeout=1200)
         cluster_started = True
+        cmd([KIND, "create", "cluster", "--config", "deploy/kind/kind-cluster.yaml", "--name", "eai"], timeout=1200)
         check("cluster", True, "pinned single-node kind cluster created")
         cmd([KUBECTL, "create", "namespace", "monitoring"])
         cmd([HELM, "install", "prometheus", "oci://ghcr.io/prometheus-community/charts/prometheus",
@@ -217,6 +224,8 @@ def main():
 
         matrix = rbac_matrix()
         check("rbac", all(matrix.values()), json.dumps(matrix, sort_keys=True))
+        if not all(matrix.values()):
+            raise RuntimeError("watch RBAC matrix failed")
         forwards.append(api_proxy())
         wait_until(lambda: httpx.get("http://127.0.0.1:18082/version", timeout=5).status_code == 200, 30)
         from kubernetes import client as kube_client
@@ -236,7 +245,8 @@ def main():
         for name in graph:
             frame = prom.signals(name, 60)
             observed[name] = [key for key in QUERIES if frame[key].notna().any()]
-        check("metrics", all(set(QUERIES) <= set(keys) for keys in observed.values()), json.dumps(observed))
+        required_metrics = {"cpu_cores", "mem_bytes", "up", "restarts_3m"}
+        check("metrics", all(required_metrics <= set(keys) for keys in observed.values()), json.dumps(observed))
 
         driver = KubernetesDriver("shop", ["shop"], apps=apps, core=core)
         before = pods("currencyservice")
@@ -259,12 +269,17 @@ def main():
         cmd([HELM, "upgrade", "eternalai", "deploy/helm/eternalai", "-n", "eternalai",
              "--set", "mode=ask", "--set", "approvalToken.existingSecret=eai-e2e-approval"])
         cmd([KUBECTL, "-n", "eternalai", "rollout", "status", "deployment/eternalai", "--timeout=300s"])
+        ask_matrix = rbac_matrix(watch=False)
+        check("rbac_ask", all(ask_matrix.values()), json.dumps(ask_matrix, sort_keys=True))
+        if not all(ask_matrix.values()):
+            raise RuntimeError("ask RBAC matrix failed")
         forwards[0].terminate()
         forwards[0].wait(timeout=5)
         forwards[0] = port_forward("eternalai", "service/eternalai", 18080, 8000)
         wait_until(lambda: api("GET", "/status"), 60)
         api("POST", "/mode", token, json={"mode": "ask"})
         current = apps.read_namespaced_deployment("productcatalogservice", "shop")
+        audit_before = len(api("GET", "/audit"))
         image = current.spec.template.spec.containers[0].image
         bad = image.rsplit(":", 1)[0] + ":does-not-exist"
         cmd([KUBECTL, "-n", "shop", "set", "image", "deployment/productcatalogservice", "server=" + bad])
@@ -275,8 +290,12 @@ def main():
         if not pending:
             raise RuntimeError("brain did not propose an approved rollback")
         unchanged = apps.read_namespaced_deployment("productcatalogservice", "shop")
-        check("no_preapproval_action", unchanged.spec.template.spec.containers[0].image == bad,
-              "bad image unchanged before approval")
+        no_action = unchanged.spec.template.spec.containers[0].image == bad and not any(
+            item.get("service") == "productcatalogservice" and item.get("runbook") != "verification"
+            for item in api("GET", "/audit")[audit_before:])
+        check("no_preapproval_action", no_action, "no productcatalogservice action before approval")
+        if not no_action:
+            raise RuntimeError("productcatalogservice changed before approval")
         api("POST", f"/approvals/{pending['incident_id']}/approve", token, json={"approver": "kind-e2e"})
         recovered = wait_deployment("productcatalogservice", timeout=300)
         incident = wait_until(lambda: next((item for item in api("GET", "/incidents")
@@ -305,6 +324,8 @@ def main():
         if held:
             try:
                 cmd(["docker", "compose", "-p", "eai", "stop"], timeout=120)
+            except Exception as exc:
+                check("compose_stopped", False, type(exc).__name__)
             finally:
                 release("codex", image_origin)
         write_results(head)
