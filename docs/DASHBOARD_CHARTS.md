@@ -3,7 +3,8 @@
 Mihir's package (branch `team/mihir-dashboard-charts`): per-service charts, a stats panel, and
 plain-language service explanations, plus a standalone preview using synthetic sample data.
 
-**Verified on synthetic data only; not connected to the live dashboard.**
+**Mihir verified these on synthetic data only. The main session later wired them into the live dashboard: see
+"Live dashboard integration" at the end.**
 
 ## Components
 
@@ -86,4 +87,19 @@ Captured 2026-10-24 00:34 IST in headless Chromium (Playwright) from the running
 - `docs/screenshots/charts_empty.png`: inventory at tick 0, the empty state ("Nothing to report for this service at this
   tick."; a single point, so no visible lines).
 
-**Verified on synthetic data only; not connected to the live dashboard.**
+**The preview and its screenshots use synthetic data only.**
+
+## Live dashboard integration (main session, 2026-10-24)
+
+`dashboard/app.py` now uses these components with live data (Mihir's integration request):
+- the poller adds every `/services` answer to a `charts.History` (300 points, about 5 minutes), stamped with the time the
+  page polled it;
+- a "Service charts" card (service selector, `service_figure`, `explain_service` on the latest live features) and an
+  "Incident statistics" card (`incident_stats` + `stats_table` on `/incidents`, i.e. what the running brain recorded since
+  it started);
+- when the backend is down or the data is stale, the chart is blank ("No data yet"); old points are not shown.
+
+Tests: `tests/test_dashboard_charts_live.py` (live API shapes, Poller feeding, Hindi, backend down). Live validation
+against the running stack is recorded separately from the synthetic preview, in `docs/results/dashboard_charts_live.md`.
+`dashboard/labels.py` gained `panel_charts`, `panel_stats`, `charts_scope`, `stats_scope`; `charts_labels.py` is
+still separate.
