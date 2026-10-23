@@ -7,6 +7,7 @@ fallbacks instead of silently pretending.
 from __future__ import annotations
 
 import json
+import sqlite3
 import threading
 import time
 import uuid
@@ -26,6 +27,7 @@ from .investigate import Investigator, remember_verified
 from .llm import llm_enabled, make_report, template_report
 from .policy import PolicyEngine
 from .rca import deepest_anomalous, evidence_table
+from .store import LearnStore, StoreError
 from .verify import verify_recovery
 
 CLOSED = ("recovered", "partially_recovered", "unresolved", "escalated")
@@ -63,6 +65,7 @@ class Incident:
     diagnosed: bool = False
     before: dict | None = None      # measured when the incident was diagnosed
     after: dict | None = None       # measured after the verification window
+    root_features: dict | None = None   # the root service's window features at diagnosis (learn store, dataset-A-style rows)
 
     def log(self, msg):
         self.timeline.append({"t": time.time(), "msg": msg})
@@ -70,7 +73,8 @@ class Incident:
     def public(self) -> dict:
         d = {k: getattr(self, k) for k in ("id", "opened_t", "closed_t", "kind", "status", "services", "ranking",
                                           "likely_cause", "confidence", "abstained", "report", "report_meta",
-                                          "actions", "verification", "timeline", "forecasts", "diagnosis", "before", "after")}
+                                          "actions", "verification", "timeline", "forecasts", "diagnosis", "before", "after",
+                                          "root_features")}
         d["evidence"] = [{"id": e.id, "tool": e.tool, "service": e.service, "summary": e.summary} for e in self.evidence]
         return d
 
@@ -106,6 +110,12 @@ class Engine:
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
                               "ranker": self.ranker is not None, "baselines": bool(self.baselines)}
         self.busy: set[str] = set()   # services with an action in flight
+        # learn store (plan §9.7): closed incidents, actions, outcomes, feedback. A store that cannot open is reported, not fatal.
+        self.store, self.store_error = None, None
+        try:
+            self.store = LearnStore()
+        except (StoreError, OSError) as e:
+            self.store_error = f"{type(e).__name__}: {e}"
         self.last_closed: dict = {}
 
     # ------------------------------------------------------------ observation
@@ -221,6 +231,21 @@ class Engine:
         if to_diagnose is not None:   # outside the lock: the API must not wait on telemetry and Docker calls
             self._try_diagnose(to_diagnose, feats, scores, anom)
         self._predictive(feats, now)   # every tick: a warning attaches to an open incident or opens a predicted one
+        self._store_closed()
+
+    def _store_closed(self):
+        """Write newly closed incidents to the learn store. Snapshot under the lock, write outside it (no I/O under the lock)."""
+        store = getattr(self, "store", None)
+        if store is None:
+            return
+        with self.lock:
+            todo = [(i, i.public()) for i in self.incidents if i.status in CLOSED and not getattr(i, "_stored", False)]
+        for inc, snap in todo:
+            try:
+                store.record_incident(snap)
+                inc._stored = True
+            except (sqlite3.Error, OSError, ValueError) as e:
+                self.store_error = f"{type(e).__name__}: {e}"
 
     def reset_run_state(self) -> dict:
         """v2 (harness independence): forget per-run state so the next benchmark run starts clean. v1 carried a cooldown from one run into the
@@ -313,6 +338,7 @@ class Engine:
             inc.ranking, inc.diagnosis = d["ranking"], d["diagnosis"]
             inc.likely_cause, inc.confidence, inc.abstained = d["label"], d["confidence"], d["abstained"]
             inc.evidence = d["evidence"]
+            inc.root_features = d.get("root_features")
             # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
             # report replaces the text later (a live Gemini call took ~7 s in testing).
             inc.report, inc.diagnosed = d["report"].model_dump(), True
@@ -368,6 +394,8 @@ class Engine:
                "ranking": ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary} for e in inv.items]}
         return {"ranking": ranking, "root": root, "diagnosis": diagnosis, "label": label, "confidence": conf,
                 "unusual": source == "forest_only",
+                "root_features": {k: round(float(v), 6) for k, v in feats[root].items()
+                                  if not k.endswith("_obs") and isinstance(v, (int, float)) and np.isfinite(v)},
                 "abstained": abst, "evidence": inv.items, "ctx": ctx, "report": template_report(ctx)}
 
     def _llm_upgrade_async(self, inc: Incident, ctx: dict):

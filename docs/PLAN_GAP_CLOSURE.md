@@ -331,3 +331,18 @@ Phases 2-7 need a cluster, external accounts and the dataset. The hackathon is o
 | Every setting env-overridable | I8 | partial | `POLICY_FILE`, `MODE` accepted; the rest stays roadmap |
 
 Tests after the last Phase 1 commit: 462 passed, 2 deselected (also on a clean clone with `requirements-dev.txt`).
+
+### Phase 3 (F1/F3 prediction live), Phase 4a and Phase 5 light: code done; live checks pending (state on 2026-10-21 09:40 IST)
+
+| item | rows | commit | verified |
+|---|---|---|---|
+| Forecast runs on every tick; warnings attach (timestamped) to the open incident or open a predicted incident | F1, L4 (partial) | `d084b20` | tests; **live smoke** (excluded seeds): memory_leak warned 37.1 s before 95% of the memory limit, gradual disk fill 86.1 s before the 300 MB threshold (`results/forecast-check/v3-smoke.md`). The 20 pre-registered runs are NOT yet run |
+| Evaluator opt-ins `observe_full`, `variant: gradual` (+ app chaos kind `disk_stream`) | F3 | `f737a17` | tests; live in the smoke runs |
+| Forecast check v3, pre-registered before running | F3 | `e2849f9` | design only until the 20 runs |
+| Finding: scripted disk_fill burst crosses its threshold in < 30 s, faster than any trend forecast | F1 | - | stated in `docs/FORECAST_CHECK.md` |
+| Finding (smoke): the time-to-limit estimate runs late (120 s look-back includes flat pre-fault data); "limit" = 95% of the memory limit, no OOM kill observed (memory plateaued at 282 MB) | F1 | - | to be reported with the 20-run result; a shorter look-back only as a separately pre-registered v4 on new seeds |
+| Forest-only anomaly -> approval in every mode | D4 | `18a4b38` | tests only (live check pending) |
+| Two close root candidates -> abstain; margin from out-of-fold training incidents | R5 | `d1c710d` | tests only; `models/artifacts/root_margin.json` not yet created |
+| SQLite learn store, POST /feedback (and /api/feedback), training-row export | S1 (partial), S2 (partial), S3 | `84a3094` | tests only (live check pending) |
+| Docker schedule + lock helpers | - | `ae91e38` | tests |
+| Push of `plan-complete` and `demo-stable-1` to GitHub (owner's go, 2026-10-21) | - | - | done |

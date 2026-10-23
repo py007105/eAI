@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import config
 from .engine import Engine
@@ -69,6 +69,13 @@ class KillSwitch(BaseModel):
     on: bool
 
 
+class Feedback(BaseModel):
+    approver: str = Field("operator", max_length=64)
+    confirmed: bool                                     # the diagnosis was right
+    correct_fault: str | None = Field(None, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")   # if not: what it really was
+    note: str = Field("", max_length=500)
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -90,6 +97,8 @@ def status():
             "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
             "policy": engine.policy.rulebook.summary(),
             "root_margin": getattr(engine, "root_margin", None),
+            "learn_store": {"path": str(engine.store.path) if getattr(engine, "store", None) else None,
+                            "error": getattr(engine, "store_error", None)},
             "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
@@ -175,6 +184,39 @@ def admin_reset(x_approval_token: str | None = Header(None)):
         return engine.reset_run_state()
     except ValueError as e:
         raise HTTPException(409, str(e))
+
+
+def _store():
+    if getattr(engine, "store", None) is None:
+        raise HTTPException(503, f"learn store unavailable: {getattr(engine, 'store_error', None)}")
+    return engine.store
+
+
+@app.post("/feedback/{iid}")
+@app.post("/api/feedback/{iid}")          # the plan's route name (§15.2)
+def feedback(iid: str, fb: Feedback, x_approval_token: str | None = Header(None)):
+    """A human confirms or corrects the diagnosis of a closed incident; the row becomes labelled training data (plan §9.7)."""
+    _auth(x_approval_token)
+    if not fb.confirmed and not fb.correct_fault:
+        raise HTTPException(400, "if the diagnosis was wrong, give correct_fault")
+    try:
+        fid = _store().add_feedback(iid, fb.approver, fb.confirmed, fb.correct_fault, fb.note)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True, "feedback_id": fid}
+
+
+@app.get("/learn/stats")
+def learn_stats():
+    return _store().counts()
+
+
+@app.get("/learn/{iid}")
+def learn_incident(iid: str):
+    rec = _store().incident(iid)
+    if rec is None:
+        raise HTTPException(404, "not in the learn store (only closed incidents are stored)")
+    return rec
 
 
 @app.get("/audit")

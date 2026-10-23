@@ -8,7 +8,7 @@ that file points here. The prompts to paste into Codex are in section 11.
 | | Main session (Claude Code) | Codex session |
 |---|---|---|
 | Folder | `D:\eAI\eAI-release` | `D:\eAI\eAI-codex` (a git worktree of the same repository) |
-| Branch | `plan-complete` | `friend/phase6-telegram`, later `friend/phase2-k8s`, `friend/phase4-kb` |
+| Branch | `plan-complete` | `friend/phase2-k8s` first; later `friend/phase6-telegram` if time remains |
 | Python venv | `D:\eAI\eAI-workspace\eAI\.venv` | its own: `D:\eAI\eAI-codex\.venv` |
 | `.env` | `D:\eAI\eAI-release\.env` | its own copy: `D:\eAI\eAI-codex\.env` (made by the owner by hand) |
 | Docker, ports, RAM, image names | **shared**: one stack at a time, by the lock in section 1.5 | **shared** |
@@ -36,7 +36,9 @@ three work packages:
 | **A. Kubernetes (minimal)** | Phase 2 | `friend/phase2-k8s` | largest | kind + helm downloads (allowed: pinned versions, checksums verified); the Docker lock for long periods (kind needs the RAM the Compose stack uses) |
 | **C. Knowledge base + outcome-ranked fixes + dataset-A classifier** | Phase 4 (partial) | `friend/phase4-kb` | medium | the dataset files' folder path |
 
-Order: **B first** (smallest, demo-visible), then **A**, then **C** (C is blocked until the dataset path is given).
+Order (owner's decision, 2026-10-21): **A (Kubernetes) first.** B (Telegram) only if time remains before the freeze; it may
+also be built during the hackathon. **C is done by the main session**, not by Codex (the dataset is at `D:\eAI\plan_dataset\`,
+read-only).
 
 The main session meanwhile works on: Phase 3 (prediction live), the engine-core parts of Phase 4 (close root
 candidates -> abstain, forest-only anomaly -> no auto action), Phase 5 light (learn store + feedback), Phase 7
@@ -109,7 +111,8 @@ Both sessions use the **same Docker daemon**, the same Compose project name (`ea
 the same host ports and the same image names (`eai/eternalai:v2`, `eai/web:v1`, ...). Running `docker compose up`
 from `D:\eAI\eAI-codex` **replaces the main session's containers with your code.** So:
 
-1. **The Docker lock file: `D:\eAI\STACK_LOCK.md`.** Before any `docker compose up/build/stop/start/restart`, any
+1. **The Docker schedule and lock: `D:\eAI\STACK_LOCK.md`.** The file starts with the agreed Docker schedule until the freeze;
+   kind work happens only in the windows marked for Codex. The **last line** is the lock. Before any `docker compose up/build/stop/start/restart`, any
    `docker run`, any `kind create/delete`, read the file.
    - If it says `FREE`, write: `HELD by codex | <what> | since <YYYY-MM-DD HH:MM IST> | expected until <HH:MM> | images built from <branch>@<hash>`.
    - If it says `HELD by main`, **do not touch Docker**; tell the owner and wait.
@@ -137,12 +140,12 @@ from `D:\eAI\eAI-codex` **replaces the main session's containers with your code.
 
 ```powershell
 cd D:\eAI\eAI-release
-git worktree add D:\eAI\eAI-codex -b friend/phase6-telegram plan-complete
+git worktree add D:\eAI\eAI-codex -b friend/phase2-k8s plan-complete
 git -C D:\eAI\eAI-codex log --oneline -3          # the top commit must equal plan-complete's
 if (-not (Test-Path D:\eAI\STACK_LOCK.md)) { "FREE | last: none" | Set-Content -Encoding utf8 D:\eAI\STACK_LOCK.md }
 ```
-Then the owner, by hand (not through any AI): copy `D:\eAI\eAI-release\.env` to `D:\eAI\eAI-codex\.env` and add
-`TELEGRAM_BOT_TOKEN=` and `TELEGRAM_CHAT_ID=` there (section 7.2). Check that git ignores it:
+Then the owner, by hand (not through any AI): copy `D:\eAI\eAI-release\.env` to `D:\eAI\eAI-codex\.env` (and, only when
+package B starts, add `TELEGRAM_BOT_TOKEN=` and `TELEGRAM_CHAT_ID=` there, section 7.2). Check that git ignores it:
 `git -C D:\eAI\eAI-codex check-ignore .env` must print `.env`.
 
 ### 2.2 Python environment (Codex may run this)
@@ -854,7 +857,8 @@ After it finishes: stop the stack, write FREE with the image note, and commit on
 ### 11.4 Package A (Kubernetes), build prompt
 
 ```
-Start package A on a new branch: git status must be clean, then `git switch -c friend/phase2-k8s plan-complete`.
+Package A runs on friend/phase2-k8s (the worktree was created on it; if you are on another branch, git status must be clean,
+then `git switch friend/phase2-k8s`).
 Implement docs/HANDOFF_FRIEND.md section 6, one commit each, tests with each:
 1. eternalai/drivers/base.py (Driver protocol, NotSupported, UNSUPPORTED list per D7) + tests
 2. eternalai/drivers/docker.py: DockerDriver delegating to the existing Executor with NO behaviour change + tests proving
