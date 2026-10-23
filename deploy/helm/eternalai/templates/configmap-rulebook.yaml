@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eternalai-rulebook
+  namespace: {{ .Release.Namespace }}
+data:
+  policy.yaml: |
+{{ .Values.rulebook | indent 4 }}

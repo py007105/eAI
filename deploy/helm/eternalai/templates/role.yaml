@@ -1,0 +1,21 @@
+{{- $root := . -}}
+{{- range $namespace := .Values.namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eternalai
+  namespace: {{ $namespace }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale", "replicasets"]
+    verbs: {{ if eq $root.Values.mode "watch" }}["get", "list", "watch"]{{ else }}["get", "list", "watch", "patch", "update"]{{ end }}
+  - apiGroups: [""]
+    resources: ["pods", "events", "services"]
+    verbs: ["get", "list", "watch"]
+  {{- if ne $root.Values.mode "watch" }}
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  {{- end }}
+{{- end }}

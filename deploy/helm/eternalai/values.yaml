@@ -1,0 +1,33 @@
+image:
+  repository: eai/eternalai
+  tag: k8s-dev
+  pullPolicy: IfNotPresent
+mode: watch
+namespaces:
+  - shop
+prometheus:
+  url: http://prometheus-server.monitoring.svc.cluster.local
+  existingSecret: ""
+approvalToken:
+  existingSecret: ""
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 768Mi
+rulebook: |
+  mode: watch
+  auto_allowed_risks: [low]
+  protected_services: []
+  database_services: []
+  max_actions_per_hour: 10
+  cooldown_s: 40
+  max_unverified_actions_per_service: 2
+  namespaces: [shop]
+  runbook_risk:
+    restart_service: low
+    clear_temp_path: low
+    recreate_container: low
+    rollback_release: high
