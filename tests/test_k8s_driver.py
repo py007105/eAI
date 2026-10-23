@@ -5,6 +5,7 @@ import pytest
 
 from eternalai.drivers.base import NotSupported, UNSUPPORTED
 from eternalai.drivers.k8s import KubernetesDriver
+from eternalai.executor import ExecutionError
 
 
 def obj(**kwargs):
@@ -50,7 +51,7 @@ def test_recovery_actions_use_namespaced_apis_and_audit(driver):
 
 
 def test_namespace_allowlist_and_unsupported_operations_are_audited(driver):
-    with pytest.raises(PermissionError):
+    with pytest.raises(ExecutionError, match="PermissionError"):
         driver.run("restart_service", "kube-system/frontend", "operator")
     assert driver.apps.patch_namespaced_deployment.call_count == 0
     for operation in ("clear_temp_path", *UNSUPPORTED):
@@ -69,3 +70,11 @@ def test_refuse_pod_not_owned_by_target_deployment(driver):
         driver.delete_pod("frontend")
     driver.core.delete_namespaced_pod.assert_not_called()
     assert driver.audit[-1]["error"] == "ValueError"
+
+
+def test_api_failure_is_audited_and_caught_by_engine_contract(driver):
+    driver.apps.patch_namespaced_deployment.side_effect = RuntimeError("private API detail")
+    with pytest.raises(ExecutionError, match="RuntimeError") as caught:
+        driver.run("restart_service", "frontend", "operator")
+    assert "private API detail" not in str(caught.value)
+    assert driver.audit[-1]["error"] == "RuntimeError"

@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ..executor import ExecutionError
 from .base import NotSupported, UNSUPPORTED
 
 AUDIT_PATH = Path("runtime/audit.jsonl")
@@ -159,11 +160,14 @@ class KubernetesDriver:
     def run(self, runbook_id, service, actor, evidence_ids=None, reason=""):
         operations = {"restart_service": self._restart, "recreate_container": self._delete_pod,
                       "rollback_release": self._rollback}
-        fn = operations.get(runbook_id)
-        if fn is None:
-            return self._perform(runbook_id, service, lambda ns, name: self._raise_unsupported(runbook_id),
-                                 actor, reason, evidence_ids)
-        return self._perform(runbook_id, service, fn, actor, reason, evidence_ids)
+        fn = operations.get(runbook_id) or (lambda ns, name: self._raise_unsupported(runbook_id))
+        try:
+            return self._perform(runbook_id, service, fn, actor, reason, evidence_ids)
+        except NotSupported:
+            raise
+        except Exception as exc:
+            # Engine's action loop catches ExecutionError, as it does for the Docker Executor.
+            raise ExecutionError(type(exc).__name__) from exc
 
     @staticmethod
     def _raise_unsupported(operation):
