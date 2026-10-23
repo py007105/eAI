@@ -26,3 +26,24 @@ def test_missing_file_counts_as_free(tmp_path):
     assert stack_lock.state(f) == "FREE"
     stack_lock.take("main", "x", "y", f)
     assert stack_lock.state(f).startswith("HELD by main")
+
+
+def test_parent_mode_keeps_the_lock_held_between_child_steps(tmp_path, monkeypatch):
+    f = tmp_path / "STACK_LOCK.md"
+    f.write_text("# schedule\nFREE | last: none\n", encoding="utf-8")
+    stack_lock.take("main", "overnight sequence", "x", f)               # the parent takes it once
+    monkeypatch.setenv(stack_lock.PARENT_ENV, "main")                   # what the parent passes to its children
+    stack_lock.take("main", "child step", "x", f)                       # no-op, but checks it is still held
+    stack_lock.release("main", "x", f)                                  # no-op in a child
+    assert stack_lock.state(f).startswith("HELD by main | overnight sequence")
+    monkeypatch.delenv(stack_lock.PARENT_ENV)
+    stack_lock.release("main", "x", f)                                  # the parent releases it at the end
+    assert stack_lock.state(f).startswith("FREE")
+
+
+def test_a_child_refuses_to_run_if_the_parent_lost_the_lock(tmp_path, monkeypatch):
+    f = tmp_path / "STACK_LOCK.md"
+    f.write_text("HELD by codex | kind | since x\n", encoding="utf-8")
+    monkeypatch.setenv(stack_lock.PARENT_ENV, "main")
+    with pytest.raises(SystemExit, match="parent sequence should hold"):
+        stack_lock.take("main", "child", "x", f)

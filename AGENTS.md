@@ -1,7 +1,8 @@
 # Instructions for AI coding agents (Codex and others)
 
-Read `docs/HANDOFF_FRIEND.md` fully before doing anything. It is the contract for working in this repository in
-parallel with the main session. The short version:
+Read `docs/COORDINATION.md` first (current ownership, freeze status, shared-file windows, Docker schedule), then
+`docs/HANDOFF_FRIEND.md` (the detailed contract for the Codex session). When they disagree, `docs/COORDINATION.md` wins.
+From the Codex worktree read it with `git -C D:\eAI\eAI-codex show plan-complete:docs/COORDINATION.md`. The short version:
 
 - If you are the Codex session: you work only in `D:\eAI\eAI-codex` (a git worktree), only on a `friend/...` branch.
   Never read, edit or run git in `D:\eAI\eAI-release` or `D:\eAI\eAI-workspace`.

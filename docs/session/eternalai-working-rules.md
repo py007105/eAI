@@ -16,3 +16,4 @@ metadata:
 
 **Why:** the user is preparing a judged demo and values verifiable, non-overstated claims.
 **How to apply:** follow these on every EternalAI task; see [[eternalai-release-status]] for current state.
+- Timestamps written into documents come from the clock (`date`) or a commit time, never estimated. (2026-10-23: estimated "about 21:05" for a spec actually committed at 20:53, which made a pre-registration look written after its run; corrected to commit times.) Pre-registration is proven by commit order: commit the spec/method, then run.

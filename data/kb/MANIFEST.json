@@ -1,0 +1,38 @@
+{
+ "built_at_utc": "2026-10-23T15:25:27Z",
+ "workbook_name": "EternalAI_training_dataset_v1.xlsx",
+ "workbook_sha256": "fafdb1f8c408bf7f54137315edb87bb09adc6eb88182749857d0c8abf5a13549",
+ "files": {
+  "knowledge_base.csv": {
+   "rows": 17,
+   "from": "workbook sheet B_knowledge_base"
+  },
+  "fix_options.csv": {
+   "rows": 72,
+   "from": "workbook sheet B_fix_options"
+  },
+  "fix_catalog.csv": {
+   "rows": 23,
+   "from": "workbook sheet B_fix_catalog"
+  },
+  "outcomes_prototype.csv": {
+   "rows": 59,
+   "from": "workbook sheet C_outcome_runs"
+  },
+  "outcomes_measured.csv": {
+   "rows": 186,
+   "from": [
+    {
+     "file": "results/benchmark-v1/benchmark_raw.jsonl",
+     "sha256": "d8fd62bc173f776be3a0dc919eeba7d58a1ec651e8f2d9d8fe55b0dedba06c9a",
+     "policy": "benchmark-system-v1 policy (equivalent to rulebooks/benchmark-v2.yaml)"
+    },
+    {
+     "file": "results/benchmark-v2/rerun/benchmark_v2_evaluated.jsonl",
+     "sha256": "07dbed85709dd22d15dcce5ab9c2b047f004c11b918beb3d239615291f7b73be",
+     "policy": "benchmark-system-v2 policy (rulebooks/benchmark-v2.yaml)"
+    }
+   ]
+  }
+ }
+}
