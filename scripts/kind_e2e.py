@@ -25,7 +25,7 @@ from eternalai.redact import redact  # noqa: E402
 from eternalai.drivers.k8s import KubernetesDriver  # noqa: E402
 from eternalai.sources.k8s_metrics import KubernetesProm, QUERIES  # noqa: E402
 from eternalai.sources.service_map import discover_topology  # noqa: E402
-from stack_lock import state, take, release  # noqa: E402; supplied by plan-complete at integration
+from stack_lock import is_free, take, release  # noqa: E402; atomic shared lock
 
 IST = timezone(timedelta(hours=5, minutes=30))
 TOOLS = Path(r"D:\eAI\tools")
@@ -164,9 +164,10 @@ def main():
     try:
         if not KIND.is_file() or not HELM.is_file():
             raise RuntimeError("verified kind.exe and helm.exe are required in D:\\eAI\\tools")
-        if not state().startswith("FREE"):
+        if not is_free():
             raise RuntimeError("the shared Docker lock is occupied")
-        if cmd(["docker", "compose", "-p", "eai", "ps", "-q"]):
+        if cmd(["docker", "ps", "--filter", "label=com.docker.compose.project=eai",
+                "--format", "{{.ID}}"]):
             raise RuntimeError("the Compose stack is running")
         if "eai" in cmd([KIND, "get", "clusters"]).splitlines():
             raise RuntimeError("kind cluster eai already exists")
