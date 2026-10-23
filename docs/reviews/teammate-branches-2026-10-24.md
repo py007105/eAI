@@ -26,3 +26,12 @@ Read-only review while the candidate evaluation runs; nothing merged. Branch hea
   dashboard modules, no `app.py` wiring).
 - **After each merge:** the full suite.
 - **After all three:** the combined result needs its own validation. Tonight's candidate results do not cover it.
+
+## Update (2026-10-24 00:28 IST, remote heads re-verified with `git ls-remote`)
+- `team/rajat-zscore-nab` moved `121024f` -> `a748eb1` (fast-forward; one commit changing only the submission section of
+  `docs/handback/rajat.md`). PR #2 points at `a748eb1`; PR #1 still points at `121024f`. The review above covers `a748eb1`
+  (no code or result change). **Integrate `a748eb1` (PR #2) only, after re-verifying that exact commit; PR #1 should be
+  closed by Rajat.**
+- `team/sanskar-docs-final` is at `f8d6941` (verified). The assigned name `team/sanskar-docs-runbooks-qa` does not exist on
+  GitHub. A rename is not required; the hand-back note must be corrected to name the real branch.
+- `team/mihir-dashboard-charts` is at `55964ad` (verified); the three preview screenshots are still missing.
