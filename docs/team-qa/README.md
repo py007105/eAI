@@ -22,7 +22,8 @@ If the code moves, line numbers may no longer match.
 - **implemented only:** the code exists; nobody has shown it working.
 - **unit-tested:** automatic tests pass (this folder does not run them; it only names them where relevant).
 - **live verified:** a committed script ran it against the real running system and wrote a results file, for example
-  `docs/results/live_check_phase1.md` (17 checks, 2026-10-21).
+  `docs/results/live_check_phase1.md` (17 checks, 2026-10-21). Note: that live check ran at commit `a24bc69`
+  (`docs/results/live_check_phase1.md:3`), earlier than the `65dd9fe` these documents cite; it was not re-run at `65dd9fe`.
 
 Two more labels are used in this folder:
 
