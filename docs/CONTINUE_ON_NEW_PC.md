@@ -32,6 +32,8 @@ Hard-coded paths to adjust on a new PC: `D:\eAI\STACK_LOCK.md` (`scripts/stack_l
   Then ONE live check of these four items and tag `demo-stable-2` (push the tag).
 - Then: Phase 4 core (KB loader, outcome-ranked fixes, dataset-A classifier next to the current one), Phase 7 re-runs
   (schedule: `docs/DOCKER_SCHEDULE.md`).
-- Codex (if used): package A Kubernetes first, `docs/HANDOFF_FRIEND.md`, `AGENTS.md`.
+- Codex: the current owner priority is package A (Kubernetes) first. The separate `friend/phase6-telegram` branch already
+  has the first three Telegram commits, verified in tests only. To preserve or resume that work on another PC, fetch the
+  friend branch and read `docs/TELEGRAM_CONTINUE_ON_NEW_PC.md` there. Do not treat it as merged into `plan-complete`.
 - Owner's answers and scope: `docs/PLAN_GAP_CLOSURE.md` sections F and G. Plan copy: `docs/ETERNALAI_PLAN.md`
   (numbers in its §4/§19/§20 are from the old prototype and still to be replaced by measured ones).
