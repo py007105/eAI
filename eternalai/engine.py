@@ -18,6 +18,7 @@ import numpy as np
 
 from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
+from .kb import KBError, load_kb, ranked_fixes, ranked_runbooks
 from .collector import DockerView, Prom
 from .dedupe import ReleaseGrace, Suppressor, downstream_of
 from .detect import Persistence, anomaly_source, service_anomalous
@@ -107,6 +108,12 @@ class Engine:
         # plan §9.4: two strong root candidates -> unknown. The margin comes from out-of-fold training incidents
         # (models/choose_root_margin.py); without the file the rule is off and /status says so.
         self.root_margin = load_root_margin() if self.use_models else None
+        # Package C: knowledge base + measured outcomes (data/kb). Missing -> the fixed table; invalid -> reported in /status.
+        self.kb, self.kb_error = None, None
+        try:
+            self.kb = load_kb()
+        except (KBError, OSError, ValueError) as e:
+            self.kb_error = f"{type(e).__name__}: {e}"
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
                               "ranker": self.ranker is not None, "baselines": bool(self.baselines)}
         self.busy: set[str] = set()   # services with an action in flight
@@ -389,7 +396,11 @@ class Engine:
             label, abst = ABSTAIN, True
         inv.similar_incidents(label if not abst else "unknown fault")
         alts = [c for c, v in sorted(probs.items(), key=lambda kv: -kv[1]) if c not in ("healthy", label)][:2]
-        cands = [] if abst else list(CAUSE_RUNBOOKS.get(label, []))
+        # Package C (plan §9.5): candidates in outcome-ranked order from the knowledge base; the fixed table when no KB is loaded
+        kb = getattr(self, "kb", None)
+        fixes = [] if abst else ranked_fixes(kb, label)
+        cands = [] if abst else ranked_runbooks(kb, label)
+        diagnosis = {**diagnosis, "fix_ranking": [f.public() for f in fixes][:6]}
         ctx = {"cause": label, "confidence": conf or 0.0, "candidates": cands, "alternatives": alts,
                "ranking": ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary} for e in inv.items]}
         return {"ranking": ranking, "root": root, "diagnosis": diagnosis, "label": label, "confidence": conf,

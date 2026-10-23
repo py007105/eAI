@@ -19,8 +19,9 @@ from . import config
 from .forecast import forecast_exhaustion
 
 # Derived from the training workbook, so it is not committed; set EAI_KNOWLEDGE_CSV (e.g. to a bind-mounted file) to use it.
+# The knowledge base built by scripts/build_kb.py (data/kb, committed; Package C). EAI_KNOWLEDGE_CSV still overrides it.
 KNOWLEDGE_CSV = Path(os.getenv("EAI_KNOWLEDGE_CSV") or
-                     Path(__file__).resolve().parents[1] / "data" / "processed" / "knowledge_base.csv")
+                     Path(__file__).resolve().parents[1] / "data" / "kb" / "knowledge_base.csv")
 INCIDENT_STORE = Path("runtime/incidents_verified.jsonl")
 
 
