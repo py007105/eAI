@@ -7,6 +7,7 @@ fallbacks instead of silently pretending.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -29,6 +30,7 @@ from .llm import llm_enabled, make_report, template_report
 from .policy import PolicyEngine
 from .rca import deepest_anomalous, evidence_table
 from .store import LearnStore, StoreError
+from .sources import make_sources
 from .verify import verify_recovery
 
 CLOSED = ("recovered", "partially_recovered", "unresolved", "escalated")
@@ -85,7 +87,7 @@ class Engine:
 
     def __init__(self, mode: str | None = None):
         config.load_topology()
-        self.prom, self.dv = Prom(), DockerView()
+        self.prom, self.dv = make_sources()
         self.executor, self.policy = make_driver(), PolicyEngine(mode)
         self.persist = Persistence(3)
         self.grace, self.suppress = ReleaseGrace(config.DEPLOY_GRACE_S), Suppressor()
@@ -168,6 +170,19 @@ class Engine:
         the success rate of a few synthetic checkouts made right now."""
         from .verify import checkout_probe
         import httpx
+        if getattr(self.executor, "runtime", "docker") == "kubernetes":
+            snap = {"error_ratio": None, "p95_s": None}
+            if probe:
+                url = os.getenv("KUBERNETES_FRONTEND_URL", f"http://frontend.{self.dv.namespace}.svc.cluster.local")
+                with httpx.Client() as client:
+                    successes = 0
+                    for _ in range(3):
+                        try:
+                            successes += client.get(url.rstrip("/") + "/", timeout=1.5).status_code == 200
+                        except httpx.HTTPError:
+                            pass
+                snap["checkout_success"] = successes / 3
+            return snap
         req = self.prom.instant('sum(rate(http_requests_total{service="web"}[10s]))')
         err = self.prom.instant('sum(rate(http_requests_total{service="web",status=~"5.."}[10s]))')
         p95 = self.prom.instant('histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service="web"}[10s])))')
