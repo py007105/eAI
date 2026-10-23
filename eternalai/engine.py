@@ -32,6 +32,7 @@ from .rca import deepest_anomalous, evidence_table
 from .store import LearnStore, StoreError
 from .sources import make_sources
 from .verify import verify_recovery
+from .verify_k8s import verify_recovery_k8s
 
 CLOSED = ("recovered", "partially_recovered", "unresolved", "escalated")
 
@@ -503,7 +504,8 @@ class Engine:
             return
         inc.status = "verifying"
         time.sleep(3)
-        v = verify_recovery(config.OBSERVATION_S)
+        v = (verify_recovery_k8s(svc, config.TOPOLOGY, self.dv.namespace, config.OBSERVATION_S)
+             if getattr(self.executor, "runtime", "docker") == "kubernetes" else verify_recovery(config.OBSERVATION_S))
         v["t"] = time.time()
         inc.verification = v
         inc.after = self._app_snapshot(probe=False) | {"checkout_success": v["success_rate"]}
