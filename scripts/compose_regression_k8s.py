@@ -96,18 +96,13 @@ def main():
     started_at = now_ist()
     origin = f"friend/phase2-k8s@{head[:7]}"
     held = False
+    compose_started = False
     images = {}
     try:
         if not is_free():
             raise RuntimeError("the shared Docker lock is occupied")
         if not (ROOT / ".env").is_file():
             raise RuntimeError("Compose credentials are not configured in this worktree")
-        if command(["docker", "ps", "--filter", "label=com.docker.compose.project=eai",
-                    "--format", "{{.ID}}"]):
-            raise RuntimeError("Compose project eai is already running")
-        clusters = command([ROOT.parent / "tools/kind.exe", "get", "clusters"]).splitlines()
-        if clusters:
-            raise RuntimeError("a kind cluster is already running")
         available = free_memory_gb()
         if available < 3:
             raise RuntimeError(f"only {available:.2f} GiB available; Compose requires about 3 GiB")
@@ -116,10 +111,17 @@ def main():
         except SystemExit:
             raise RuntimeError("could not acquire shared Docker lock") from None
         held = True
+        if command(["docker", "ps", "--filter", "label=com.docker.compose.project=eai",
+                    "--format", "{{.ID}}"]):
+            raise RuntimeError("Compose project eai is already running")
+        clusters = command([ROOT.parent / "tools/kind.exe", "get", "clusters"]).splitlines()
+        if clusters:
+            raise RuntimeError("a kind cluster is already running")
         check("preflight", True, f"no running eai Compose/kind; {available:.2f} GiB free")
 
         command(["docker", "compose", "-p", "eai", "--profile", "releases", "build"], timeout=2400)
         check("build", True, "Compose images built from candidate commit")
+        compose_started = True
         command(["docker", "compose", "-p", "eai", "--profile", "releases", "up", "-d"], timeout=900)
         check("startup", True, "Compose profile releases started")
         for tag in command(["docker", "compose", "-p", "eai", "--profile", "releases",
@@ -144,12 +146,13 @@ def main():
     except Exception as exc:
         check("aborted", False, type(exc).__name__)
     finally:
-        if held:
+        if compose_started:
             try:
                 command(["docker", "compose", "-p", "eai", "--profile", "releases", "stop"], timeout=180)
                 check("compose_stopped", True, "project eai stopped; volumes preserved")
             except Exception as exc:
                 check("compose_stopped", False, type(exc).__name__)
+        if held:
             try:
                 release("codex", origin)
                 check("lock_release", True, "atomic owner file released")

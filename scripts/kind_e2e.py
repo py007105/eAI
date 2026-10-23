@@ -199,11 +199,6 @@ def main():
             raise RuntimeError("verified kind.exe and helm.exe are required in D:\\eAI\\tools")
         if not is_free():
             raise RuntimeError("the shared Docker lock is occupied")
-        if cmd(["docker", "ps", "--filter", "label=com.docker.compose.project=eai",
-                "--format", "{{.ID}}"]):
-            raise RuntimeError("the Compose stack is running")
-        if "eai" in cmd([KIND, "get", "clusters"]).splitlines():
-            raise RuntimeError("kind cluster eai already exists")
         available = free_memory_gb()
         if available < 6:
             raise RuntimeError(f"only {available:.2f} GiB available; kind requires about 6 GiB")
@@ -212,7 +207,12 @@ def main():
         except SystemExit:
             raise RuntimeError("could not acquire shared Docker lock") from None
         held = True
-        check("preflight", True, f"Compose stopped, no eai kind cluster, {available:.2f} GiB free")
+        if cmd(["docker", "ps", "--filter", "label=com.docker.compose.project=eai",
+                "--format", "{{.ID}}"]):
+            raise RuntimeError("the Compose stack is running")
+        if cmd([KIND, "get", "clusters"]).splitlines():
+            raise RuntimeError("a kind cluster is already running")
+        check("preflight", True, f"Compose stopped, no kind cluster, {available:.2f} GiB free")
 
         cluster_started = True
         cmd([KIND, "create", "cluster", "--config", "deploy/kind/kind-cluster.yaml", "--name", "eai"], timeout=1200)
@@ -366,10 +366,6 @@ def main():
             except Exception as exc:
                 check("teardown", False, type(exc).__name__)
         if held:
-            try:
-                cmd(["docker", "compose", "-p", "eai", "stop"], timeout=120)
-            except Exception as exc:
-                check("compose_stopped", False, type(exc).__name__)
             try:
                 release("codex", image_origin)
                 check("lock_release", True, "atomic owner file released")
