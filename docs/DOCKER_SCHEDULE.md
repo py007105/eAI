@@ -3,7 +3,7 @@
 One machine, one Docker daemon, shared by the main session (Claude Code, `D:\eAI\eAI-release`) and the Codex session
 (`D:\eAI\eAI-codex`). The working copy of this schedule is the top of `D:\eAI\STACK_LOCK.md`; its last line is the lock
 (protocol: `docs/HANDOFF_FRIEND.md` section 1.5). Kind and the Compose stack never run at the same time.
-Long runs are started detached from the AI session (a separate PowerShell process) so they survive a memory-pressure stop of
+**Superseded by `docs/COORDINATION.md` section 5 (2026-10-23 evening).** Long runs are started detached from the AI session (a separate PowerShell process) so they survive a memory-pressure stop of
 the session; they are resumable (finished runs are skipped).
 
 | when (IST) | who | what | est. |
