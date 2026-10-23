@@ -73,10 +73,16 @@ it returns a confirmed order within 1 second (`verify.py:19-26,32,41`). All good
 ## recreate_container
 
 **What it does.** Stops and removes the service's container, then creates a new one from the **same image**, with the
-same name, network alias, environment, volume bindings, memory limit, ports and restart policy, and starts it
+same name, network alias, environment, volume bindings (see "Data volumes" below), memory limit, ports and restart policy, and starts it
 (`eternalai/executor.py:99-102`, helper `_recreate_from` at `executor.py:63-83`). Unlike a restart, the running process
 and anything kept only inside the old container are thrown away; the module describes this as clearing leaked state
 (`executor.py:5`).
+
+**Data volumes (scope of the check).** The code copies the volume bindings from `HostConfig.Binds`
+(`executor.py:69-70`). On the tested configuration (Docker Compose 5.6.0, this repository's `docker-compose.yml`) a
+read-only inspection showed the named data volumes in `Binds` (e.g. `eai_inventory-data:/data:rw`), so they are passed
+on. This was checked by inspection on that version only; it is not a guarantee for other Compose/Engine versions, and no
+live check recreates a container and verifies its data afterwards.
 
 **When EternalAI proposes it.** First choice for a **memory leak**; second choice for a **down** service, which is not
 proposed by default because the first candidate (restart) is used (`eternalai/classify.py:20-21`; `eternalai/llm.py:76`).
@@ -120,7 +126,8 @@ partially recovered / unresolved (`eternalai/engine.py:488-504`, `eternalai/conf
 **What it does.** Replaces the service's container with one built from the **previous release image**: among the images
 labelled for this service, the one with the highest release number (`eai.release_seq`) lower than the current one
 (`eternalai/executor.py:104-108`, helper `_previous_release` at `executor.py:85-91`). The replacement keeps the container's
-name, network, volumes and limits (`executor.py:63-83`), but settings that came from the old image are not carried over,
+name, network, volumes (in the tested configuration only; see "Data volumes" under `recreate_container`) and limits
+(`executor.py:63-83`), but settings that came from the old image are not carried over,
 so the older image's own settings apply (`executor.py:29-39`).
 
 **When EternalAI proposes it.** Only for a **bad deploy** (`eternalai/classify.py:23`).
