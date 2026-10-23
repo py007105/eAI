@@ -107,6 +107,12 @@ class Engine:
             self.detectors = self.classifier = self.ranker = None
             self.det_meta = self.cls_meta = self.rank_meta = None
             self.baselines = {}
+        if (getattr(self.executor, "runtime", "docker") == "kubernetes"
+                and not set(config.SERVICES).issubset(self.detectors or {})):
+            # Demo-shop artifacts are not trained for Online Boutique service names.
+            self.detectors = self.classifier = self.ranker = None
+            self.det_meta = self.cls_meta = self.rank_meta = None
+            self.baselines = {}
         # The feature window must be the one the models were trained with (train/serve consistency).
         self.window_s = float((self.cls_meta or self.det_meta or {}).get("window_s", 30.0))
         # plan §9.4: two strong root candidates -> unknown. The margin comes from out-of-fold training incidents
@@ -403,6 +409,14 @@ class Engine:
         diagnosis = {**diagnosis, "anomaly_source": source}
         if st is not None and not st.running and st.oom_killed:
             label, abst = "memory_leak", False  # container was OOM-killed: direct evidence
+        if getattr(self.executor, "runtime", "docker") == "kubernetes":
+            try:
+                bad_image = self.dv.image_pull_failure(root)
+            except Exception:
+                bad_image = False
+            if bad_image:
+                label, abst = "bad_deploy", False
+                diagnosis = {**diagnosis, "image_pull_failure": True}
         if label == "healthy":                  # anomalous but classified healthy => do not guess
             label, abst = ABSTAIN, True
         inv.similar_incidents(label if not abst else "unknown fault")

@@ -1,8 +1,10 @@
 from types import SimpleNamespace as NS
 from unittest.mock import Mock
+import threading
 
 import httpx
 
+from eternalai import config
 from eternalai.engine import Engine, Incident
 
 
@@ -46,3 +48,47 @@ def test_kubernetes_action_uses_target_and_callers_verifier(monkeypatch):
     assert called["service"] == "frontend" and called["namespace"] == "shop"
     assert incident.verification["outcome"] == "unresolved"
     engine.executor.log_verification.assert_called_once()
+
+
+def test_kubernetes_bad_image_evidence_selects_approval_gated_rollback(monkeypatch):
+    class QuietInvestigator:
+        def __init__(self, *args):
+            self.items = []
+
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+
+    monkeypatch.setattr("eternalai.engine.Investigator", QuietInvestigator)
+    engine = Engine.__new__(Engine)
+    engine.lock = threading.RLock()
+    engine.executor = NS(runtime="kubernetes")
+    engine.dv = NS(state=lambda: {}, image_pull_failure=lambda service: service == "web")
+    engine.prom = None
+    engine.detectors = engine.classifier = engine.ranker = None
+    engine.root_margin = None
+    engine.frames = {name: None for name in config.SERVICES}
+    engine._depfail = lambda: {}
+    features = {name: {"up_frac": 0.0} for name in config.SERVICES}
+    result = engine._diagnose_compute(["web"], {"web": 1.0}, features,
+                                      {name: 0.0 for name in config.SERVICES},
+                                      {name: name == "web" for name in config.SERVICES})
+    assert result["label"] == "bad_deploy"
+    assert result["report"].runbook_id == "rollback_release"
+    assert result["diagnosis"]["image_pull_failure"]
+
+
+def test_unknown_kubernetes_services_report_model_fallbacks(monkeypatch):
+    monkeypatch.setattr(config, "load_topology", lambda: config.TOPOLOGY)
+    monkeypatch.setattr("eternalai.engine.make_sources", lambda: (None, None))
+    monkeypatch.setattr("eternalai.engine.make_driver", lambda: NS(runtime="kubernetes"))
+    monkeypatch.setattr("eternalai.engine.LearnStore", lambda: NS())
+
+    def load(name):
+        if name == "detectors":
+            return {"unrelated-service": object()}, {}
+        return object(), {}
+
+    monkeypatch.setattr("eternalai.engine.artifacts.load", load)
+    engine = Engine()
+    assert engine.models_loaded == {"detectors": False, "classifier": False,
+                                     "ranker": False, "baselines": False}
