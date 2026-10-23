@@ -88,6 +88,7 @@ def status():
                            for k, v in (("detectors", engine.det_meta), ("classifier", engine.cls_meta),
                                         ("ranker", engine.rank_meta))},
             "fallbacks_in_use": [k for k, v in engine.models_loaded.items() if not v],
+            "topology_fallback": config.TOPOLOGY_FALLBACK,
             # a probability may be shown as a percentage only if training verified its calibration (ECE <= 0.05)
             "calibration": {"ece": (engine.cls_meta or {}).get("ece_oof"),
                             "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
