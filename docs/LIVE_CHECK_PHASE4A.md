@@ -1,6 +1,6 @@
 # Phase 4a live check: specification and acceptance criteria
 
-Written 2026-10-23, about 21:05 IST, **before** the check was run. Script: `scripts/live_check_phase4a.py`. Results:
+Committed in `1540245` at 2026-10-23 20:53:09 IST, **before** the check started (20:53:18 IST). (An earlier draft of this line gave an estimated time, "about 21:05", which was wrong; corrected after the run from the commit time.) Script: `scripts/live_check_phase4a.py`. Results:
 `docs/results/live_check_phase4a.md` and `results/live-checks/phase4a.json`. Criteria are not changed after the run; a
 failed criterion is reported as failed.
 

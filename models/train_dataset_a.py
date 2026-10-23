@@ -4,7 +4,7 @@ aggregate results.
 
     python models/train_dataset_a.py --workbook <EternalAI_training_dataset_v1.xlsx> [--out docs/results/dataset_a_classifier.md]
 
-EVERY CHOICE BELOW WAS FIXED BEFORE THE FIRST RUN (2026-10-23, about 21:10 IST) and is not changed after seeing results.
+EVERY CHOICE BELOW WAS FIXED BEFORE THE FIRST RUN (committed in 6d617df at 2026-10-23 21:06:04 IST; the run followed) and is not changed after seeing results.
 - Data: the workbook's A sheets (A_cases, A_telemetry), REAL rows only. The plan's v2 files (train_balanced.csv with
   synthetic oversampling, val_real.csv, test_unseen_system_real.csv, test_unknown_fault_real.csv) are not on this
   machine, so the plan's v2 numbers cannot be reproduced exactly; this is the plan's split method on real rows.

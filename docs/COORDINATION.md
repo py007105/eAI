@@ -1,6 +1,6 @@
 # Coordination record (integration owner: Claude, main session)
 
-Written 2026-10-23, about 21:00 IST. This is the current, single coordination record. When it disagrees with an older
+Committed 2026-10-23 20:51 IST (`46a1aa4`); schedule updated after the first runs. This is the current, single coordination record. When it disagrees with an older
 document (`docs/HANDOFF_FRIEND.md`, `docs/CONTINUE_ON_NEW_PC.md`, `docs/DOCKER_SCHEDULE.md`), this file wins.
 
 ## 1. Freeze
@@ -79,8 +79,8 @@ the relevant live checks on the combined result, and records it in `docs/PLAN_GA
 
 | when (IST) | who | what |
 |---|---|---|
-| Fri 23, 21:00-22:30 | main | Phase 4a live check (`scripts/live_check_phase4a.py`) |
-| Fri 23, 22:30 - Sat 24, 01:30 | main (detached) | forecast check v3, the 20 pre-registered runs (`scripts/live_check_phase3.py`) |
+| Fri 23, 20:53-21:00 (done) | main | Phase 4a live check (`scripts/live_check_phase4a.py`): 10/10 |
+| Fri 23, 21:02 - about 23:00 (running) | main (detached) | forecast check v3, the 20 pre-registered runs (`scripts/live_check_phase3.py`) |
 | Sat 24, 07:00-12:00 | codex | kind window 1 |
 | Sat 24, 12:00-14:00 | main | Package C live check / regression (if Package C is ready) |
 | Sat 24, 14:00-19:00 | codex | kind window 2 |
