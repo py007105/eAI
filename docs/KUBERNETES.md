@@ -15,7 +15,7 @@ cd D:\eAI\eAI-k8s
 .\.venv\Scripts\python.exe scripts\kind_e2e.py
 ```
 
-The script requires the checksum-verified `D:\eAI\tools\kind.exe` and `helm.exe`, and a `kubectl` and Docker CLI. It pins the kind node image, Prometheus chart and Online Boutique v0.10.7 manifest; it refuses a changed manifest checksum. It builds `eai/eternalai:k8s-dev`, never the Compose `:v2` tag. All port-forwards use 18080-18082. Approval credentials are generated for the run, supplied to Kubernetes through stdin, and never printed. The script records PASS/FAIL details and the code/image revision in the result files above.
+The script requires the checksum-verified `D:\eAI\tools\kind.exe` and `helm.exe`, and a `kubectl` and Docker CLI. It pins the kind node image, verifies the Prometheus chart archive SHA256, and refuses a changed Online Boutique v0.10.7 manifest checksum. It builds `eai/eternalai:k8s-dev`, never the Compose `:v2` tag. All port-forwards use 18080-18082. Approval credentials are generated for the run, supplied to Kubernetes through stdin, and never printed. Each execution writes fresh `docs/results/kind_e2e_<execution-id>.md` and `results/live-checks/kind_e2e_<execution-id>.json` files with timestamps, code commit, actual image ID, configuration hashes and PASS/FAIL details. The fixed result paths above mirror the latest execution.
 
 To render the chart without a cluster:
 

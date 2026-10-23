@@ -1,6 +1,6 @@
 # Pinned kind acceptance inputs
 
-All checksums below were checked on 2026-10-23 IST before kind was run. The kind and Helm binaries live in `D:\eAI\tools`, outside Git. The Prometheus chart archive was downloaded into ignored `runtime/` for its checksum; the live script fetches the pinned chart version.
+All checksums below were checked on 2026-10-23 IST before kind was run. The kind and Helm binaries live in `D:\eAI\tools`, outside Git. The Prometheus chart archive was downloaded into ignored `runtime/`; the live script verifies that archive before installing it, or pulls and verifies the same version if the archive is absent.
 
 | Input | Version/source | SHA256 or OCI digest |
 |---|---|---|

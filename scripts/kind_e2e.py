@@ -25,7 +25,7 @@ from eternalai.redact import redact  # noqa: E402
 from eternalai.drivers.k8s import KubernetesDriver  # noqa: E402
 from eternalai.sources.k8s_metrics import KubernetesProm, QUERIES  # noqa: E402
 from eternalai.sources.service_map import discover_topology  # noqa: E402
-from stack_lock import is_free, take, release  # noqa: E402; atomic shared lock
+from scripts.stack_lock import is_free, take, release  # noqa: E402; atomic shared lock
 
 IST = timezone(timedelta(hours=5, minutes=30))
 TOOLS = Path(r"D:\eAI\tools")
@@ -35,8 +35,10 @@ KUBECTL = "kubectl"
 MANIFEST = "https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/v0.10.7/release/kubernetes-manifests.yaml"
 MANIFEST_SHA256 = "ae3c20181c051048e6a5cae51fa530681affa4043ba60ae95d4f39e1262f2744"
 PROM_CHART = "29.18.0"
-OUT_MD = ROOT / "docs/results/kind_e2e.md"
-OUT_JSON = ROOT / "results/live-checks/kind_e2e.json"
+PROM_ARCHIVE = ROOT / "runtime/prometheus-29.18.0.tgz"
+PROM_SHA256 = "24f5f056dd5cb00e98ffb905c9c2779e810153f1b5a6306bf2cc2c5a4f02a0b9"
+LATEST_MD = ROOT / "docs/results/kind_e2e.md"
+LATEST_JSON = ROOT / "results/live-checks/kind_e2e.json"
 CHECKS: list[dict] = []
 
 
@@ -142,21 +144,52 @@ def rbac_matrix(watch=True):
     return results
 
 
-def write_results(head):
-    result = {"at_ist": now_ist(), "branch": "friend/phase2-k8s", "commit": head,
-              "image": f"eai/eternalai:k8s-dev built from {head}", "checks": CHECKS}
-    OUT_MD.parent.mkdir(parents=True, exist_ok=True)
-    OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    OUT_JSON.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    rows = ["# Kubernetes kind end-to-end check", "", f"- Time: {result['at_ist']}",
-            f"- Commit: `{head}`", f"- Image: `{result['image']}`", "",
+def file_hash(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_results(head, run_id, started_at, image_id):
+    finished_at = now_ist()
+    result = {"execution_id": run_id, "started_at_ist": started_at, "finished_at_ist": finished_at,
+              "branch": "friend/phase2-k8s", "commit": head,
+              "image": {"tag": "eai/eternalai:k8s-dev", "id": image_id,
+                        "built_from": head if image_id else None},
+              "configuration": {
+                  "kind_config_sha256": file_hash(ROOT / "deploy/kind/kind-cluster.yaml"),
+                  "helm_values_sha256": file_hash(ROOT / "deploy/helm/eternalai/values.yaml"),
+                  "rulebook_source": "deploy/helm/eternalai/values.yaml#rulebook",
+                  "online_boutique_manifest_sha256": MANIFEST_SHA256,
+                  "prometheus_chart_version": PROM_CHART,
+                  "prometheus_chart_archive_sha256": PROM_SHA256,
+                  "namespace": "shop", "mode_initial": "watch", "mode_final": "ask",
+                  "ports": [18080, 18081, 18082]},
+              "checks": CHECKS}
+    out_md = ROOT / f"docs/results/kind_e2e_{run_id}.md"
+    out_json = ROOT / f"results/live-checks/kind_e2e_{run_id}.json"
+    out_md.parent.mkdir(parents=True, exist_ok=True)
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    content = json.dumps(result, indent=2)
+    with out_json.open("x", encoding="utf-8") as stream:
+        stream.write(content + "\n")
+    rows = ["# Kubernetes kind end-to-end check", "", f"- Execution: `{run_id}`",
+            f"- Time: {started_at} to {finished_at}", f"- Commit: `{head}`",
+            f"- Image: `eai/eternalai:k8s-dev` (`{image_id or 'not built'}`)",
+            f"- Configuration: [JSON result](../../results/live-checks/{out_json.name})", "",
             "| Check | Result | Detail |", "|---|---|---|"]
     rows += [f"| {c['check']} | {c['result']} | {c['detail'].replace('|', '/')} |" for c in CHECKS]
-    OUT_MD.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    markdown = "\n".join(rows) + "\n"
+    with out_md.open("x", encoding="utf-8") as stream:
+        stream.write(markdown)
+    LATEST_JSON.write_text(content + "\n", encoding="utf-8")
+    LATEST_MD.write_text(markdown, encoding="utf-8")
+    return out_md, out_json
 
 
 def main():
     head = cmd(["git", "rev-parse", "HEAD"])
+    run_id = datetime.now(IST).strftime("%Y%m%dT%H%M%S") + "-" + secrets.token_hex(4)
+    started_at = now_ist()
+    image_id = None
     image_origin = f"friend/phase2-k8s@{head[:7]}"
     held = False
     cluster_started = False
@@ -174,7 +207,10 @@ def main():
         available = free_memory_gb()
         if available < 6:
             raise RuntimeError(f"only {available:.2f} GiB available; kind requires about 6 GiB")
-        take("codex", "kind e2e", image_origin)
+        try:
+            take("codex", "kind e2e", image_origin)
+        except SystemExit:
+            raise RuntimeError("could not acquire shared Docker lock") from None
         held = True
         check("preflight", True, f"Compose stopped, no eai kind cluster, {available:.2f} GiB free")
 
@@ -182,9 +218,15 @@ def main():
         cmd([KIND, "create", "cluster", "--config", "deploy/kind/kind-cluster.yaml", "--name", "eai"], timeout=1200)
         check("cluster", True, "pinned single-node kind cluster created")
         cmd([KUBECTL, "create", "namespace", "monitoring"])
-        cmd([HELM, "install", "prometheus", "oci://ghcr.io/prometheus-community/charts/prometheus",
-             "--version", PROM_CHART, "-n", "monitoring", "--set", "alertmanager.enabled=false",
-             "--set", "prometheus-pushgateway.enabled=false", "--set", "server.persistentVolume.enabled=false"], timeout=1200)
+        PROM_ARCHIVE.parent.mkdir(exist_ok=True)
+        if not PROM_ARCHIVE.is_file():
+            cmd([HELM, "pull", "oci://ghcr.io/prometheus-community/charts/prometheus",
+                 "--version", PROM_CHART, "--destination", str(PROM_ARCHIVE.parent)], timeout=300)
+        if file_hash(PROM_ARCHIVE) != PROM_SHA256:
+            raise RuntimeError("pinned Prometheus chart checksum mismatch")
+        cmd([HELM, "install", "prometheus", str(PROM_ARCHIVE), "-n", "monitoring",
+             "--set", "alertmanager.enabled=false", "--set", "prometheus-pushgateway.enabled=false",
+             "--set", "server.persistentVolume.enabled=false"], timeout=1200)
         cmd([KUBECTL, "-n", "monitoring", "rollout", "status", "deployment/prometheus-server", "--timeout=300s"])
         check("prometheus", True, f"chart {PROM_CHART} Ready")
 
@@ -206,8 +248,9 @@ def main():
             raise RuntimeError("Online Boutique did not become Ready")
 
         cmd(["docker", "build", "-t", "eai/eternalai:k8s-dev", "-f", "eternalai/Dockerfile", "."], timeout=1800)
+        image_id = cmd(["docker", "image", "inspect", "--format", "{{.Id}}", "eai/eternalai:k8s-dev"])
         cmd([KIND, "load", "docker-image", "eai/eternalai:k8s-dev", "--name", "eai"], timeout=900)
-        check("brain_image", True, f"eai/eternalai:k8s-dev built from {head[:7]}")
+        check("brain_image", True, f"eai/eternalai:k8s-dev {image_id} built from {head[:7]}")
         cmd([KUBECTL, "create", "namespace", "eternalai"])
         token = secrets.token_urlsafe(32)
         secret_manifest = {"apiVersion": "v1", "kind": "Secret",
@@ -327,9 +370,12 @@ def main():
                 cmd(["docker", "compose", "-p", "eai", "stop"], timeout=120)
             except Exception as exc:
                 check("compose_stopped", False, type(exc).__name__)
-            finally:
+            try:
                 release("codex", image_origin)
-        write_results(head)
+                check("lock_release", True, "atomic owner file released")
+            except (Exception, SystemExit) as exc:
+                check("lock_release", False, type(exc).__name__)
+        write_results(head, run_id, started_at, image_id)
     return 0 if CHECKS and all(item["result"] == "PASS" for item in CHECKS) else 1
 
 
