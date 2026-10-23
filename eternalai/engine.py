@@ -84,6 +84,7 @@ class Engine:
     use_models = True   # baseline engines (eternalai/baselines.py) set this False and never load trained artifacts
 
     def __init__(self, mode: str | None = None):
+        config.load_topology()
         self.prom, self.dv = Prom(), DockerView()
         self.executor, self.policy = make_driver(), PolicyEngine(mode)
         self.persist = Persistence(3)
