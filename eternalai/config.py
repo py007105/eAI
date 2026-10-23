@@ -44,3 +44,31 @@ def env_list(value: str | None) -> set:
 
 KILL_SWITCH = env_flag(os.getenv("ETERNALAI_KILL_SWITCH"))
 PROTECTED_SERVICES = env_list(os.getenv("ETERNALAI_PROTECTED_SERVICES"))
+
+# Kubernetes discovery is intentionally delayed until Engine startup. Docker keeps the static graph.
+_STATIC_TOPOLOGY = {service: list(callees) for service, callees in TOPOLOGY.items()}
+TOPOLOGY_FALLBACK = False
+
+
+def load_topology(apps=None, namespaces=None):
+    """Load Deployment annotation edges once; report an explicit static fallback."""
+    global TOPOLOGY, SERVICES, CALLERS, TOPOLOGY_FALLBACK
+    if os.getenv("RUNTIME", "docker").strip().lower() != "kubernetes":
+        return TOPOLOGY
+    from .sources.service_map import callers, discover_topology
+    from .rulebook import load
+
+    allowed = tuple(namespaces) if namespaces is not None else load().namespaces
+    if apps is None:
+        try:
+            from kubernetes import client, config as kube_config
+            kube_config.load_incluster_config()
+            apps = client.AppsV1Api()
+        except Exception:
+            apps = None
+    topology, fallback = (discover_topology(apps, allowed, _STATIC_TOPOLOGY)
+                          if apps is not None else (dict(_STATIC_TOPOLOGY), True))
+    TOPOLOGY, TOPOLOGY_FALLBACK = topology, fallback
+    SERVICES = list(topology)
+    CALLERS = callers(topology)
+    return TOPOLOGY
