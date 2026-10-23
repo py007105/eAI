@@ -66,12 +66,21 @@ Hand-back: teammates send a PR to `plan-complete` (after Prem's "push") or a git
 the relevant live checks on the combined result, and records it in `docs/PLAN_GAP_CLOSURE.md` section G.
 
 ## 5. Docker: schedule and lock
-- **Lock procedure** (unchanged): `D:\eAI\STACK_LOCK.md`.
-  - The top of the file is the schedule (copied from section 5 here); its **last line** is the lock.
-  - Use `scripts/stack_lock.py` (`take(who, what, images)` / `release(who, images)`); it changes only the last line.
-  - Before taking the lock, check the real state: `docker ps`, `kind get clusters`, and running `python`/`kind`
-    processes. A FREE line does not prove the engine is idle.
-  - Never overwrite a HELD line held by someone else. Never delete volumes.
+- **Lock procedure** (atomic since 2026-10-24): ownership is the owner file `D:\eAI\STACK_LOCK.owner`, created only
+  through `scripts/stack_lock.py`:
+  - `take(who, what, images)` creates the file with O_EXCL, so of two sessions exactly one wins, and writes the display line;
+  - `release(who, images)` frees it only with the caller's own token.
+
+  Rules:
+  - The last line of `D:\eAI\STACK_LOCK.md` is only a display. **Seeing FREE is not ownership**, and nobody edits that
+    line by hand.
+  - Codex takes the lock the same way:
+    `python -c "import sys; sys.path.insert(0,'scripts'); import stack_lock; print(stack_lock.take('codex','kind window','friend/phase2-k8s@<hash>'))"`,
+    and releases it with that token.
+  - A scheduled window never overrides an active owner.
+  - A crashed owner's file is never removed automatically; check the `pid` in it first.
+  - Before taking the lock, also check the real state (`docker ps`, `kind get clusters`, running `python`/`kind`
+    processes). Never delete volumes.
 - **RAM:** the machine has 15.7 GB in total; often only 2-3 GB are free. Each window needs about 3 GB free (Compose) or
   about 6 GB (kind + Online Boutique). If that is not free, the run waits.
 - **Attribution:** every run records the commit, the rulebook file and the image build (`images built from
