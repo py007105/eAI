@@ -21,6 +21,7 @@ from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
 from .collector import DockerView, Prom
 from .dedupe import ReleaseGrace, Suppressor, downstream_of
 from .detect import Persistence, anomaly_source, service_anomalous
+from .drivers import make_driver
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
 from .investigate import Investigator, remember_verified
@@ -84,7 +85,7 @@ class Engine:
 
     def __init__(self, mode: str | None = None):
         self.prom, self.dv = Prom(), DockerView()
-        self.executor, self.policy = Executor(), PolicyEngine(mode)
+        self.executor, self.policy = make_driver(), PolicyEngine(mode)
         self.persist = Persistence(3)
         self.grace, self.suppress = ReleaseGrace(config.DEPLOY_GRACE_S), Suppressor()
         self.incidents: list[Incident] = []
