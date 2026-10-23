@@ -1,13 +1,21 @@
-"""Overnight sequence from a checkout pinned to one commit (clean attribution): wait for the Docker lock to be free, build all
-images once, run the demo gate checks (Phase 1 and Phase 4a live checks) and then evaluation v3.
+"""Overnight sequence from a checkout pinned to one commit (clean attribution).
 
     python scripts/run_v3_sequence.py            # run from a worktree at the commit to test, detached
 
-Each step writes its own results inside this checkout; the main session copies them back and commits them.
+1. Wait until the Docker lock is FREE, then TAKE it (scripts/stack_lock.py) and hold it for the whole sequence: the image
+   build and every step run under it; child scripts run in parent mode (EAI_STACK_LOCK_PARENT=main) so they never release
+   it in between. The lock is released in a `finally`, also after a failure or an exception.
+2. Build all images once (attribution: the commit of this checkout).
+3. Gate checks: Phase 1 live check, Phase 4a live check. Their PASS counts are written to results/v3-gate.json. The sequence
+   never promotes anything: a demo-stable tag is a separate, manual step that requires every gate item in
+   docs/RELEASE_GATE.md, and a failed gate check means no promotion.
+4. Evaluation v3 (docs/EVALUATION_V3_PLAN.md). It runs whether or not the gate passes: it is an evaluation, not a gate.
 """
 from __future__ import annotations
 
+import json
 import os
+import re
 import secrets
 import subprocess
 import sys
@@ -20,6 +28,7 @@ import stack_lock  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 DOCKER_BIN = r"C:\Program Files\Docker\Docker\resources\bin"
 LOG = ROOT / "results" / "v3-sequence.log"
+GATE = ROOT / "results" / "v3-gate.json"
 
 
 def log(msg):
@@ -30,11 +39,22 @@ def log(msg):
 
 def step(cmd, timeout):
     env = {**os.environ, "PATH": os.environ.get("PATH", "") + os.pathsep + DOCKER_BIN,
+           stack_lock.PARENT_ENV: "main",
            "CHAOS_TOKEN": secrets.token_urlsafe(24)}          # only for compose interpolation during the build
     with open(LOG, "a", encoding="utf-8") as f:
-        rc = subprocess.run(cmd, cwd=ROOT, env=env, stdout=f, stderr=subprocess.STDOUT, timeout=timeout).returncode
+        try:
+            rc = subprocess.run(cmd, cwd=ROOT, env=env, stdout=f, stderr=subprocess.STDOUT, timeout=timeout).returncode
+        except subprocess.TimeoutExpired:
+            rc = "timeout"
     log(f"{' '.join(cmd[:4])} -> exit {rc}")
     return rc
+
+
+def passed(md: Path) -> str | None:
+    if not md.exists():
+        return None
+    m = re.search(r"(\d+) of (\d+) checks passed", md.read_text(encoding="utf-8"))
+    return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
 def main():
@@ -42,15 +62,29 @@ def main():
     log(f"sequence start at commit {commit}")
     while not stack_lock.state().startswith("FREE"):
         time.sleep(60)
-    log("lock free")
-    py = sys.executable
-    if step(["docker", "compose", "--profile", "releases", "build"], 3600):
-        log("build failed: stop")
-        return
-    step([py, "-u", "scripts/live_check_phase1.py"], 3600)
-    step([py, "-u", "scripts/live_check_phase4a.py", "--no-build"], 3600)
-    step([py, "-u", "scripts/run_final_eval.py"], 10 * 3600)
-    log("sequence finished")
+    stack_lock.take("main", f"overnight sequence (build, gate checks, evaluation v3) at {commit}", f"plan-complete@{commit}")
+    log("lock taken")
+    gate = {"commit": commit}
+    try:
+        py = sys.executable
+        if step(["docker", "compose", "--profile", "releases", "build"], 3600):
+            log("build failed: stop (no gate checks, no evaluation)")
+            gate["build"] = "failed"
+            return
+        gate["build"] = "ok"
+        gate["phase1_exit"] = step([py, "-u", "scripts/live_check_phase1.py"], 3600)
+        gate["phase1"] = passed(ROOT / "docs" / "results" / "live_check_phase1.md")
+        gate["phase4a_exit"] = step([py, "-u", "scripts/live_check_phase4a.py", "--no-build"], 3600)
+        gate["phase4a"] = passed(ROOT / "docs" / "results" / "live_check_phase4a.md")
+        gate["gate_checks_all_passed"] = gate["phase1"] == "17/17" and gate["phase4a"] == "10/10"
+        GATE.write_text(json.dumps(gate, indent=1), encoding="utf-8")
+        log(f"gate: {gate}")
+        step([py, "-u", "scripts/run_final_eval.py"], 10 * 3600)
+        log("sequence finished")
+    finally:
+        GATE.write_text(json.dumps(gate, indent=1), encoding="utf-8")
+        stack_lock.release("main", f"plan-complete@{commit}")
+        log("lock released")
 
 
 if __name__ == "__main__":
