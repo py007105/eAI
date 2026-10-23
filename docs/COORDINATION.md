@@ -81,10 +81,11 @@ the relevant live checks on the combined result, and records it in `docs/PLAN_GA
 |---|---|---|
 | Fri 23, 20:53-21:00 (done) | main | Phase 4a live check (`scripts/live_check_phase4a.py`): 10/10 |
 | Fri 23, 21:02 - about 23:00 (running) | main (detached) | forecast check v3, the 20 pre-registered runs (`scripts/live_check_phase3.py`) |
+| Fri 23, after the forecast check - about Sat 24, 05:00 | main (detached, pinned checkout `D:\eAI\eAI-eval-3208bf0`) | `scripts/run_v3_sequence.py`: build at `3208bf0`; Phase 1 + Phase 4a live checks (demo-candidate gate); evaluation v3 (50 runs, `docs/EVALUATION_V3_PLAN.md`) |
 | Sat 24, 07:00-12:00 | codex | kind window 1 |
 | Sat 24, 12:00-14:00 | main | Package C live check / regression (if Package C is ready) |
 | Sat 24, 14:00-19:00 | codex | kind window 2 |
-| Sat 24, 21:00 - Sun 25, 05:00 | main (detached) | final evaluation: policy-affected scenario re-runs, at least 5 seeds |
+| Sat 24, 21:00 - Sun 25, 05:00 | main (detached) | reserve: re-runs of failed v3 runs, or a pre-registered forecast v4 |
 | Sun 25, 07:00-12:00 | codex | kind window 3 (end-to-end on merged code) |
 | Sun 25, 13:00-17:00 | main | final regression; demo-candidate gates |
 
