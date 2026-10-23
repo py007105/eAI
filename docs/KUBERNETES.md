@@ -17,6 +17,8 @@ cd D:\eAI\eAI-k8s
 
 The script requires the checksum-verified `D:\eAI\tools\kind.exe` and `helm.exe`, and a `kubectl` and Docker CLI. It pins the kind node image, verifies the Prometheus chart archive SHA256, and refuses a changed Online Boutique v0.10.7 manifest checksum. It builds `eai/eternalai:k8s-dev`, never the Compose `:v2` tag. All port-forwards use 18080-18082. Approval credentials are generated for the run, supplied to Kubernetes through stdin, and never printed. Each execution writes fresh `docs/results/kind_e2e_<execution-id>.md` and `results/live-checks/kind_e2e_<execution-id>.json` files with timestamps, code commit, actual image ID, configuration hashes and PASS/FAIL details. The fixed result paths above mirror the latest execution.
 
+After kind has been removed, the Docker-path regression uses `scripts/compose_regression_k8s.py` in a separate assigned lock window. It requires an owner-provided, ignored `.env` in this worktree; the script checks only that it exists and never reads its contents. It builds and starts the `eai` Compose project from this branch, runs `stock_gate.py` and the unchanged `preflight.py`, records each result and image ID in fresh `docs/results/compose_regression_k8s_<execution-id>.md` and `results/live-checks/compose_regression_k8s_<execution-id>.json` files, then stops Compose and releases its own lock. The preflight's benchmark-tag identity gate compares all `eternalai/` code with the older benchmark tag, so a Kubernetes branch change is expected to make that particular gate fail; the script records the failure instead of suppressing it.
+
 To render the chart without a cluster:
 
 ```powershell
