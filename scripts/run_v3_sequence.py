@@ -6,7 +6,8 @@
    build and every step run under it; child scripts run in parent mode (EAI_STACK_LOCK_PARENT=main) so they never release
    it in between. The lock is released in a `finally`, also after a failure or an exception.
 2. Build all images once (attribution: the commit of this checkout).
-3. Gate checks: Phase 1 live check, Phase 4a live check. Their PASS counts are written to results/v3-gate.json. The sequence
+3. Gate checks: Phase 1 live check, Phase 4a live check; after the evaluation, the controlled checks (G4-G6). Their PASS
+   counts are written to results/v3-gate.json. The sequence
    never promotes anything: a demo-stable tag is a separate, manual step that requires every gate item in
    docs/RELEASE_GATE.md, and a failed gate check means no promotion.
 4. Evaluation v3 (docs/EVALUATION_V3_PLAN.md). It runs whether or not the gate passes: it is an evaluation, not a gate.
@@ -50,10 +51,15 @@ def step(cmd, timeout):
     return rc
 
 
-def passed(md: Path) -> str | None:
+def passed(md: Path, commit: str) -> str | None:
+    """'x/y' from a results file written by THIS run: the file must name this commit (the checkout also contains older
+    committed results files, which must never be read as this run's result)."""
     if not md.exists():
         return None
-    m = re.search(r"(\d+) of (\d+) checks passed", md.read_text(encoding="utf-8"))
+    text = md.read_text(encoding="utf-8")
+    if f"`{commit}`" not in text:
+        return None
+    m = re.search(r"(\d+) of (\d+) checks passed", text)
     return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
@@ -73,13 +79,18 @@ def main():
             return
         gate["build"] = "ok"
         gate["phase1_exit"] = step([py, "-u", "scripts/live_check_phase1.py"], 3600)
-        gate["phase1"] = passed(ROOT / "docs" / "results" / "live_check_phase1.md")
+        gate["phase1"] = passed(ROOT / "docs" / "results" / "live_check_phase1.md", commit)
         gate["phase4a_exit"] = step([py, "-u", "scripts/live_check_phase4a.py", "--no-build"], 3600)
-        gate["phase4a"] = passed(ROOT / "docs" / "results" / "live_check_phase4a.md")
-        gate["gate_checks_all_passed"] = gate["phase1"] == "17/17" and gate["phase4a"] == "10/10"
+        gate["phase4a"] = passed(ROOT / "docs" / "results" / "live_check_phase4a.md", commit)
         GATE.write_text(json.dumps(gate, indent=1), encoding="utf-8")
+        log(f"gate so far: {gate}")
+        gate["eval_exit"] = step([py, "-u", "scripts/run_final_eval.py"], 10 * 3600)
+        # controlled checks (docs/RELEASE_GATE.md G4-G6): after the registered evaluation, same commit and build
+        gate["controlled_exit"] = step([py, "-u", "scripts/live_check_controlled.py"], 3 * 3600)
+        gate["controlled"] = passed(ROOT / "docs" / "results" / "live_check_controlled.md", commit)
+        gate["live_gate_items_all_passed"] = all(
+            v is not None and v.split("/")[0] == v.split("/")[1] for v in (gate["phase1"], gate["phase4a"], gate["controlled"]))
         log(f"gate: {gate}")
-        step([py, "-u", "scripts/run_final_eval.py"], 10 * 3600)
         log("sequence finished")
     finally:
         GATE.write_text(json.dumps(gate, indent=1), encoding="utf-8")

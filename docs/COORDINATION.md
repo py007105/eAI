@@ -81,7 +81,7 @@ the relevant live checks on the combined result, and records it in `docs/PLAN_GA
 |---|---|---|
 | Fri 23, 20:53-21:00 (done) | main | Phase 4a live check (`scripts/live_check_phase4a.py`): 10/10 |
 | Fri 23, 21:02 - about 23:00 (running) | main (detached) | forecast check v3, the 20 pre-registered runs (`scripts/live_check_phase3.py`) |
-| Fri 23, after the forecast check - about Sat 24, 05:00 | main (detached, pinned checkout `D:\eAI\eAI-eval-3208bf0`) | `scripts/run_v3_sequence.py`: build at `3208bf0`; Phase 1 + Phase 4a live checks (demo-candidate gate); evaluation v3 (50 runs, `docs/EVALUATION_V3_PLAN.md`) |
+| Fri 23, after the forecast check releases the lock, until the sequence releases it | main (detached; pinned checkout `D:\eAI\eAI-eval-<commit>`) | `scripts/run_v3_sequence.py` holds the lock for the whole run: build; Phase 1 + Phase 4a live checks; evaluation v3 (50 runs, `docs/EVALUATION_V3_PLAN.md`); controlled checks G4-G6 (`docs/RELEASE_GATE.md`). No finish time is promised. **If it still holds the lock at 07:00 Sat, Codex's window 1 starts only when the lock line reads FREE**; the main session then moves Codex's window in this table |
 | Sat 24, 07:00-12:00 | codex | kind window 1 |
 | Sat 24, 12:00-14:00 | main | Package C live check / regression (if Package C is ready) |
 | Sat 24, 14:00-19:00 | codex | kind window 2 |
