@@ -119,4 +119,5 @@ To bring the main session's work into a `friend/...` branch: `git merge plan-com
 |---|---|---|---|---|
 | 23 Oct 21:11 | `D:\eAI\eAI-eval-3208bf0` | `3208bf0` | (no ID) | stopped at 21:22 while still waiting for the lock: it did not hold the lock across steps. Ran nothing |
 | 23 Oct 21:26 | `D:\eAI\eAI-eval-7961c1c` | `7961c1c` | (no ID) | stopped at 22:19 while still waiting for the lock: controlled-check claims and stale-result protection were insufficient. Ran nothing |
-| 23 Oct 22:25 | `D:\eAI\eAI-eval-67211f8` | `67211f8` (image build inputs identical to `7961c1c`) | `20261023T222518-d60e18cd` | waiting for the forecast check to release the lock; this is the current candidate run |
+| 23 Oct 22:25 | `D:\eAI\eAI-eval-67211f8` | `67211f8` (image build inputs identical to `7961c1c`) | `20261023T222518-d60e18cd` | stopped at 22:27 while still waiting: lock acquisition was not atomic and there was no execution manifest. Ran nothing |
+| 24 Oct 00:18 | `D:\eAI\eAI-eval-71eb2f5` | `71eb2f5` (image build inputs identical to `7961c1c`) | `20261024T001813-4cedc8bf` | lock taken atomically at 00:18; running; manifest `results/executions/<ID>/manifest.json` |
