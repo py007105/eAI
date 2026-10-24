@@ -59,3 +59,22 @@ def test_charts_callback_without_backend_shows_no_chart(monkeypatch):
     assert len(out[1].data) == 0 and "No data yet" in str(out[1].layout.annotations)
     assert "Nothing to report" in str(out[2])
     assert "None" in str(out[5]) or "-" in str(out[5])   # empty statistics table, no invented numbers
+
+
+def test_populated_explanation_check_needs_a_non_empty_match():
+    """D6 of scripts/live_check_dashboard_charts.py: empty-versus-empty never counts; the sentences must equal
+    explain_service() on API features sampled within 4 s of the page read."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("ldc", Path(__file__).resolve().parents[1] / "scripts" / "live_check_dashboard_charts.py")
+    ldc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ldc)
+    from explain_words import explain_service
+    feats = SERVICES["services"]["inventory"]["features"]
+    want = explain_service("inventory", feats, "en")
+    assert want                                                            # the fixture is a populated case
+    assert ldc.populated_match([(10.0, want)], [(12.0, feats)], "inventory") == (10.0, want)
+    assert ldc.populated_match([(10.0, want)], [(20.0, feats)], "inventory") is None                  # too far apart
+    assert ldc.populated_match([(10.0, [])], [(10.0, {"up_frac": 1.0})], "inventory") is None         # empty vs empty
+    nothing = ["Nothing to report for this service at this tick."]
+    assert ldc.populated_match([(10.0, nothing)], [(10.0, {"up_frac": 1.0})], "inventory") is None
+    assert ldc.populated_match([(10.0, ["something else"])], [(10.0, feats)], "inventory") is None
