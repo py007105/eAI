@@ -1,5 +1,36 @@
 # EternalAI Console handoff
 
+## Integration follow-up — 25 October 2026, 01:36 IST
+
+**Live integration remains blocked, not verified.** Direct `GET http://127.0.0.1:8000/health` was unreachable. Docker inspection found no running containers and existing stopped `eai` containers. The documented normal startup command is `docker compose up -d` from the repository root. This worktree has no `.env` (existence checked only), and `CHAOS_TOKEN` is absent from the process environment; Compose requires a real value for that variable. `ETERNALAI_APPROVAL_TOKEN` is also absent, but is not needed by the read-only frontend. No secret file was read or copied. No backend, Docker service, fault, or operational action was started. The next live check requires owner-provided backend configuration and the shared Docker lock before the normal startup command; do not substitute defaults or recreate the saved stack speculatively.
+
+Runtime fix and verification tooling: `b7ee5d2def943e40bb2b02b8f307ea8e62d821a1`. Failed polling now immediately suppresses retained current values; confidence requires a fresh successful permission response; all failed endpoints report disconnected; unmount aborts pending requests. Partial/recovery and six-second stale behavior are verified in tests only, using fixtures restricted to tests.
+
+| Check | Observed result |
+| --- | --- |
+| Full frontend suite | `npm run test -- --run`: 16 passed, 2 test files; 25 October 01:33 IST |
+| Type checking and production build | `npm run lint` and `npm run build` passed; optional lazy 3D chunk still generates the >500 kB warning |
+| Development and preview API routes | Both `/api/health`, `/api/status`, `/api/services`, `/api/incidents`, `/api/approvals`, `/api/audit` returned HTTP 500 text/plain with the backend unavailable. They did not fall through to the SPA. Successful forwarding/response mapping is still unverified live. |
+| Browser routes | 54 observations: 9 routes in each server mode at all 3 requested sizes; zero horizontal-overflow or non-GET failures. Includes all console pages and an unavailable incident deep link. |
+| Polling | Two actual `/api/status` retries during each 4.3-second observation, in both development and preview, approximately two seconds apart. |
+| Responsive visual inspection | Exact 1440×900, 1280×720, 390×844 viewports tested; mobile navigation exercised. Landing, Overview, and topology screenshots saved; mobile Overview/topology and desktop Landing/Overview visually inspected. Reduced-motion preference enabled. |
+| Actual incident, populated services, 3D service selection | Blocked by unavailable API; no incident created and no populated screenshot fabricated. Keyboard-only navigation and a live WebGL context-loss scenario were not separately exercised in this follow-up. |
+
+Latest execution began **25 October 2026 01:34:31 IST**. Machine-readable observations and nine screenshots are in [evidence/2026-10-24T20-04-31-780Z/report.json](evidence/2026-10-24T20-04-31-780Z/report.json). Directory and JSON timestamps use UTC. Screenshots are real **disconnected frontend** captures, not live backend evidence; backend ref is unknown/null, so neither `demo-stable-1` nor `plan-complete` can be attributed to them. The earlier [first execution](evidence/2026-10-24T19-58-21-602Z/report.json) ran with uncommitted fixes; its recorded HEAD is not an exact runtime revision. Prefer the latest execution, which used the committed runtime fix. No screenshots contain credentials or operational payloads.
+
+Reproduce from `D:\eAI\eAI-console\console`:
+
+```powershell
+npm ci
+npm run test -- --run
+npm run lint
+npm run build
+node scripts/verify-browser.mjs
+npm run preview -- --host 127.0.0.1 --port 4180
+```
+
+Open `http://127.0.0.1:4180`; for development use `npm run dev -- --port 4173`. Both use the default server-side API target `http://127.0.0.1:8000`; an existing backend elsewhere can be selected with `$env:VITE_API_TARGET='http://127.0.0.1:8000'` before starting Vite. Browser verification uses installed Brave and starts/stops only its own frontend processes; set `CONSOLE_BROWSER_PATH` for another installed Chromium executable. Once the normally configured backend is available, repeat the script and inspect actual returned incidents without creating one. Partial/stale/recovery checks remain explicitly test-only until observed with the real API. The previous implementation notes below are historical; the exact-viewport limitation is superseded by this follow-up.
+
 ## Branch and scope
 
 Work is isolated on `team/console`, based on `origin/plan-complete` at `7cc615a48d8378dcf781b4f7e3deb428c16654c7`. Every project change is inside `console/`. No backend files, protected refs, tags, Docker services, or clusters were changed. No merge or push to `plan-complete` was performed.

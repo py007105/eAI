@@ -29,6 +29,8 @@ Only common observational GET routes from `demo-stable-1` and `origin/plan-compl
 
 ## Scope and limitations
 
+Browser regression checks use pinned `@playwright/test` 1.56.1 and an existing Brave executable. After building, run `node scripts/verify-browser.mjs`. To use another installed Chromium browser, set `CONSOLE_BROWSER_PATH` to its executable. The script starts and stops only its own frontend servers on 4173 and 4180, tests three exact viewports, and writes real-response observations/screenshots under `evidence/`. It does not intercept responses, start the backend, or create incidents. Successful rendering while disconnected is not live API integration evidence.
+
 - If the backend is stopped or an endpoint fails, current values are unavailable or explicitly historical. Missing fields are not converted into zero or healthy states.
 - Service dependencies are shown from API topology; they do not imply traffic. When the API returns numeric service scores, Overview samples those real snapshots into a bounded in-memory sparkline; charts start empty and show gaps for unavailable samples.
 - Incident details are selected from the returned incident list. The API does not provide list pagination, query filters, or approval expiry; filters are client-side over only returned records.

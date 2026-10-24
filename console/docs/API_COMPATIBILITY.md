@@ -16,4 +16,4 @@ No selected route accepts query parameters. `/scorecard` is excluded because its
 
 Browser requests use relative `/api/...` URLs. Vite's development and preview proxies read `VITE_API_TARGET` server-side, default to `http://127.0.0.1:8000`, and strip the `/api` prefix. A deployed static build requires a same-origin reverse proxy; `vite preview` is not production hosting.
 
-Connection freshness requires schema-valid responses from /status, /services, /incidents, /approvals, and /audit within six seconds. Mixed endpoint failures are partial; after six seconds, retained values are labeled historical and are not shown as current.
+Connection freshness requires schema-valid responses from /status, /services, /incidents, /approvals, and /audit within six seconds. A failed endpoint immediately loses its current values, even if its previous success was recent. Mixed endpoint failures are partial; all failed endpoints are disconnected. Retained values after six seconds are historical and are not shown as current. Confidence additionally requires a fresh, successful status response granting permission.
