@@ -4,9 +4,10 @@
 
 --target shop (default): EternalAI's own 4-service shop (deploy/kind/shop/), the workload our trained models fit, with a
 plain Prometheus. The brain runs in autopilot through Helm and must:
-  1. restart a crashed service by itself (a frozen process that the kubelet does not repair; see freeze_service);
+  1. frozen service (not Ready) -> EternalAI restart, by itself in autopilot (the kubelet does not repair a frozen
+     process; see freeze_service);
   2. propose a rollback of a bad release and execute it only after approval;
-  3. (nice-to-have) the driver scales a Deployment 1 -> 2 -> 1 (the brain has no scale-out runbook).
+  3. (nice-to-have) driver check, not a brain decision: KubernetesDriver scales a Deployment 1 -> 2 -> 1.
 --target boutique: the earlier Online Boutique path (roadmap; prometheus-community chart), unchanged.
 
 No fakes are used. All created resources live in the named throwaway kind cluster; Compose and unrelated clusters stay
@@ -61,10 +62,8 @@ SHOP_DIR = ROOT / "deploy/kind/shop"
 SHOP_MANIFEST = SHOP_DIR / "shop.yaml"
 SHOP_PROMETHEUS = SHOP_DIR / "prometheus.yaml"
 SHOP_VALUES = SHOP_DIR / "values-shop.yaml"
-SHOP_LATEST_MD = ROOT / "docs/results/k8s_e2e.md"
-SHOP_LATEST_JSON = ROOT / "results/live-checks/kind_e2e_shop.json"
 SHOP_SERVICES = ("web", "orders", "payments", "inventory")
-CRASH_SERVICE = "inventory"                 # frozen; EternalAI must restart it in autopilot
+FROZEN_SERVICE = "inventory"                # frozen (not Ready); EternalAI must restart it in autopilot
 BAD_SERVICE = "payments"                    # gets its v3-bad release; rollback must wait for approval
 SCALE_SERVICE = "orders"                    # driver scale 1 -> 2 -> 1 (nice-to-have)
 BRAIN_IMAGE = "eai/eternalai:k8s-dev"       # never :v2, which the Compose demo uses
@@ -295,7 +294,7 @@ def deployment_image(body: dict, container: str) -> str | None:
 def freeze_service(service: str) -> str:
     """Stop (SIGSTOP) the service's process from the kind node. The pod stays Running, so the kubelet does not restart
     it (no livenessProbe, as Compose has restart: "no"); its readinessProbe fails and /metrics stops answering. This is
-    the Kubernetes form of a crash that only EternalAI's restart repairs. Returns the frozen pod's name."""
+    a frozen service (not Ready) that only EternalAI's restart repairs. Returns the frozen pod's name."""
     body = json.loads(cmd([KUBECTL, "-n", "shop", "get", "pods", "-l", f"app={service}", "-o", "json"]))
     for pod in body["items"]:
         cid = running_container_id(pod)
@@ -348,8 +347,9 @@ def write_results(head, run_id, started_at, image_id, target="boutique", configu
     markdown = "\n".join(rows) + "\n"
     with out_md.open("x", encoding="utf-8") as stream:
         stream.write(markdown)
-    (SHOP_LATEST_JSON if shop else LATEST_JSON).write_text(content + "\n", encoding="utf-8")
-    (SHOP_LATEST_MD if shop else LATEST_MD).write_text(markdown, encoding="utf-8")
+    if not shop:   # the shop run writes only its execution-specific files; the integrator links them
+        LATEST_JSON.write_text(content + "\n", encoding="utf-8")
+        LATEST_MD.write_text(markdown, encoding="utf-8")
     return out_md, out_json
 
 
@@ -362,7 +362,7 @@ def shop_configuration():
             "shop_values_sha256": file_hash(SHOP_VALUES),
             "rulebook_source": "deploy/helm/eternalai/values.yaml#rulebook",
             "prometheus_image": PROMETHEUS_IMAGE,
-            "crash_service": CRASH_SERVICE, "bad_release_service": BAD_SERVICE, "scale_service": SCALE_SERVICE,
+            "frozen_service": FROZEN_SERVICE, "bad_release_service": BAD_SERVICE, "scale_service": SCALE_SERVICE,
             "namespaces": ["shop", "loadgen", "monitoring", "eternalai"],
             "mode_initial": "watch", "mode_final": "autopilot", "ports": [18080, 18081, 18082]}
 
@@ -485,19 +485,19 @@ def run_shop(head, state):
     open_before = active_incidents(api("GET", "/incidents"))
     check("baseline_quiet", not open_before, f"{len(open_before)} active incidents after 60 s of normal load")
 
-    # 1. crash -> automatic restart (MUST)
+    # 1. frozen service (not Ready) -> EternalAI restart (MUST)
     t0 = time.time()
-    frozen = freeze_service(CRASH_SERVICE)
-    check("crash_injected", True, f"{CRASH_SERVICE} process stopped in pod {frozen} (pod stays Running)")
-    restarted = wait_until(lambda: automatic_actions(api("GET", "/audit"), CRASH_SERVICE, "restart_service", t0), 240, 3)
+    frozen = freeze_service(FROZEN_SERVICE)
+    check("frozen_service", True, f"{FROZEN_SERVICE} process stopped in pod {frozen} (pod stays Running, not Ready)")
+    restarted = wait_until(lambda: automatic_actions(api("GET", "/audit"), FROZEN_SERVICE, "restart_service", t0), 240, 3)
     check("auto_restart", bool(restarted),
-          f"brain restart_service on {CRASH_SERVICE} without approval: {len(restarted or [])} audited call(s)")
-    replaced = wait_until(lambda: wait_deployment(CRASH_SERVICE, timeout=5)
-                          if frozen not in pods(CRASH_SERVICE) else None, 240, 5)
-    crash_incident = wait_until(lambda: incident_with_action(api("GET", "/incidents"), CRASH_SERVICE,
+          f"brain restart_service on {FROZEN_SERVICE} without approval: {len(restarted or [])} audited call(s)")
+    replaced = wait_until(lambda: wait_deployment(FROZEN_SERVICE, timeout=5)
+                          if frozen not in pods(FROZEN_SERVICE) else None, 240, 5)
+    frozen_incident = wait_until(lambda: incident_with_action(api("GET", "/incidents"), FROZEN_SERVICE,
                                                              "restart_service", t0 - 5), 300, 5)
-    outcome = (crash_incident or {}).get("verification", {}).get("outcome")
-    check("crash_recovered", bool(replaced and outcome == "recovered"),
+    outcome = (frozen_incident or {}).get("verification", {}).get("outcome")
+    check("frozen_service_recovered", bool(replaced and outcome == "recovered"),
           f"frozen pod replaced: {bool(replaced)}; incident verification: {outcome}")
 
     # 2. bad deploy -> rollback only after approval (MUST)
@@ -546,7 +546,8 @@ def run_shop(head, state):
     driver.scale_to(SCALE_SERVICE, 1)
     down1 = wait_deployment(SCALE_SERVICE, 1, 240)
     check("driver_scale", bool(up2 and down1) and all(item["ok"] for item in driver.audit),
-          f"{SCALE_SERVICE} 1 -> 2 -> 1 through KubernetesDriver.scale_to (not a brain decision)")
+          f"driver check, not a brain decision (nice-to-have): {SCALE_SERVICE} 1 -> 2 -> 1 through "
+          "KubernetesDriver.scale_to")
 
 
 # ------------------------------------------------------------------ Online Boutique (roadmap; unchanged path)

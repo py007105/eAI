@@ -41,7 +41,7 @@ def test_build_command():
 def test_fault_services_exist_in_the_shop_manifest():
     deployments = {d["metadata"]["name"]: d for d in yaml.safe_load_all(k.SHOP_MANIFEST.read_text(encoding="utf-8"))
                    if d and d["kind"] == "Deployment" and d["metadata"]["namespace"] == "shop"}
-    for name in (k.CRASH_SERVICE, k.BAD_SERVICE, k.SCALE_SERVICE):
+    for name in (k.FROZEN_SERVICE, k.BAD_SERVICE, k.SCALE_SERVICE):
         assert name in deployments and name in k.SHOP_SERVICES
         # `kubectl set image deployment/<s> <s>=...` needs the container to be named like the service
         assert deployments[name]["spec"]["template"]["spec"]["containers"][0]["name"] == name
@@ -123,8 +123,6 @@ def test_deployment_ready_and_image():
 
 def test_shop_results_are_execution_specific_and_say_live_only_when_all_pass(monkeypatch, tmp_path):
     monkeypatch.setattr(k, "ROOT", tmp_path)
-    monkeypatch.setattr(k, "SHOP_LATEST_MD", tmp_path / "docs/results/k8s_e2e.md")
-    monkeypatch.setattr(k, "SHOP_LATEST_JSON", tmp_path / "results/live-checks/kind_e2e_shop.json")
     monkeypatch.setattr(k, "CHECKS", [{"check": "auto_restart", "result": "PASS", "detail": "x", "t": "t"}])
     md, raw = k.write_results("abc", "run-1", "start", "sha256:img", target="shop",
                               configuration={"target": "shop"}, branch="team/k8s-rajat")
@@ -132,7 +130,9 @@ def test_shop_results_are_execution_specific_and_say_live_only_when_all_pass(mon
     assert md.name == "kind_e2e_shop_run-1.md" and raw.name == "kind_e2e_shop_run-1.json"
     assert data["target"] == "shop" and data["branch"] == "team/k8s-rajat" and data["image"]["id"] == "sha256:img"
     assert "**verified live**" in md.read_text(encoding="utf-8")
-    assert k.SHOP_LATEST_MD.read_text(encoding="utf-8") == md.read_text(encoding="utf-8")
+    # only the execution-specific files: no shared "latest" file and no docs/results/k8s_e2e.md
+    written = sorted(f.relative_to(tmp_path).as_posix() for f in tmp_path.rglob("*") if f.is_file())
+    assert written == ["docs/results/kind_e2e_shop_run-1.md", "results/live-checks/kind_e2e_shop_run-1.json"]
     monkeypatch.setattr(k, "CHECKS", [{"check": "auto_restart", "result": "FAIL", "detail": "x", "t": "t"}])
     md2, _ = k.write_results("abc", "run-2", "start", None, target="shop", configuration={"target": "shop"})
     assert "verified live**" not in md2.read_text(encoding="utf-8")
