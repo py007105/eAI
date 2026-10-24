@@ -1,5 +1,21 @@
 # EternalAI Console handoff
 
+## Existing backend configuration recheck — 25 October 2026 (IST)
+
+Follow-up against console `a622b20`: located the authorized backend configuration at `D:\eAI\eAI-release\.env` (existence only; contents never opened). Existing stopped containers identify `D:\eAI\eAI-demo-stable-1` as their Compose working directory, at `demo-stable-1` / `49155ea`. Its README documents `docker compose up -d`. The existing brain image ID is `sha256:cffc24a4b92c09d2d2c1c295756b863385173408aa1a102c6c5eb9cfc070612f`; that is observed image identity, not an independent verification of image source contents.
+
+Preflight found 3.5 GiB available RAM, no running containers or Python/kind processes, and no atomic lock owner file. The lock display was FREE. Before taking the lock or starting containers, the existing configuration was validated with:
+
+```powershell
+docker compose -p eai --env-file D:\eAI\eAI-release\.env -f D:\eAI\eAI-demo-stable-1\docker-compose.yml config --quiet
+```
+
+**Actual result: exit 1; required variable `CHAOS_TOKEN` is missing or empty.** Only required-variable names were extracted from captured diagnostics; raw diagnostics and secret values were not printed. A file existing is not proof of usable configuration. No startup command was run, no lock was acquired, and no containers, volumes, modes, code outside `console/`, protected branches, or tags were changed.
+
+Exact setup required: the owner must set a real, non-default `CHAOS_TOKEN` in the existing backend file `D:\eAI\eAI-release\.env`, outside the frontend. Keep the existing approval and provider configuration intact. `ETERNALAI_APPROVAL_TOKEN` enables protected actions but is not a frontend credential and is not required for these observational GET checks. No credentials should be copied into `console/` or browser storage.
+
+After configuration validation succeeds, repeat the RAM/process checks, atomically acquire the shared lock using `scripts/stack_lock.py`, and use the documented Compose startup with `--no-build --no-recreate --pull never` to preserve the saved containers and their operating settings. Verify `GET http://127.0.0.1:8000/health`, then rerun the console browser checks in both development and preview. The expected API address is **not yet verified reachable**. Real GET response mapping, populated pages, and actual incident deep links remain blocked. No additional live screenshots or successful live results are claimed by this recheck.
+
 ## Integration follow-up — 25 October 2026, 01:36 IST
 
 **Live integration remains blocked, not verified.** Direct `GET http://127.0.0.1:8000/health` was unreachable. Docker inspection found no running containers and existing stopped `eai` containers. The documented normal startup command is `docker compose up -d` from the repository root. This worktree has no `.env` (existence checked only), and `CHAOS_TOKEN` is absent from the process environment; Compose requires a real value for that variable. `ETERNALAI_APPROVAL_TOKEN` is also absent, but is not needed by the read-only frontend. No secret file was read or copied. No backend, Docker service, fault, or operational action was started. The next live check requires owner-provided backend configuration and the shared Docker lock before the normal startup command; do not substitute defaults or recreate the saved stack speculatively.
