@@ -67,6 +67,7 @@ class Incident:
     before: dict | None = None      # measured when the incident was diagnosed
     after: dict | None = None       # measured after the verification window
     root_features: dict | None = None   # the root service's window features at diagnosis (learn store, dataset-A-style rows)
+    candidates: list = field(default_factory=list)  # runbooks in ranked order at diagnosis; a failed fix retries the next one once
 
     def log(self, msg):
         self.timeline.append({"t": time.time(), "msg": msg})
@@ -346,6 +347,7 @@ class Engine:
             inc.likely_cause, inc.confidence, inc.abstained = d["label"], d["confidence"], d["abstained"]
             inc.evidence = d["evidence"]
             inc.root_features = d.get("root_features")
+            inc.candidates = list(d["ctx"].get("candidates") or [])
             # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
             # report replaces the text later (a live Gemini call took ~7 s in testing).
             inc.report, inc.diagnosed = d["report"].model_dump(), True
@@ -500,6 +502,7 @@ class Engine:
         v = verify_recovery(config.OBSERVATION_S)
         v["t"] = time.time()
         inc.verification = v
+        act["verification"] = v          # per attempt: a retry replaces inc.verification, not this
         inc.after = self._app_snapshot(probe=False) | {"checkout_success": v["success_rate"]}
         inc.log(f"verification: {v['outcome']} ({v['success_rate']:.0%} of {v['probes']} checkouts)")
         log_v = getattr(self.executor, "log_verification", None)
@@ -509,10 +512,51 @@ class Engine:
             self.policy.record_recovered(svc)
             inc.status, inc.closed_t = "recovered", time.time()
             remember_verified(inc.likely_cause, svc, (inc.report or {}).get("summary", ""), act["runbook_id"])
+        elif self._retry_second_candidate(inc, act, v):
+            return               # the incident stays active: the second fix is executing, awaiting approval, or was blocked
         else:
             inc.status = v["outcome"] if v["outcome"] != "unresolved" else "unresolved"
             inc.closed_t = time.time()
             self._preserve(inc)  # stop repeated interventions; policy breaker handles the rest
+        self.last_closed = {"t": time.time()}
+        self.persist.runs.clear()
+        self.first_anom.clear()
+
+    def _retry_second_candidate(self, inc: Incident, act: dict, v: dict) -> bool:
+        """Plan P8/L5 (max 2 attempts per incident): after a failed verification, propose the next ranked candidate runbook
+        ONCE, through the unchanged policy (approval, protected services, kill switch, breaker, hourly cap all apply).
+        - The retry waits out the remaining per-service cooldown instead of bypassing it.
+        - If the retry also fails verification, the incident is escalated to a human.
+        Returns True when this call decided the incident's next state (retry proposed, or escalated after the retry);
+        False when there is no different candidate (the caller closes the incident as before)."""
+        executed = [a for a in inc.actions if a.get("executed")]
+        if len(executed) >= 2:
+            inc.status, inc.closed_t = "escalated", time.time()
+            inc.log(f"retry with {act['runbook_id']} did not recover ({v['outcome']}): escalated to a human with "
+                    "evidence preserved")
+            self._preserve(inc)
+            self._clear_after_close()
+            return True
+        used = {a["runbook_id"] for a in inc.actions}
+        nxt = next((r for r in inc.candidates if r not in used), None)
+        if nxt is None:
+            return False
+        acts = self.policy.history.get(act["service"], [])
+        wait = max(0.0, self.policy.rulebook.cooldown_s - (time.time() - acts[-1]) + 0.5) if acts else 0.0
+        inc.log(f"verification {v['outcome']} after {act['runbook_id']}: retrying once with the second candidate {nxt}"
+                + (f" after the remaining {wait:.0f} s cooldown" if wait else ""))
+        if wait:
+            time.sleep(wait)
+        with self.lock:
+            if inc.status != "verifying":      # closed meanwhile (e.g. reset_run_state): do nothing
+                return True
+            unusual = (inc.diagnosis or {}).get("anomaly_source") == "forest_only"
+            self._propose(inc, act["service"], nxt, unusual=unusual)
+            if inc.status in CLOSED:           # the policy blocked the retry: _propose escalated and preserved it
+                self._clear_after_close()
+        return True
+
+    def _clear_after_close(self):
         self.last_closed = {"t": time.time()}
         self.persist.runs.clear()
         self.first_anom.clear()
