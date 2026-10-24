@@ -5,8 +5,8 @@ Numbers in this block come from `docs/results/benchmark_v2.md` and `docs/results
 | v2 figure | value |
 |---|---|
 | evaluated rows (valid original + replacement) | {{n_eval}} ({{n_valid}} + {{n_rerun}}) |
-| autopilot, supported faults: detected / recovered by its own check | {{ap_det}} / {{ap_rec}} |
-| ask-first, supported faults: detected / recovered | {{af_det}} / {{af_rec}} |
+| autopilot, supported faults: detected / recovered by its own check (v2 benchmark, old policy; current unattended v3: 10/30 recovered alone) | {{ap_det}} / {{ap_rec}} |
+| ask-first, supported faults: detected / recovered (approvals by a simulated operator after 5 s; v2 benchmark, old policy) | {{af_det}} / {{af_rec}} |
 | autopilot, healthy runs: incidents / executed actions | {{ap_hinc_k}} / {{ap_hact_k}} |
 | threshold_restart, same healthy seeds: incidents | {{thr_hinc_k}} |
 | cpu_burn (unseen), autopilot abstained | {{cpu_v2}} in v2; {{v1_cpu}} in v1 (different seeds, not pooled) |
@@ -19,7 +19,7 @@ On healthy runs the same-seed threshold_restart baseline opened an incident in {
 Four learned components, all trained on this application's own runs (105 runs used, two telemetry conditions): per-service anomaly limits plus an IsolationForest (the forest adds nothing measurable over the learned limits, `docs/results/detector_margin.md`), a calibrated gradient-boosting fault classifier with a nearest-neighbour novelty gate, a gradient-boosting root-cause ranker, and a Theil-Sen trend forecaster (live check: memory lead FAILED, median 18.3 s vs 30 s; gradual disk fill PASSED, median 86.4 s). The policy, the runbooks and the verification are deterministic code; the LLM only writes the report and cannot act.
 
 **Is this overfitted to one application?**
-It is specific to one application, and we say so. Cross-validation scores are optimistic (same fault injector, four iterations), and the benchmark seeds use the same injector. The v2 counts ({{ap_rec}} recovered, {{ap_hinc_k}} healthy incidents) come from 3 runs per fault type and carry wide intervals (an 18-of-18 result is consistent with a true rate near {{wilson_lo_18}}%). On public cross-system data fault classification transfers weakly (leave-one-system-out macro-F1 about 0.62, `docs/results/transfer_re1.md`). We have not shown that the models work on any other system.
+It is specific to one application, and we say so. Cross-validation scores are optimistic (same fault injector, four iterations), and the benchmark seeds use the same injector. The v2 counts (v2 benchmark, old policy, approvals by a simulated operator; current unattended v3: 10/30 recovered alone) ({{ap_rec}} recovered, {{ap_hinc_k}} healthy incidents) come from 3 runs per fault type and carry wide intervals (an 18-of-18 result is consistent with a true rate near {{wilson_lo_18}}%). On public cross-system data fault classification transfers weakly (leave-one-system-out macro-F1 about 0.62, `docs/results/transfer_re1.md`). We have not shown that the models work on any other system.
 
 **How would it work with other applications?**
 The architecture is portable (metrics, container state, topology, allow-listed runbooks, a verification probe), but the **trained models are not**: they would need new training runs on the new application with a fault injector, and the runbooks and topology would have to be defined for it. Nothing here was tested on a second application.

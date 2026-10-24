@@ -4,6 +4,11 @@
 > The live system runs the calibrated models trained on live stack telemetry (`models/artifacts/`),
 > documented in `docs/results/models_cv_v2.md` and benchmarked in `docs/results/benchmark_v2.md`.
 
+> **Integrator labels, 24 Oct 2026** (numbers below unchanged; a rerun of `models/eval_dataset_a.py` rewrites this file without these labels):
+> - The **0.564 / 0.376** below are a **separate experiment with 369 synthetic training rows; not comparable** with the real-rows-only classifier in `docs/results/dataset_a_classifier.md` (0.385 plan features / 0.449 live-computable features). The two differ in model, training data and averaging. No claim is made that synthetic rows improved accuracy.
+> - 0.564 averages over the test's truth classes; **0.376 is the strict value** (predictions outside the truth classes count). Pitch documents use the strict value for this experiment, and do not compare it with a majority baseline computed another way.
+> - The 50.0 % unknown-fault result: **the threshold does not separate unknown faults reliably** (39.6 % of known test cases were also flagged unknown).
+
 ## 1. Setup and Dataset Split
 
 - **Script**: `models/eval_dataset_a.py` (fixed random seed = 42).
@@ -53,13 +58,13 @@ The table below places the offline Dataset-A model numbers beside the current pu
 |---|---|---|---|---|---|
 | Offline Dataset-A | HistGradientBoosting (balanced) | Cross-system transfer (`train_ticket`, 53 cases) | Macro-F1 **0.564**, Balanced Acc **0.586** | `docs/results/dataset_a_model.md` | Offline report only (NOT live) |
 | Offline Dataset-A | HistGradientBoosting (threshold=0.9840) | Unknown fault abstention (`logic_bug`, 18 cases) | Flagged unknown: **50.0%** | `docs/results/dataset_a_model.md` | Offline report only (NOT live) |
-| Live Application | Calibrated Gradient Boosting + IsolationForest | Live stack runs grouped CV (105 runs, 33,576 windows) | Macro-F1 **0.991**, ECE **0.003**, False alarm 1.1/100 service-min | `docs/results/models_cv_v2.md` | **Verified live model** |
+| Live Application | Calibrated Gradient Boosting + IsolationForest | Live stack runs grouped CV (105 runs, 33,576 windows) | Macro-F1 **0.991**, ECE **0.003**, False alarm 1.1/100 service-min | `docs/results/models_cv_v2.md` | Offline CV of the model the demo uses (in-distribution, optimistic) |
 | Public RCAEval Transfer | Gradient Boosting (leave-one-system-out) | RCAEval RE1 (3 systems, 300 incidents, 900 rows) | Mean Macro-F1 **0.616** [0.586, 0.644] (TT 0.682, SS 0.590, OB 0.575) | `docs/results/transfer_re1.md` | Offline public benchmark |
-| Live Benchmark v2 | Autopilot (policy + runbooks) | Held-out seeds (18 supported runs, 24 healthy runs) | Recovered **18/18 [82%, 100%]**, Healthy actions **0/24**, Failed req **11.15%** | `docs/results/benchmark_v2.md` | **Verified live gate** |
+| Live Benchmark v2 | Autopilot (policy + runbooks) | Held-out seeds (18 supported runs, 24 healthy runs) | Recovered **18/18 [82%, 100%]** (v2 benchmark, old policy, approvals by a simulated operator; current unattended v3: 10/30 recovered alone), Healthy actions **0/24**, Failed req **11.15%** | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live (old policy) |
 
 ## 5. Limitations and Discussion
 
 1. **Few real cases**: The entire Dataset A contains only 181 real training cases across 11 fault classes; cross-system transfer relies on small sample sizes.
 2. **Single-source bias**: 64% of planned fault types originate from only a single source system (Cramér's V = 72% between source and label), meaning models can easily learn source artifacts rather than generalized fault physics.
-3. **Synthetic rows in training**: While synthetic oversampling (369 rows) balanced class representations to 50 rows each, it cannot create new underlying domain knowledge. Cross-system generalization remains roughly 55-60% (here 56.4% macro-F1, 58.6% balanced accuracy on Train Ticket).
+3. **Synthetic rows in training**: While synthetic oversampling (369 rows) balanced class representations to 50 rows each, it cannot create new underlying domain knowledge. This single run measured 56.4% macro-F1 over the truth classes (0.376 strict) and 58.6% balanced accuracy on Train Ticket; no general claim about cross-system generalisation is made from it.
 4. **Live separation**: The live EternalAI detector and classifier operate on high-frequency 10 s rolling windows of container metrics and traces specifically calibrated for the monitored stack, where in-distribution performance reaches 0.991 macro-F1. Cross-system transfer remains a known open challenge across the AIOps literature.

@@ -1,3 +1,5 @@
+Superseded by docs/DEMO_CHECKLIST.md (rehearsed); kept for reference.
+
 # EternalAI: 5-Minute Live Demo Script & Fallback Plan
 
 This script guides the presenter through an exact, timed 5-minute live demonstration for hackathon judges, followed by contingency steps if local infrastructure fails.
@@ -23,7 +25,7 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
 ### 1. Context & Architecture (0:00 – 0:45)
 - **What to show**: Dashboard home page showing four healthy green services (`web`, `orders`, `payments`, `inventory`), zero open incidents, and the mode set to **Ask first**.
 - **What to say**:
-  > *"When microservices fail, engineers face alert storms, delayed diagnosis, and stressful late-night manual fixes. EternalAI is an autonomous operations assistant that closes the loop: observe, detect, predict, diagnose root cause, select safe runbooks, and verify recovery. It runs inside the cluster, observes live Prometheus telemetry every 2 seconds, and acts deterministically under strict policy."*
+  > *"When microservices fail, engineers face alert storms, delayed diagnosis, and stressful late-night manual fixes. EternalAI is a policy-governed operations assistant (low-risk fixes automatic, high-risk fixes need human approval) that closes the loop: observe, detect, predict, diagnose root cause, select safe runbooks, and verify recovery. It runs inside the cluster, observes live Prometheus telemetry every 2 seconds, and acts deterministically under strict policy."*
 - **What the judge sees**: Clean topology map, real-time telemetry metrics, and the safety policy configuration.
 
 ---
@@ -61,13 +63,13 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
   - The metrics show abnormal CPU, but the classifier flags the window as novel or low confidence.
   - The incident is marked **insufficient_evidence** and escalated to humans without executing random, destructive actions.
 - **What to say (Honest limitation)**:
-  > *"In benchmark v2, EternalAI abstained correctly in 2 of 3 runs. In one run—seed 426—the novelty gate missed and restarted the wrong service (`inventory` instead of `orders`). We diagnosed this post-mortem and introduced a close-candidates abstention rule. We do not claim perfect omniscience; we engineer safeguards to constrain risk."*
+  > *"In benchmark v2, EternalAI abstained correctly in 2 of 3 runs. In one run—seed 426—the novelty gate missed and restarted the wrong service (`inventory` instead of `orders`). We diagnosed this post-mortem and added a close-candidates abstention rule afterwards; it is unit-tested only, was never triggered live, and its live gate check failed, so seed 426 remains a standing limitation. We do not claim perfect omniscience; we engineer safeguards to constrain risk."*
 
 ---
 
 ### 4. Honest Numbers & Evidence Review (3:45 – 4:30)
 - **What to show**: Navigate to or display the Headline Numbers table from `docs/pitch/PITCH.md`:
-  - **18/18** supported recoveries in benchmark v2 autopilot [82%, 100% Wilson CI].
+  - **18/18** supported recoveries in benchmark v2 autopilot [82%, 100% Wilson CI]: v2 benchmark, old policy, approvals by a simulated operator; current unattended v3: 10/30 recovered alone.
   - **1/24** false incidents opened on healthy runs (vs **6/24** for threshold restart baseline).
   - **0/24** harmful actions on healthy runs.
   - **Disk fill forecast**: 86.4 s median lead time (PASSED >= 30 s target).
@@ -79,7 +81,7 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
 
 ### 5. Wrap-up & Q&A Transition (4:30 – 5:00)
 - **What to say**:
-  > *"EternalAI demonstrates that autonomous SRE operations can be safe, predictive, and verified without handing unconstrained terminal access to an LLM. The core is modular: Docker today, Kubernetes on Rajat's branch, and interactive Telegram bot integration on Sanskar's branch. We are ready for your questions."*
+  > *"EternalAI demonstrates that policy-governed SRE operations (low-risk fixes automatic, high-risk fixes need human approval) can be safe and verified without handing unconstrained terminal access to an LLM. The core is modular: Docker today; Kubernetes validated offline (Helm lint+render, 26/26 resources, 57 tests) but not run on a live cluster; and a separate Telegram bot over the REST API, verified live in a dry run. We are ready for your questions."*
 
 ---
 

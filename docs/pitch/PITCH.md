@@ -1,6 +1,8 @@
 # EternalAI: Pitch Document
 
-An autonomous operations and predictive recovery assistant for backend services.
+A policy-governed operations and recovery assistant for backend services: low-risk fixes run automatically; high-risk fixes need human approval.
+
+The demo runs tag `demo-stable-1` (`49155ea`). Every number here is taken from `docs/CURRENT_NUMBERS.md`, which also gives its conditions.
 
 ---
 
@@ -60,13 +62,13 @@ flowchart TD
     subgraph OperatorUI["Operator & Evaluation Interfaces"]
         Dashboard["Dash UI Dashboard (:8050)"]
         Evaluator["Independent Evaluator (:8200) <br/> [Private Fault Truth & Loadgen]"]
-        Telegram["Telegram Notifications <br/> [Sanskar's branch / PR]"]
-        K8s["Kubernetes Native Driver <br/> [Rajat's branch / roadmap]"]
+        Telegram["Telegram bot (separate process) <br/> [REST API only; verified live in a dry run]"]
+        K8s["Kubernetes driver + Helm chart <br/> [validated offline: Helm lint+render, 26/26 resources, 57 tests; not run on a live cluster]"]
     end
 
     Prom --> Engine
     Engine --> Dashboard
-    Engine -. Approvals / Reports .-> Telegram
+    Telegram -. bot polls REST API .-> Engine
     Evaluator -. Inject Faults & Score Impact .-> SUT
     Evaluator -. Compute User Impact (Failed Req %) .-> Brain
 ```
@@ -77,7 +79,7 @@ flowchart TD
 
 | Capability | Live Today (Verified on Stack) | Roadmap (Branches / Future) |
 |---|---|---|
-| **Runtime Environment** | Docker Compose (4 services: web, orders, payments, inventory) | Kubernetes / Kind native (Rajat's branch `team/k8s-rajat`) |
+| **Runtime Environment** | Docker Compose (4 services: web, orders, payments, inventory) | Kubernetes (`team/k8s-rajat`): validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster |
 | **Telemetry Ingestion** | Prometheus metrics every 2 s + Docker container state | OpenTelemetry collector + service-mesh traces |
 | **Detection** | Per-service learned limits + IsolationForest | Dynamic seasonal baselines |
 | **Forecasting** | Live Theil-Sen slope forecaster (disk fill & memory leak) | Multi-variate LSTM / Prophet for periodic seasonal spikes |
@@ -86,7 +88,7 @@ flowchart TD
 | **Fix Actions** | 4 audited Docker runbooks (restart, recreate, rollback, temp clean) | Kubernetes rolling restart, HPA horizontal scaling, pod migration |
 | **Safety Governance** | Deterministic rulebook (cooldowns, circuit breaker, ask-first token) | RBAC-partitioned namespaces, multi-party approver quorums |
 | **Verification** | Internal 4-service synthetic checkout pass over observation window | Independent evaluator-side e2e probe with audit traces |
-| **Notifications** | Dash UI live incident views + REST API | Telegram Bot interactive approval buttons (Sanskar's branch) |
+| **Notifications** | Dash UI live incident views + REST API; Telegram approval via a separate bot over the REST API, verified live in a dry run (a real tap approved a rollback) | Telegram merged into the release build |
 
 ---
 
@@ -98,13 +100,14 @@ All numbers are backed by executable scripts and generated result files in the r
 |---|---|---|---|---|---|
 | **Disk Fill Warning Lead Time** | **86.4 s** (median) | >= 30 s | 5 warned runs [73.7s, 75.5s, 86.4s, 86.5s, 87.0s]; watch-only mode | `docs/results/forecast_check.md` | **Verified live** |
 | **Memory Leak Warning Lead Time** | **18.3 s** (median) | >= 30 s | **FAILED TARGET**: 5 warned runs [8.1s, 9.8s, 18.3s, 19.1s, 34.5s]; leak slope steep before OOM limit | `docs/results/forecast_check.md` | **Verified live (honest failure)** |
-| **Healthy-Run False Incidents** | **1 / 24** (4.2%) | <= 2 / 24 | Autopilot on fresh v2 seeds (200-318, 400-429); baseline `threshold_restart` opened **6 / 24** | `docs/results/benchmark_v2.md` | **Verified live** |
+| **Healthy-Run False Incidents** | **1 incident in 24 healthy runs** (v2) vs **6 / 24** for the `threshold_restart` baseline; **0 in 10** (v3) | <= 2 / 24 | v2 autopilot arm, 24 healthy runs (seeds 200-318, 400-429; old policy); v3 unattended autopilot arm, 10 healthy runs (current policy) | `docs/results/benchmark_v2.md`, `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md` | **Verified live** |
 | **Harmful Actions on Healthy Runs** | **0 / 24** (0%) | 0 / 24 | 0 executed actions across 24 autopilot and 8 ask-first healthy runs | `docs/results/benchmark_v2.md` | **Verified live** |
-| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | 3 runs each across 6 faults; verified by internal synthetic checkout; mean failed requests: 11.15% | `docs/results/benchmark_v2.md` | **Verified live** |
-| **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | Human approval mode; 0 approval failures; verified by internal synthetic checkout | `docs/results/benchmark_v2.md` | **Verified live** |
-| **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (66.7%) | >= 2 / 3 | In v2 seed 426 failed by restarting `inventory` (wrong service); now guarded by close-candidates rule | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | **Verified live** |
-| **Cross-System Fault Transfer (Unseen System)** | **56.4%** macro-F1 | ~55-60% | Train Ticket (53 real cases), HistGradientBoosting trained on Dataset A; balanced accuracy 58.6% | `docs/results/dataset_a_model.md` | **Offline result** |
-| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | 105 runs, 33,576 windows of monitored application; ECE = 0.003; optimistic in-distribution | `docs/results/models_cv_v2.md` | **Verified live model** |
+| **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy, approvals by a simulated operator after 5 s (no person reviewed); 3 runs each across 6 faults; verified by internal synthetic checkout. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | **Verified live** |
+| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy (autopilot also ran rollbacks and recreates without asking), approvals by a simulated operator; mean failed requests 11.15%. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | **Verified live** |
+| **Live human approval** | rollback approved by a person in the dashboard (58.1 s) and by a Telegram tap (82.3 s); both verified recovered | - | demo rehearsal and dry run 1 on `demo-stable-1`, 300 s demo approval window; not a benchmark number | `docs/results/demo_rehearsal_20261024-1854.md`, `docs/results/dry_run_1_20261024-1948.md` | **Verified live** |
+| **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (v2) and **4 / 5** (v3) | >= 2 / 3 | v2 seed 426 restarted a wrong service (`inventory`), a standing limitation. A close-candidates abstain rule was added later; it was not triggered live, and its gate check (G4) failed on candidate `71eb2f5` | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | **Verified live (rule: tests only)** |
+| **Cross-System Fault Transfer (Unseen System)** | **0.385** (plan features) / **0.449** (live-computable features) macro-F1 | majority 0.132 (same averaging) | Train Ticket (53 real cases), real rows only, macro-F1 over the test classes; offline, not used by the demo. The unknown-fault threshold does not separate unknown faults reliably | `docs/results/dataset_a_classifier.md` | **Offline result** |
+| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | offline grouped cross-validation on this application's own 105 runs (33,576 windows); in-distribution, optimistic; ECE = 0.003. This is the classifier the demo uses | `docs/results/models_cv_v2.md` | **Offline CV** |
 
 ---
 
@@ -112,5 +115,5 @@ All numbers are backed by executable scripts and generated result files in the r
 
 **Team Brahmastra** (Hackyard Build 2026, IIT Guwahati):
 - **Mihir Pukale** (Track Lead): Knowledge base review and outcome ranking validation, offline ML evaluation and cross-system transfer report, pitch pack and technical documentation.
-- **Rajat Raghatwan**: Kubernetes-native migration, driver abstraction layer, Helm chart packaging, and Kind cluster end-to-end integration.
+- **Rajat Raghatwan**: Kubernetes driver abstraction layer, Helm chart packaging and a kind end-to-end script (validated offline; not run on a live cluster).
 - **Sanskar Randive**: Telegram bot integration with interactive approval flows, Dash UI dashboard UX improvements, and notification dispatching.

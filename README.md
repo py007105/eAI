@@ -1,6 +1,8 @@
 # EternalAI
 
-An autonomous operations and predictive recovery assistant for backend microservices that detects anomalies, forecasts resource exhaustion, identifies root-cause services, executes policy-governed Docker runbooks, and verifies recovery with synthetic end-to-end checkouts.
+A policy-governed operations and recovery assistant for backend microservices. Low-risk fixes run automatically; high-risk fixes need human approval. It detects anomalies, forecasts resource exhaustion, identifies root-cause services, executes allow-listed Docker runbooks under a rulebook, and verifies recovery with synthetic end-to-end checkouts.
+
+The demo runs tag `demo-stable-1` (`49155ea`). Current numbers, with their conditions and sources: `docs/CURRENT_NUMBERS.md`.
 
 ## Headline Numbers (Current, Verified & Honest)
 
@@ -10,13 +12,14 @@ All numbers are produced by committed scripts from raw benchmark and test record
 |---|---|---|---|---|---|
 | **Disk Fill Warning Lead Time** | **86.4 s** (median) | >= 30 s | 5 warned runs [73.7s, 75.5s, 86.4s, 86.5s, 87.0s]; watch-only mode | `docs/results/forecast_check.md` | Verified live |
 | **Memory Leak Warning Lead Time** | **18.3 s** (median) | >= 30 s | **FAILED TARGET**: 5 warned runs [8.1s, 9.8s, 18.3s, 19.1s, 34.5s]; steep fill slope before OOM | `docs/results/forecast_check.md` | Verified live (honest failure) |
-| **Healthy-Run False Incidents** | **1 / 24** (4.2%) | <= 2 / 24 | Autopilot on fresh v2 seeds; baseline `threshold_restart` opened **6 / 24** | `docs/results/benchmark_v2.md` | Verified live |
+| **Healthy-Run False Incidents** | **1 incident in 24 healthy runs** (v2) vs **6 / 24** for the `threshold_restart` baseline; **0 in 10** (v3) | <= 2 / 24 | v2 autopilot arm, 24 healthy runs (old policy); v3 unattended autopilot arm, 10 healthy runs (current policy) | `docs/results/benchmark_v2.md`, `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md` | Verified live |
 | **Harmful Actions on Healthy Runs** | **0 / 24** (0%) | 0 / 24 | 0 actions executed in 24 autopilot and 8 ask-first healthy runs | `docs/results/benchmark_v2.md` | Verified live |
-| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | 3 runs each across 6 faults; verified by internal synthetic checkout; mean failed req: 11.15% | `docs/results/benchmark_v2.md` | Verified live |
-| **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | Human approval mode; 0 approval failures; verified by internal checkout | `docs/results/benchmark_v2.md` | Verified live |
-| **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (66.7%) | >= 2 / 3 | Seed 426 restarted wrong service (`inventory`); now guarded by close-candidates rule | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | Verified live |
-| **Cross-System Fault Transfer** | **56.4%** macro-F1 | ~55-60% | Train Ticket (53 real cases), HistGradientBoosting on Dataset A; balanced accuracy 58.6% | `docs/results/dataset_a_model.md` | Offline result (NOT live) |
-| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | 105 runs, 33,576 windows of monitored application; ECE = 0.003; in-distribution | `docs/results/models_cv_v2.md` | Verified live model |
+| **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy, approvals by a simulated operator after 5 s (no person reviewed); 3 runs each across 6 faults; verified by internal checkout. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
+| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy (autopilot also ran rollbacks and recreates without asking), approvals by a simulated operator; mean failed req 11.15%. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
+| **Live human approval** | rollback approved by a person in the dashboard (58.1 s) and by a Telegram tap (82.3 s); both verified recovered | - | demo rehearsal and dry run 1 on `demo-stable-1`, 300 s demo approval window; not a benchmark number | `docs/results/demo_rehearsal_20261024-1854.md`, `docs/results/dry_run_1_20261024-1948.md` | Verified live |
+| **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (v2) and **4 / 5** (v3) | >= 2 / 3 | v2 seed 426 restarted a wrong service, a standing limitation. A close-candidates abstain rule was added later; it was not triggered live, and its gate check (G4) failed on candidate `71eb2f5` | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | Verified live (rule: tests only) |
+| **Cross-System Fault Transfer** | **0.385** (plan features) / **0.449** (live-computable features) macro-F1 | majority 0.132 (same averaging) | Train Ticket (53 real cases), real rows only, macro-F1 over the test classes; offline, not used by the demo. The unknown-fault threshold does not separate unknown faults reliably | `docs/results/dataset_a_classifier.md` | Offline result (NOT live) |
+| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | offline grouped cross-validation on this application's own 105 runs (33,576 windows); in-distribution, optimistic; ECE = 0.003. This is the classifier the demo uses | `docs/results/models_cv_v2.md` | Offline CV |
 
 ## Architecture
 
@@ -56,13 +59,13 @@ flowchart TD
     subgraph OperatorUI["Operator & Evaluation Interfaces"]
         Dashboard["Dash UI Dashboard (:8050)"]
         Evaluator["Independent Evaluator (:8200) <br/> [Private Fault Truth & Loadgen]"]
-        Telegram["Telegram Notifications <br/> [Sanskar's branch / PR]"]
-        K8s["Kubernetes Native Driver <br/> [Rajat's branch / roadmap]"]
+        Telegram["Telegram bot (separate process) <br/> [REST API only; verified live in a dry run]"]
+        K8s["Kubernetes driver + Helm chart <br/> [validated offline: Helm lint+render, 26/26 resources, 57 tests; not run on a live cluster]"]
     end
 
     Prom --> Engine
     Engine --> Dashboard
-    Engine -. Approvals / Reports .-> Telegram
+    Telegram -. bot polls REST API .-> Engine
     Evaluator -. Inject Faults & Score Impact .-> SUT
     Evaluator -. Compute User Impact (Failed Req %) .-> Brain
 ```
@@ -97,7 +100,7 @@ Stop everything with `docker compose down`.
 > 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
 > 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
 >
-> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
+> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), the pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs, and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
 
 Short form limitations (full list in `docs/EVALUATION.md`):
 72 training runs, one application, scripted faults, laboratory public data, optimistic cross-validation scores, n = 5 per benchmark cell, recovery **self-reported** by the system's own checkout (the independent measure is the load generator's failed-request %), benchmark brains were configured without LLM keys but the per-run report provider is not recorded (design limitation), the Gemini path tried only a few times and Groq untested.
@@ -142,8 +145,8 @@ v1 results above are kept unchanged. v2 is **not** presented as "the model is be
 
 | v2 (seeds 200-318 and the replacement block 400-429) | observed | certainty |
 |---|---|---|
-| supported faults, autopilot: detected / recovered (own verification) | 18/18 [82%, 100%] / 18/18 [82%, 100%] | 18 runs, 3 per fault type; Wilson 95% interval lower bound about 82% |
-| supported faults, ask-first (human approval): detected / recovered | 18/18 [82%, 100%] / 18/18 [82%, 100%] | same sample sizes |
+| supported faults, autopilot: detected / recovered (own verification; v2 benchmark, old policy; current unattended v3: 10/30 recovered alone) | 18/18 [82%, 100%] / 18/18 [82%, 100%] | 18 runs, 3 per fault type; Wilson 95% interval lower bound about 82% |
+| supported faults, ask-first (approvals by a simulated operator after 5 s; v2 benchmark, old policy): detected / recovered | 18/18 [82%, 100%] / 18/18 [82%, 100%] | same sample sizes |
 | healthy runs, autopilot: incidents opened / actions executed | 1/24 / 0/24 | upper bound of the interval for 1 in 24 is about 20% |
 | healthy runs, threshold_restart on the same seeds: incidents opened | 6/24 | |
 | unseen fault cpu_burn, autopilot: abstained | 2/3 (v1: 4/5, other seeds, not pooled) | seed 426 restarted the wrong service (post-mortem in `docs/postmortems/cpu_burn_seed426.md`) |
