@@ -17,7 +17,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
   - mean failed-request % 13.51;
   - mean detection 12.11 s;
   - median time to verified recovery 48.7 s.
-- **Healthy runs:** 0 of 8 opened an incident; 0 executed an action.
+- **Healthy runs, v2 ask-first arm (8 runs: 4 traffic surge + 4 good deploy):** 0 of 8 opened an incident; 0 executed an action.
 - **Source:** `docs/results/benchmark_v2.md` (sections 3 and 4) and `results/benchmark-v2/rerun/benchmark_v2_evaluated.jsonl`.
 
 **Live human approval:** shown in the kind demo (bad deploy → rollback, approved by a person at the demo). Not a benchmark number. **PENDING** until Rajat's live run is verified.
@@ -37,7 +37,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
   - disk fill 4/5;
   - memory leak 2/5;
   - latency, error spike and bad deploy 0/5 each. Their fixes need approval under this policy (medium or high risk), so they waited.
-- **Healthy runs:** 10 (surge and good deploy); 0 opened an incident; 0 actions.
+- **Healthy runs, v3 unattended autopilot arm (10 runs: 5 traffic surge + 5 good deploy):** 0 opened an incident; 0 actions.
 - **Harmful interventions:** 0 (an executed action on a non-target service) in 45 autopilot runs.
 - **cpu_burn** (unseen fault, no runbook): abstained correctly in 4 of 5.
 - **Memory leak with vs without EternalAI** (same 5 seeds, paired): failed-request % with unattended EternalAI 0.0, 0.0, 4.49, 5.0, 1.13; without (no brain) 0.0, 0.0, 0.0, 0.0, 0.3. Within these short runs the leak itself caused almost no failed requests, and EternalAI's restarts added some.
@@ -48,7 +48,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
   - recovered 18/18 supported faults;
   - mean failed-request % 11.15;
   - mean detection 11.78 s.
-  - Healthy runs: EternalAI opened an incident in 1 of 24; a simple threshold-restart baseline opened one in 6 of 24 on the same seeds.
+  - **Healthy runs, v2 autopilot arm (24 runs: 12 traffic surge + 12 good deploy):** EternalAI opened an incident in 1 of 24 and executed no action. The threshold-restart baseline arm, on the same 24 seeds, opened one in 6 of 24.
   - cpu_burn abstained 2 of 3. Seed 426 restarted the wrong service, a standing limitation (`docs/postmortems/cpu_burn_seed426.md`).
   - Source: `docs/results/benchmark_v2.md`.
 - **v1** (OLD POLICY, 225 runs, 5 arms): `docs/results/benchmark.md`.
@@ -56,7 +56,15 @@ Every number below comes from a committed results file or raw rows. The pooled v
 ## 4. Safety and live checks on candidate `71eb2f5` (current policy)
 - **Phase 1 safety live check:** 17/17 PASS (approvals, protected services, kill switch, high-risk needs approval). Source: `docs/results/v3_execution_20261024T001813-4cedc8bf.md`.
 - **Phase 4a live check:** 10/10 PASS. The learn store and `/feedback` are verified live. "Forest-only → approval" and "close candidates → abstain" were active but never triggered live, so they're unit-tested only. Same source.
-- **Release gate G2–G7 rerun** (one execution): **running now** (started 16:27 IST). The result and the `demo-stable-2` decision are still to come.
+- **Release gate G2–G7 rerun** (execution `20261024T162717-159af59f`, 16:27–17:20 IST): **FAILED, so `demo-stable-2` was NOT tagged.** The demo tag stays `demo-stable-1`.
+  - **G2** Phase 1: PASS, 17/17.
+  - **G3** Phase 4a: PASS, 10/10.
+  - **G4** (C1, close candidates → abstain): **FAIL**. The brain abstained ("two close root candidates"), made no proposal and ran no audited action. But the check also saw Docker `create`/`start` events on web, and its rule is "no Docker action on web". The source of those events is not recorded.
+  - **G5** (forest-only → approval, adaptive controlled integration stimulus): PASS, 5/5.
+  - **G6** (knowledge base): **FAIL**. K1 passed. In K2 the first incident followed the re-ranked list (rollback, waited for approval, expired unapproved). Then a second memory_leak incident ran `recreate_container` under autopilot without approval, while the check requires no unapproved action. That incident had no diagnosis fields, consistent with the forecast path (not verified).
+  - **G7** (restoration + unmodified smoke S1): PASS.
+  - C2 is INCOMPLETE as before (no forest-only incident occurs naturally); G5 replaces it as the gate item.
+  - Source: `results/executions/20261024T162717-159af59f/`.
 
 ## 5. Prediction (forecast), current system
 - **Forecast check v3** (20 pre-registered runs, watch-only):
@@ -68,10 +76,21 @@ Every number below comes from a committed results file or raw rows. The pooled v
 
 ## 6. Models and offline results (not live)
 - **Root-cause abstain margin:** 0.1215, from 316 out-of-fold training incidents. It would make 1 of 7 wrong-root incidents abstain, and 4 of 309 correctly ranked ones. Source: `docs/results/root_margin.md`.
-- **Public-dataset classifier (dataset A, offline, one run):** Train Ticket macro-F1 0.385 / 0.449 (plan definition, 53 incidents), against a majority baseline of 0.132 / 0.184. The unknown-fault threshold does **not** separate unknown faults. Source: `docs/results/dataset_a_classifier.md`.
+- **Public-dataset classifier (dataset A, offline, one run): NOT the model the demo uses.**
+  - **Model:** a gradient-boosting classifier trained by `models/train_dataset_a.py` on the owner's workbook, real rows only.
+  - **Test set:** Train Ticket, a system never seen in training; 53 test incidents under the plan's truth definition.
+  - **Result:** macro-F1 0.385 (plan feature list, variant P) and 0.449 (live-computable features, variant L). The majority-class baseline scores 0.132. The unknown-fault threshold does **not** separate unknown faults.
+  - **The demo** uses the live classifier, trained on our shop's own runs (10 s live windows). On these 53 Train Ticket incidents it abstains on all 53. That's not a fair comparison: most of its inputs are missing there.
+  - Source: `docs/results/dataset_a_classifier.md`.
+- **The plan's figures, 58% (v1) and 54-65% over 6 seeds (v2) on Train Ticket**, are a different measurement and are not changed here. They come from the owner's plan (`docs/ETERNALAI_PLAN.md`), trained on the plan's balanced v2 files, which include synthetic rows. Those files are not on this machine, so those figures were not reproduced; 0.385 / 0.449 is real rows only.
 - **NAB anomaly benchmark (offline, public data):** z-score detector recall 0.367 (11 of 30 windows), precision 0.174, 1.15 false alarms per day. Source: `docs/results/nab_detector_eval.md`.
 - **LLM reports, live (5 incidents):** 0 of 5 answered and schema-valid (timeouts). The deterministic template report and fix were used every time, and all 5 recovered. Source: `docs/results/llm_live.md`.
 - **Independence:** no v3 seed was used to train a model, build the knowledge base or pick a threshold. Source: `docs/results/eval_independence.md`.
+
+## Limitations for the demo
+- **Memory leak:** not used as a live demo (failed requests higher with EternalAI than without).
+- **Demo faults for autopilot:** crash and disk. Their fixes are low-risk and run without approval under the current policy.
+- One application, scripted faults; recovery is self-verified; seed-426 wrong-service restart; forecast memory lead FAILED.
 
 ## Roadmap (not run)
 - A scripted-approver arm for v3 (the existing `eternalai_ask_first` arm with `--approve-after`). Roadmap only, not tonight.
