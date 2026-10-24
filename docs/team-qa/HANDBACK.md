@@ -1,7 +1,8 @@
 # Hand-back: documentation and manual QA
-- Branch: team/sanskar-docs-runbooks-qa
-- Starting commit: 65dd9fe014e2bdfe6cede2cd9f69b0a014604f93    - Final commit: the commit that adds this file
-  ("QA docs: hand-back note"; `git rev-parse HEAD` on the branch). A file cannot contain its own commit hash.
+- Branch: team/sanskar-docs-final (the branch actually pushed; earlier drafts of this note named
+  `team/sanskar-docs-runbooks-qa`, which was not the pushed branch. Corrected by the main session on 2026-10-24.)
+- Starting commit: 65dd9fe014e2bdfe6cede2cd9f69b0a014604f93    - Final commit of Sanskar's work: f8d6941
+  ("QA docs: hand-back submission details"). Corrections after that are separate main-session commits.
 - Documents describe the system at commit: 65dd9fe (no checkpoint merged)
 - Written by Sanskar's AI writing assistant (Claude Code) on 2026-10-23, after Prem lifted the freeze for this
   documentation work only (relayed by Sanskar). Git, a text editor and read-only shell commands only: no Docker, no
@@ -47,9 +48,17 @@
    compose services use named volumes (`docker-compose.yml:17,23,29`). Does Docker report those in `Binds` for compose
    containers, or only in `Mounts`? If only in `Mounts`, the recreated container would not get its data volume. The
    runbook document repeats the code's claim ("same volumes", `executor.py:64`) without verifying it.
+   **Answer (main session, 2026-10-24):** checked read-only on the running stack with Docker Compose 5.6.0:
+   `HostConfig.Binds` contains `eai_inventory-data:/data:rw` (and the same for orders and payments), so `_recreate_from`
+   passes the data volume **in that tested configuration**. This is not a general guarantee: whether Docker lists named
+   volumes in `Binds` can depend on the Compose/Engine version and on how the volume is declared. No live check recreates
+   a container and verifies its data afterwards.
 2. **No restore on a failed recreate.** The old container is removed before the new one is created
    (`executor.py:77-82`); a creation failure leaves no container. Is this intended, and is "stuck service: force-recreate"
    (TROUBLESHOOTING 11) the intended recovery?
+   **Answer (main session, 2026-10-24):** correct, and still a known limitation: there is **no automatic rollback** to
+   the old container if creating the new one fails. The manual recovery is
+   `docker compose -p eai up -d --force-recreate <service>`.
 3. **Medium-risk restarts in Autopilot.** Error-spike and latency-spike restarts are medium (`default.yaml:26-27`) and
    therefore wait for approval in Autopilot (`policy.py:91-95`). Benchmark v2 ran them automatically. Please confirm the
    documents should present this as intended current behaviour.
@@ -69,7 +78,7 @@
 - secret check (assignment section 7 step 6) before every commit: no matches.
 
 ## Submission
-- Push and PR authorised by Prem (relayed by Sanskar) on 2026-10-23. Only `team/sanskar-docs-runbooks-qa` is pushed
+- Push and PR authorised by Prem (relayed by Sanskar) on 2026-10-23. Only `team/sanskar-docs-final` is pushed
   (no force-push); the PR targets `plan-complete` and is not merged by the author. The PR link is in the PR itself and in
   the message to Prem. No bundle or zip was made.
 - Checks re-run before the push: 232 distinct citations in range at `65dd9fe` (one scripted false positive,
