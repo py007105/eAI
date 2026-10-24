@@ -1,4 +1,4 @@
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import type { Sample } from "../lib/history";
 
 export default function ScoreChart({
@@ -14,18 +14,25 @@ export default function ScoreChart({
       role="img"
       aria-label={`Recent API score samples for ${name}`}
     >
-      <ResponsiveContainer width="100%" height={28}>
-        <LineChart data={samples}>
-          <Line
-            type="linear"
+      <ResponsiveContainer width="100%" height={40}>
+        <AreaChart data={samples} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id={`spark-${name}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#39ff14" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#39ff14" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
             dataKey="value"
-            stroke="#72d7e5"
-            strokeWidth={1.5}
+            stroke="#22c40a"
+            strokeWidth={2}
+            fill={`url(#spark-${name})`}
             dot={false}
             isAnimationActive={false}
             connectNulls={false}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

@@ -1,6 +1,8 @@
+import { Check, X as XIcon } from "lucide-react";
 import { isRecord, numberValue, serviceState, textValue, type UnknownRecord } from "../lib/api";
 import { useTelemetry } from "../lib/useTelemetry";
 import {
+  ACTIVE_STATUSES,
   approverChannel,
   deriveStages,
   lastAction,
@@ -31,7 +33,9 @@ export function ApproverBadge({ value }: { value: unknown }) {
 function StageCard({ s }: { s: Stage }) {
   return (
     <li className={`stage stage-${s.status}`} aria-current={s.status === "current" ? "step" : undefined}>
-      <div className="stage-dot" aria-hidden="true" />
+      <div className="stage-dot" aria-hidden="true">
+        {s.status === "done" ? <Check size={15} strokeWidth={3} /> : s.status === "failed" ? <XIcon size={14} strokeWidth={3} color="#ffffff" /> : null}
+      </div>
       <div className="stage-label">{s.label}</div>
       <div className="stage-detail">
         {s.status === "skipped" || s.status === "failed"
@@ -72,11 +76,11 @@ function ForecastChart({ inc }: { inc: UnknownRecord }) {
       <div style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-            <XAxis dataKey="s" type="number" stroke="#8d99a6" tickFormatter={(v) => `${v}s`} />
-            <YAxis domain={[0, 110]} stroke="#8d99a6" tickFormatter={(v) => `${v}%`} />
-            <ReferenceLine y={100} stroke="#e47d7d" strokeDasharray="4 4" />
-            <Tooltip contentStyle={{ background: "#11161c", border: "1px solid #252d36" }} />
-            <Line dataKey="pct" stroke="#e7bd69" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <XAxis dataKey="s" type="number" stroke="#66706b" tickFormatter={(v) => `${v}s`} />
+            <YAxis domain={[0, 110]} stroke="#66706b" tickFormatter={(v) => `${v}%`} />
+            <ReferenceLine y={100} stroke="#f04438" strokeDasharray="4 4" />
+            <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e6eae8", borderRadius: 10 }} />
+            <Line dataKey="pct" stroke="#f79009" strokeWidth={2.4} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -95,7 +99,7 @@ export function PipelineView({ inc, title }: { inc: UnknownRecord; title: string
   const actor = textValue(act?.approved_by) ?? (act?.executed === true && textValue(act?.verdict) === "execute" ? "autopilot" : undefined);
   return (
     <>
-      <section className="panel live-head">
+      <section className={`panel live-head ${ACTIVE_STATUSES.includes(textValue(inc.status) ?? "") ? "beam" : ""}`}>
         <div className="panel-title">
           <div>
             <h2>{title}</h2>

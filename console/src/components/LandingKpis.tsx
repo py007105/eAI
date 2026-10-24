@@ -1,4 +1,6 @@
+import { CheckCircle2, Eye, Radar, Scale, Stethoscope } from "lucide-react";
 import { isRecord, numberValue, serviceState, textValue } from "../lib/api";
+import NumberTicker from "./NumberTicker";
 import { useTelemetry } from "../lib/useTelemetry";
 
 const NR = "Not reported";
@@ -46,7 +48,9 @@ export function LandingKpis() {
       {kpis.map(([k, v]) => (
         <div key={k} className="kpi">
           <div className="kpi-label">{k}</div>
-          <div className="kpi-value">{v}</div>
+          <div className="kpi-value">
+            <NumberTicker value={v} />
+          </div>
         </div>
       ))}
     </div>
@@ -61,11 +65,14 @@ const STEPS: [string, string][] = [
   ["Verify", "A real checkout must pass again before an incident counts as recovered."],
 ];
 
+const ICONS = [<Eye key="o" size={17} />, <Radar key="d" size={17} />, <Stethoscope key="g" size={17} />, <Scale key="p" size={17} />, <CheckCircle2 key="v" size={17} />];
+
 export function HowItWorks() {
   return (
     <div className="steps-row">
       {STEPS.map(([t, d], i) => (
         <div key={t} className="step">
+          <div className="step-icon" aria-hidden="true">{ICONS[i]}</div>
           <div className="step-n">{String(i + 1).padStart(2, "0")}</div>
           <div className="step-t">{t}</div>
           <div className="step-d">{d}</div>

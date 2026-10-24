@@ -44,6 +44,7 @@ const Charts = lazy(() => import("./components/ChartsSection"));
 import PolicyRows from "./components/PolicyRows";
 import { HowItWorks, LandingKpis } from "./components/LandingKpis";
 import ReportProvider from "./components/ReportProvider";
+import NumberTicker from "./components/NumberTicker";
 import InvestigationTrace from "./components/InvestigationTrace";
 import { newestActive } from "./lib/pipeline";
 type Page =
@@ -260,14 +261,16 @@ function Landing() {
         <section className="container hero">
           <div>
             <div className="eyebrow">READ-ONLY OPERATIONS VIEW</div>
-            <h1>Understand the failure. Inspect the response.</h1>
+            <h1>
+              Understand the <span className="mark">failure.</span> Inspect the response.
+            </h1>
             <p>
               Explore service health, incident evidence, policy decisions, and
               recovery verification in one read-only console.
             </p>
             <div className="hero-actions">
               <a href="/console/live" className="btn btn-primary" onClick={handle}>
-                Watch the live incident view <ArrowRight size={15} />
+                Open live console <ArrowRight size={15} />
               </a>
               <a href="/console" className="btn" onClick={handle}>
                 Open Console
@@ -359,6 +362,13 @@ function Landing() {
         <div className="container footer-inner">
           <Brand />
           <span>Operational evidence, presented read-only.</span>
+          <span className="source-badges" aria-label="Sources and integrations">
+            <span>Prometheus</span>
+            <span>Docker Compose</span>
+            <span>Telegram</span>
+            <span>Gemini</span>
+            <span>Kubernetes · validated offline</span>
+          </span>
         </div>
       </footer>
     </div>
@@ -404,7 +414,7 @@ function ArchNode({
   return (
     <g>
       <rect className="arch-node" x={x} y={y} width={w} height="54" rx="7" />
-      <circle cx={x + 15} cy={y + 17} r="3" fill="#72d7e5" />
+      <circle cx={x + 15} cy={y + 17} r="3" fill="#12b76a" />
       <text className="arch-label" x={x + 27} y={y + 21}>
         {title}
       </text>
@@ -575,7 +585,9 @@ function Metric({
   return (
     <div className="panel metric">
       <div className="metric-label">{label}</div>
-      <div className="metric-value">{value}</div>
+      <div className="metric-value">
+        <NumberTicker value={value} />
+      </div>
       {hint && <div className="metric-hint">{hint}</div>}
     </div>
   );
@@ -1316,10 +1328,12 @@ function Topology() {
                             : "reported service";
                     const dot =
                       state === "down"
-                        ? "#ef6b6b"
+                        ? "#f04438"
                         : state === "anomaly"
-                          ? "#f2b84b"
-                          : "#72d7e5";
+                          ? "#f79009"
+                          : state === "ok"
+                            ? "#39ff14"
+                            : "#8a948f";
                     return (
                     <g
                       key={name}

@@ -4,10 +4,10 @@ import { OrbitControls, Line, Text } from "@react-three/drei";
 import type { UnknownRecord, ServiceState } from "../lib/api";
 
 const COLOR: Record<ServiceState, { color: string; emissive: string }> = {
-  ok: { color: "#66c89b", emissive: "#1d4a36" },
-  anomaly: { color: "#e7bd69", emissive: "#5a4513" },
-  down: { color: "#e47d7d", emissive: "#6a1f1f" },
-  unknown: { color: "#72d7e5", emissive: "#153942" },
+  ok: { color: "#39ff14", emissive: "#1f8a0b" },
+  anomaly: { color: "#f79009", emissive: "#7a4504" },
+  down: { color: "#f04438", emissive: "#7a1f18" },
+  unknown: { color: "#8a948f", emissive: "#2a302d" },
 };
 const reduced = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -20,8 +20,26 @@ function Edge({ from, to, animate }: { from: [number, number, number]; to: [numb
     if (animate && ref.current?.material) ref.current.material.dashOffset -= delta * 0.6;
   });
   return (
-    <Line ref={ref} points={[from, to]} color={animate ? "#72d7e5" : "#40515d"} lineWidth={animate ? 1.6 : 1}
+    <Line ref={ref} points={[from, to]} color={animate ? "#39ff14" : "#3a4a40"} lineWidth={animate ? 1.6 : 1}
       dashed={animate} dashSize={0.18} gapSize={0.12} />
+  );
+}
+
+/** Root-cause halo: pulses slowly (static when reduced motion is requested). */
+function Pulse({ color, still }: { color: string; still: boolean }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ref = useRef<any>(null);
+  useFrame(({ clock }) => {
+    if (!ref.current || still) return;
+    const k = 1 + 0.25 * Math.sin(clock.elapsedTime * 3);
+    ref.current.scale.set(k, k, k);
+    if (ref.current.material) ref.current.material.opacity = 0.32 - 0.14 * (k - 1) * 4;
+  });
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[0.38, 24, 18]} />
+      <meshBasicMaterial color={color} transparent opacity={0.28} />
+    </mesh>
   );
 }
 
@@ -48,15 +66,19 @@ function Graph({ names, links, states, root, animate }: {
               <sphereGeometry args={[isRoot ? 0.24 : 0.19, 24, 18]} />
               <meshStandardMaterial color={c.color} emissive={c.emissive} emissiveIntensity={isRoot ? 1.4 : 0.9} />
             </mesh>
-            <mesh>
-              <sphereGeometry args={[isRoot ? 0.36 : 0.28, 24, 18]} />
-              <meshBasicMaterial color={c.color} transparent opacity={0.12} />
-            </mesh>
-            <Text position={[0, -0.42, 0]} fontSize={0.14} color="#dbe4eb" anchorX="center">
+            {isRoot ? (
+              <Pulse color={c.color} still={reduced()} />
+            ) : (
+              <mesh>
+                <sphereGeometry args={[0.3, 24, 18]} />
+                <meshBasicMaterial color={c.color} transparent opacity={0.16} />
+              </mesh>
+            )}
+            <Text position={[0, -0.42, 0]} fontSize={0.14} color="#ffffff" anchorX="center">
               {name}
             </Text>
             {isRoot && (
-              <Text position={[0, 0.46, 0]} fontSize={0.12} color="#e47d7d" anchorX="center">
+              <Text position={[0, 0.46, 0]} fontSize={0.12} color="#ff8a80" anchorX="center">
                 root cause
               </Text>
             )}

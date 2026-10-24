@@ -8,7 +8,7 @@ export default function ChartsSection() {
   return (
     <div className="charts-section">
       <ContinuousWatch />
-      <ScoreHistoryChart samples={samples} />
+      <ScoreHistoryChart samples={samples} incidents={data.incidents.value} />
       <div className="live-grid">
         {live ? (
           <>

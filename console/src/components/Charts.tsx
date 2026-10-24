@@ -1,10 +1,11 @@
 import {
+  Area,
+  AreaChart,
+  ReferenceLine,
   Bar,
   BarChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,10 +15,10 @@ import { isRecord, numberValue, type UnknownRecord } from "../lib/api";
 import { actionsByRunbook, incidentDurations, scoreSeries, useScorecard } from "../lib/charts";
 import type { Sample } from "../lib/history";
 
-const AXIS = "#8d99a6";
-const GRID = "#252d36";
-const COLORS = ["#72d7e5", "#66c89b", "#e7bd69", "#e47d7d", "#a78bfa", "#a5adb7"];
-const tip = { background: "#11161c", border: "1px solid #252d36", color: "#e8edf2", fontVariantNumeric: "tabular-nums" };
+const AXIS = "#66706b";
+const GRID = "#e6eae8";
+const COLORS = ["#39ff14", "#12b76a", "#0a0f0c", "#8a948f", "#0b8a3a", "#4a5550"];
+const tip = { background: "#ffffff", border: "1px solid #e6eae8", borderRadius: 10, color: "#0a0f0c", fontVariantNumeric: "tabular-nums" };
 const hhmmss = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
 const hhmm = (s: number) => new Date(s * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
@@ -33,8 +34,13 @@ function Panel({ title, note, children }: { title: string; note: string; childre
   );
 }
 
-export function ScoreHistoryChart({ samples }: { samples: Record<string, Sample[]> }) {
+export function ScoreHistoryChart({ samples, incidents }: { samples: Record<string, Sample[]>; incidents?: unknown }) {
   const { rows, names } = scoreSeries(samples);
+  const first = rows.length ? Number(rows[0].at) : 0;
+  const marks = (Array.isArray(incidents) ? incidents : [])
+    .filter(isRecord)
+    .map((i) => ({ at: (numberValue(i.opened_t) ?? 0) * 1000, bad: i.status !== "recovered" }))
+    .filter((m) => m.at >= first);
   return (
     <Panel title="Anomaly score over time" note="Per service, from the 2 s /services polling buffer in this browser; gaps are failed polls">
       {rows.length < 2 ? (
@@ -42,17 +48,28 @@ export function ScoreHistoryChart({ samples }: { samples: Record<string, Sample[
       ) : (
         <div style={{ height: 260 }} className="tabular">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
-              <CartesianGrid stroke={GRID} strokeDasharray="3 3" />
-              <XAxis dataKey="at" type="number" domain={["dataMin", "dataMax"]} tickFormatter={hhmmss} stroke={AXIS} fontSize={11} />
-              <YAxis stroke={AXIS} fontSize={11} width={44} />
+            <AreaChart data={rows} margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
+              <defs>
+                {names.map((n, i) => (
+                  <linearGradient key={n} id={`fill-${n}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS[i % COLORS.length]} stopOpacity={0.12} />
+                    <stop offset="100%" stopColor={COLORS[i % COLORS.length]} stopOpacity={0} />
+                  </linearGradient>
+                ))}
+              </defs>
+              <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="at" type="number" domain={["dataMin", "dataMax"]} tickFormatter={hhmmss} stroke={AXIS} fontSize={12} />
+              <YAxis stroke={AXIS} fontSize={12} width={44} />
               <Tooltip contentStyle={tip} labelFormatter={(v) => hhmmss(Number(v))} />
               <Legend />
-              {names.map((n, i) => (
-                <Line key={n} dataKey={n} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={false}
-                  isAnimationActive={false} connectNulls={false} />
+              {marks.map((m, i) => (
+                <ReferenceLine key={i} x={m.at} stroke={m.bad ? "#f04438" : "#f79009"} strokeDasharray="4 3" label={{ value: "incident", fill: "#b42318", fontSize: 11, position: "top" }} />
               ))}
-            </LineChart>
+              {names.map((n, i) => (
+                <Area key={n} type="monotone" dataKey={n} stroke={COLORS[i % COLORS.length]} strokeWidth={2.2}
+                  fill={`url(#fill-${n})`} dot={false} isAnimationActive={false} connectNulls={false} />
+              ))}
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -75,8 +92,8 @@ export function IncidentDurationsChart({ incidents }: { incidents: unknown }) {
               <YAxis stroke={AXIS} fontSize={11} width={44} unit="s" />
               <Tooltip contentStyle={tip} />
               <Legend />
-              <Bar dataKey="diagnose_s" name="opened → diagnosed" fill="#72d7e5" isAnimationActive={false} />
-              <Bar dataKey="verified_s" name="opened → verified" fill="#66c89b" isAnimationActive={false} />
+              <Bar dataKey="diagnose_s" name="opened → diagnosed" fill="#0a0f0c" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="verified_s" name="opened → verified" fill="#39ff14" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -146,9 +163,9 @@ export function ScorecardPanel() {
                 <YAxis allowDecimals={false} stroke={AXIS} fontSize={11} width={32} />
                 <Tooltip contentStyle={tip} />
                 <Legend />
-                <Bar dataKey="runs" fill="#a5adb7" isAnimationActive={false} />
-                <Bar dataKey="detected" fill="#72d7e5" isAnimationActive={false} />
-                <Bar dataKey="recovered" fill="#66c89b" isAnimationActive={false} />
+                <Bar dataKey="runs" fill="#8a948f" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="detected" fill="#0a0f0c" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="recovered" fill="#39ff14" radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
