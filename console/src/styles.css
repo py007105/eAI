@@ -982,6 +982,15 @@ a:focus-visible {
   stroke: #72d7e5;
   fill: #15252a;
 }
+.topology-node rect.node-anomaly {
+  stroke: #f2b84b;
+  stroke-width: 2;
+}
+.topology-node rect.node-down {
+  stroke: #ef6b6b;
+  stroke-width: 2;
+  fill: #2a1717;
+}
 .topology-node text {
   fill: #dbe4eb;
   font:

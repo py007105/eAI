@@ -9,13 +9,41 @@ import {
   adaptService,
   adaptServices,
   adaptStatus,
+  auditResult,
+  auditWhat,
   endpointPath,
   fetchTelemetry,
   knownCount,
   parseArray,
+  serviceState,
   supportsConfidence,
   validPayload,
 } from "../src/lib/api";
+
+// Record shapes as returned by the live demo-stable-1 API on 25 Oct 2026 (GET /audit, GET /services).
+describe("audit columns and topology state use the API's own field names", () => {
+  const executed = { t: 1, runbook: "restart_service", service: "web", actor: "autopilot", ok: true, result: { restarted: "web" } };
+  const verification = { t: 2, kind: "verification", incident_id: "d38555ed", runbook: "restart_service", service: "web", outcome: "recovered", success_rate: 1 };
+  it("names the audit action from runbook and service", () => {
+    expect(auditWhat(executed)).toBe("restart_service on web");
+    expect(auditWhat(verification)).toBe("restart_service on web");
+    expect(auditWhat({ action: "approve" })).toBe("approve");
+    expect(auditWhat({})).toBeUndefined();
+  });
+  it("reports the audit result from ok and outcome", () => {
+    expect(auditResult(executed)).toBe("ok");
+    expect(auditResult({ ...executed, ok: false })).toBe("failed");
+    expect(auditResult(verification)).toBe("recovered");
+    expect(auditResult({})).toBeUndefined();
+  });
+  it("derives the topology state only from state.running and anomalous", () => {
+    expect(serviceState({ anomalous: false, state: { running: true } })).toBe("ok");
+    expect(serviceState({ anomalous: true, state: { running: true } })).toBe("anomaly");
+    expect(serviceState({ anomalous: true, state: { running: false } })).toBe("down");
+    expect(serviceState({ score: 0.4 })).toBe("unknown");
+    expect(serviceState(undefined)).toBe("unknown");
+  });
+});
 
 describe("API contract adapters", () => {
   it("keeps recorded results source-backed and excludes forbidden presentation wording", () => {

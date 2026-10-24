@@ -14,9 +14,12 @@ import {
   X,
 } from "lucide-react";
 import {
+  auditResult,
+  auditWhat,
   isRecord,
   parseArray,
   parseIncidentId,
+  serviceState,
   supportsConfidence,
   textValue,
   type UnknownRecord,
@@ -1259,9 +1262,26 @@ function Topology() {
                       />
                     ) : null;
                   })}
-                  {positions.map(({ name, x, y }) => (
+                  {positions.map(({ name, x, y }) => {
+                    const state = serviceState(services?.[name]);
+                    const stateLabel =
+                      state === "down"
+                        ? "not running"
+                        : state === "anomaly"
+                          ? "anomaly reported"
+                          : state === "ok"
+                            ? "no anomaly reported"
+                            : "reported service";
+                    const dot =
+                      state === "down"
+                        ? "#ef6b6b"
+                        : state === "anomaly"
+                          ? "#f2b84b"
+                          : "#72d7e5";
+                    return (
                     <g
                       key={name}
+                      data-state={state}
                       onClick={() => setSelected(name)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ")
@@ -1278,17 +1298,25 @@ function Topology() {
                         width="108"
                         height="46"
                         rx="7"
-                        className={selected === name ? "node-selected" : ""}
+                        className={[
+                          selected === name ? "node-selected" : "",
+                          state === "down" || state === "anomaly"
+                            ? `node-${state}`
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
                       />
-                      <circle cx={x - 37} cy={y - 6} r="3" fill="#72d7e5" />
+                      <circle cx={x - 37} cy={y - 6} r="3" fill={dot} />
                       <text x={x - 25} y={y - 2}>
                         {name}
                       </text>
                       <text className="topology-node-sub" x={x - 37} y={y + 13}>
-                        reported service
+                        {stateLabel}
                       </text>
                     </g>
-                  ))}
+                    );
+                  })}
                 </svg>
               ) : (
                 <Suspense
@@ -1560,19 +1588,11 @@ function Audit() {
                         textValue(r.who) ??
                         "Not reported"}
                     </td>
-                    <td>
-                      {textValue(r.action) ??
-                        textValue(r.what) ??
-                        "Not reported"}
-                    </td>
+                    <td>{auditWhat(r) ?? "Not reported"}</td>
                     <td>
                       {formatTime(typeof r.t === "number" ? r.t : r.timestamp)}
                     </td>
-                    <td>
-                      {textValue(r.result) ??
-                        textValue(r.status) ??
-                        "Not reported"}
-                    </td>
+                    <td>{auditResult(r) ?? "Not reported"}</td>
                     <td>
                       <pre className="audit-record">
                         {JSON.stringify(r, null, 2)}

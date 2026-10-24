@@ -1,5 +1,47 @@
 # EternalAI Console handoff
 
+## Live verification against the real backend — 25 October 2026, 1:46-2:00 AM IST
+
+- **Backend ref:** `demo-stable-1` (`49155ea`), started exactly as in `docs/DEMO_CHECKLIST.md` 0.3-0.5 (per-run tokens in a file outside git, 300 s approval override, autopilot, kill switch OFF, scorecard renamed to 0 runs). The Telegram bot was not started.
+- **Console:** `team/console` at `f8db4c9`, plus the two fixes below. Served with `npm run build` and `npm run preview` (`VITE_API_TARGET=http://127.0.0.1:8000`) on `http://127.0.0.1:4173`.
+- **Free RAM:** 2.25 GB with the stack up.
+
+| check | observed |
+|---|---|
+| Preview proxy reaches the API | `/status`, `/services`, `/incidents`, `/approvals`, `/audit`: all **200** through `http://127.0.0.1:4173/api/...` |
+| Pages vs live API | Landing, Overview, Topology (2D, 3D), Incidents, Approvals, Safety, Audit, Verified Results all load. Header **"Live · updated 0-1 s ago"** on every operations page. Values match the API: mode autopilot, kill switch Off, 4 services, 0 incidents, 0 approvals, rulebook raw fields. No "Unavailable" while the API returned the field; no browser console errors |
+| One authorised fault (checklist step a, crash on web, autopilot) | Run `3da7f59c7d`. **Without reload**, Overview showed "Open incidents 1" when incident `d38555ed` opened (1:50:32 AM). The detail page shows observed issue, the full **evidence** list (metrics, container exit 137, logs, deploy history, forecast, similar incidents), **policy `execute`**, `restart_service` by autopilot, and **verification "recovered"**. Audit shows `restart_service` on web (`"restarted": "web"`) and the verification record with outcome `recovered`. 3D view renders (1 canvas) |
+| Backend stopped for 10 s (only `eai-eternalai-1`) | **"Disconnected · retrying" after 2.4 s**; all live values switched to "Unavailable" (no stale numbers shown as live). After `docker start`, back to **"Live · updated 0s ago" in 6.0 s** |
+
+### Console bugs found live and fixed (inside `console/` only)
+1. **Audit "What" / "Result" showed "Not reported" while the API returned the values.** The brain's audit records use `runbook` + `service` and `ok` / `outcome`, not `action`/`what`/`result`/`status`. Fix: `auditWhat()` / `auditResult()` in `src/lib/api.ts`, used by the Audit table.
+2. **Topology did not highlight a failing service.** Every node read "reported service" while `/services` returned `anomalous` and `state.running` (web was down during the fault and looked healthy). Fix: `serviceState()` in `src/lib/api.ts`. A node is red "not running" when `state.running === false`, amber "anomaly reported" when `anomalous === true`, otherwise "no anomaly reported". Only the API's own fields are used.
+
+- **After the fixes:** `npm run test -- --run` 19 passed; `npm run lint` exit 0; `npm run build` exit 0.
+- **Live re-check of the fixed build:** all four nodes `ok` / "no anomaly reported", matching `/services`; no browser errors.
+- **Tests only:** the red/amber highlight and the audit columns under a fault. Only one fault was authorised, and the brain restart in the outage test emptied its in-memory audit log.
+
+### Screenshots (1280×720, SHA256)
+
+```
+61b98cf003aa9ca13b53af3a0639f06e04a590b0befbf3d5750232001411f3c1  evidence/live-20261025/overview_live_incident_1280x720.png
+1b7786c60356ee2ec048599f3ef7233312c3794b3fcac8c156b65e3c85e20e98  evidence/live-20261025/topology_2d_live_incident_1280x720.png   (before the fix: web not highlighted)
+dbfba91dcec5034f28081606e3d75a95b123555c62a4b290e2369b0e9fc31218  evidence/live-20261025/topology_3d_live_incident_1280x720.png
+68b4945473983156dccf853d613b5f1859049493745258c2d4cf1128f7a5c3b7  evidence/live-20261025/incident_detail_live_1280x720.png
+4627032b9b8210ca5421d0baa5473cf1a5ac577bd7c93a873aa7d3e52ebd9ff5  evidence/live-20261025/overview_disconnected_1280x720.png
+a33c70665141a9e609215cd6ce25b96c3105ab378645719fa3aaef45f469485d  evidence/live-20261025/topology_2d_after_fix_healthy_1280x720.png
+```
+
+### Start the console (with the backend already running per `docs/DEMO_CHECKLIST.md`)
+
+```powershell
+cd D:\eAI\eAI-console\console
+npm run build
+$env:VITE_API_TARGET = "http://127.0.0.1:8000"
+npm run preview -- --port 4173 --strictPort
+# open http://127.0.0.1:4173/console
+```
+
 ## Existing backend configuration recheck — 25 October 2026 (IST)
 
 Follow-up against console `a622b20`: located the authorized backend configuration at `D:\eAI\eAI-release\.env` (existence only; contents never opened). Existing stopped containers identify `D:\eAI\eAI-demo-stable-1` as their Compose working directory, at `demo-stable-1` / `49155ea`. Its README documents `docker compose up -d`. The existing brain image ID is `sha256:cffc24a4b92c09d2d2c1c295756b863385173408aa1a102c6c5eb9cfc070612f`; that is observed image identity, not an independent verification of image source contents.

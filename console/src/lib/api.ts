@@ -25,6 +25,34 @@ export const textValue = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim() ? value.trim() : undefined;
 export const numberValue = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
+/** Audit "What": the brain's audit records name the action as `runbook` (+ `service`), not `action`/`what`. */
+export const auditWhat = (r: UnknownRecord): string | undefined => {
+  const named = textValue(r.action) ?? textValue(r.what);
+  if (named) return named;
+  const runbook = textValue(r.runbook);
+  const service = textValue(r.service);
+  if (runbook) return service ? `${runbook} on ${service}` : runbook;
+  return textValue(r.kind);
+};
+
+/** Audit "Result": executed actions report `ok` (boolean); verification records report `outcome`. */
+export const auditResult = (r: UnknownRecord): string | undefined =>
+  textValue(r.result) ??
+  textValue(r.status) ??
+  textValue(r.outcome) ??
+  (typeof r.ok === "boolean" ? (r.ok ? "ok" : "failed") : undefined);
+
+/** Service state for the topology, from the API's own fields only: `state.running` and `anomalous`. */
+export type ServiceState = "down" | "anomaly" | "ok" | "unknown";
+export const serviceState = (raw: unknown): ServiceState => {
+  const r = isRecord(raw) ? raw : undefined;
+  const state = isRecord(r?.state) ? r.state : undefined;
+  if (state?.running === false) return "down";
+  if (r?.anomalous === true) return "anomaly";
+  if (r?.anomalous === false) return "ok";
+  return "unknown";
+};
 export interface StatusModel {
   mode?: string;
   killSwitch?: boolean;
