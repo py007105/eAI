@@ -110,7 +110,10 @@ def create_live_app(state: dict, approval_token: str):
 
 
 def test_step4_live_flow_and_screenshots(tmp_path):
-    SHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    # Screenshots go to pytest's tmp_path so a test run never changes tracked files; the committed
+    # docs/screenshots/*_simulated.png are kept as they are.
+    shots_dir = tmp_path / "screenshots"
+    shots_dir.mkdir(parents=True, exist_ok=True)
     approval_token = "live-demo-approval-token-42"
     now = time.time()
 
@@ -229,7 +232,7 @@ def test_step4_live_flow_and_screenshots(tmp_path):
     assert "reply_markup" in msg1
 
     # 5. Screenshot 1: Dashboard showing awaiting approval
-    shot1_path = SHOTS_DIR / "live_telegram_1_awaiting_approval_simulated.png"
+    shot1_path = shots_dir / "live_telegram_1_awaiting_approval_simulated.png"
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": 1400, "height": 950})
@@ -277,7 +280,7 @@ def test_step4_live_flow_and_screenshots(tmp_path):
     assert edit_msg["reply_markup"] == {"inline_keyboard": []}
 
     # 8. Screenshot 2: Dashboard showing verified healthy status
-    shot2_path = SHOTS_DIR / "live_telegram_2_verified_healthy_simulated.png"
+    shot2_path = shots_dir / "live_telegram_2_verified_healthy_simulated.png"
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": 1400, "height": 950})
