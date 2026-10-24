@@ -37,6 +37,12 @@ spec:
               value: /etc/eternalai/policy.yaml
             - name: PROMETHEUS_URL
               value: {{ .Values.prometheus.url | quote }}
+            - name: KUBERNETES_METRICS
+              value: {{ .Values.metricsProfile | quote }}
+            {{- if .Values.frontendUrl }}
+            - name: KUBERNETES_FRONTEND_URL
+              value: {{ .Values.frontendUrl | quote }}
+            {{- end }}
             {{- if .Values.prometheus.existingSecret }}
             - name: PROMETHEUS_TOKEN
               valueFrom:

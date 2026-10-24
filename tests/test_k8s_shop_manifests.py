@@ -103,3 +103,15 @@ def test_prometheus_labels_match_the_docker_queries():
     # eternalai/collector.py Q selects job="app" and instance_name="<service>"
     from eternalai.collector import Q
     assert 'job="app",instance_name="{s}"' in Q["up"]
+
+
+def test_shop_helm_values_point_at_the_manifests_services():
+    values = yaml.safe_load((ROOT / "deploy/kind/shop/values-shop.yaml").read_text(encoding="utf-8"))
+    prom_service = by_kind(docs(PROM), "Service", "monitoring")["prometheus"]
+    web_service = by_kind(docs(SHOP), "Service", "shop")["web"]
+    assert values["prometheus"]["url"] == (f"http://prometheus.monitoring.svc.cluster.local:"
+                                           f"{prom_service['spec']['ports'][0]['port']}")
+    assert values["frontendUrl"] == f"http://web.shop.svc.cluster.local:{web_service['spec']['ports'][0]['port']}"
+    assert values["metricsProfile"] == "app" and values["namespaces"] == ["shop"]
+    assert values["image"]["pullPolicy"] == "Never"
+    assert "approvalToken" not in values                    # the token Secret is created at run time only

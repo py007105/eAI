@@ -8,6 +8,11 @@ namespaces:
 prometheus:
   url: http://prometheus-server.monitoring.svc.cluster.local
   existingSecret: ""
+# Which Prometheus queries the brain uses: "cluster" (cAdvisor + kube-state-metrics) or "app" (our shop's own /metrics,
+# see deploy/kind/shop/prometheus.yaml and eternalai/sources/__init__.py).
+metricsProfile: cluster
+# URL the brain probes for user-facing health and recovery verification; empty: http://frontend.<namespace>.svc.cluster.local
+frontendUrl: ""
 approvalToken:
   existingSecret: ""
 resources:

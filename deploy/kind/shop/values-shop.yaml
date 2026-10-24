@@ -1,0 +1,11 @@
+# Helm values for the brain on kind with our own shop (deploy/kind/shop/). Used by scripts/kind_e2e.py --target shop.
+image:
+  repository: eai/eternalai
+  tag: k8s-dev
+  pullPolicy: Never          # built locally and loaded with `kind load docker-image`
+namespaces:
+  - shop
+prometheus:
+  url: http://prometheus.monitoring.svc.cluster.local:9090
+metricsProfile: app
+frontendUrl: http://web.shop.svc.cluster.local:8000

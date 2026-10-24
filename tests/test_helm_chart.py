@@ -51,3 +51,18 @@ def test_ask_chart_grants_exact_write_rules_but_reads_existing_token_only():
     env = {item["name"]: item for item in deployment["spec"]["template"]["spec"]["containers"][0]["env"]}
     assert env["ETERNALAI_APPROVAL_TOKEN"]["valueFrom"]["secretKeyRef"] == {
         "name": "approval", "key": "token"}
+
+
+def test_shop_values_set_app_metrics_and_our_frontend():
+    values = str(Path(__file__).resolve().parents[1] / "deploy" / "kind" / "shop" / "values-shop.yaml")
+    manifests = render("-f", values)
+    deployment = next(item for item in manifests if item["kind"] == "Deployment")
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    env = {item["name"]: item.get("value") for item in container["env"]}
+    assert env["KUBERNETES_METRICS"] == "app"
+    assert env["KUBERNETES_FRONTEND_URL"] == "http://web.shop.svc.cluster.local:8000"
+    assert env["PROMETHEUS_URL"] == "http://prometheus.monitoring.svc.cluster.local:9090"
+    assert container["imagePullPolicy"] == "Never"
+    default_env = {item["name"]: item.get("value") for item in next(
+        item for item in render() if item["kind"] == "Deployment")["spec"]["template"]["spec"]["containers"][0]["env"]}
+    assert default_env["KUBERNETES_METRICS"] == "cluster" and "KUBERNETES_FRONTEND_URL" not in default_env
