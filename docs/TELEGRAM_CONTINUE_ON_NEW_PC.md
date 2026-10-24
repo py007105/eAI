@@ -55,3 +55,44 @@ work. Unit tests need no Docker lock.
 > approvers key. Make one small commit at a time, with each shared file in its own `shared:` commit. Run the full suite
 > after every commit and show the last line. Do not push without the owner's go. Do not touch Docker without the
 > shared stack lock. No secrets may be read or logged.
+
+
+## Running the Telegram Bot & Notifications (REST-only)
+
+The bot operates as an independent REST-only process that interfaces with the EternalAI backend API and Telegram Bot API. No changes to `engine.py` or `api.py` are needed.
+
+### 1. Identify Telegram Chat & User Info (`whoami`)
+1. Create a bot using [@BotFather](https://t.me/BotFather) and set `TELEGRAM_BOT_TOKEN` in `.env`.
+2. Send a message to your bot in Telegram (e.g. `/start` or a greeting).
+3. Run the `whoami` utility:
+   ```powershell
+   .\.venv\Scripts\python.exe -m eternalai.notify.whoami
+   ```
+   This reads `TELEGRAM_BOT_TOKEN` from `.env`, queries `getUpdates`, and prints the `chat_id`, `user_id`, and `username` without exposing tokens or URLs.
+4. Add the resulting IDs and approval token to `.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=<your-bot-token>
+   TELEGRAM_CHAT_ID=<your-chat-id>
+   TELEGRAM_USER_ID=<your-user-id>
+   ETERNALAI_APPROVAL_TOKEN=<secret-approval-token>
+   BACKEND_URL=http://localhost:8000
+   ```
+
+### 2. Run the Bot Process
+Run the REST bot as a separate process:
+```powershell
+.\.venv\Scripts\python.exe -m eternalai.notify.bot
+```
+The bot polls `GET /status`, `GET /approvals`, and `GET /incidents` from `BACKEND_URL` every 2 seconds:
+- Sends formatted incident alerts using `format_incident` (through `redact()`).
+- Shows Approve/Reject inline keyboard buttons when an incident is pending approval (`/approvals`).
+- Removes buttons when an incident leaves `/approvals`.
+- On user button tap: verifies chat ID and user ID, checks kill switch, and sends `POST /approvals/{iid}/approve` or `reject` with header `X-Approval-Token`.
+- Maps responses (200="done", 409="already handled/expired", 403/503="token refused", kill switch="kill switch is on") and replies via `answerCallbackQuery`.
+- Edits messages in place as incident state transitions to recovered or escalated.
+
+### 3. Running Tests
+Run the mock transport unit tests (no real network or tokens required):
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_telegram.py tests/test_notify_whoami.py tests/test_notify_bot.py
+```
