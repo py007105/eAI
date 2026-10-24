@@ -34,7 +34,10 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Rehearsal 2026-10-24 18:49-18:54 IST:** bad deploy on payments → `rollback_release` (high risk) proposed in ask-first, approved by the owner in the dashboard after 58.1 s, executed (audit actor `human:dashboard`) and verified recovered.
 - **Conditions:** approval window 300 s (demo override, no code change). This commit's dashboard records the approver as `dashboard`, not the person's name.
 - **Not a benchmark number.** Source: `docs/results/demo_rehearsal_20261024-1854.md`.
-- **Kubernetes:** a bonus if Rajat's kind run (bad deploy → rollback approved by him) is verified.
+- **Telegram tap: DONE** (dry run 1, `demo-stable-1`, bot from `team/ui-telegram-sanskar` `4bdb017`, unchanged).
+  - Bad deploy on payments → rollback approved by the owner's Telegram tap; executed 7:37:41 PM IST with audit actor `human:telegram:7769231832`; verified recovered 7:38:04 PM.
+  - Not a benchmark number. Source: `docs/results/dry_run_1_20261024-1948.md`.
+- **Kubernetes:** not done tonight (Rajat's run did not happen); it stays on his branch as "ready, not yet run live".
 
 ## 2. Autopilot alone under the current policy (v3, no human present)
 
@@ -113,4 +116,4 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - A scripted-approver arm for v3 (the existing `eternalai_ask_first` arm with `--approve-after`). Roadmap only, not tonight.
 - Retry with the second fix: implemented, **tests only**.
 - Kubernetes: no live pass yet (14:14 kind run failed during monitoring setup).
-- Telegram: tests only.
+- Telegram: the REST-only bot (`team/ui-telegram-sanskar` `4bdb017`, PR #4, not merged) was verified live against `demo-stable-1` in dry run 1 (a real tap approved a rollback). Its merge into `plan-complete` is still pending.
