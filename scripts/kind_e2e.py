@@ -56,7 +56,8 @@ def check(name: str, ok: bool, detail: str = ""):
 
 def cmd(args, *, input_text=None, timeout=900, cleanup=False):
     process = subprocess.run([str(arg) for arg in args], cwd=ROOT, input=input_text,
-                             capture_output=True, text=True, timeout=bounded_timeout(timeout, cleanup=cleanup))
+                             capture_output=True, text=True, encoding="utf-8", errors="replace",
+                             timeout=bounded_timeout(timeout, cleanup=cleanup))
     if process.returncode:
         raise RuntimeError(f"{Path(str(args[0])).name} {args[1]} exited {process.returncode}")
     return process.stdout.strip()
@@ -74,6 +75,25 @@ def free_memory_gb():
     if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
         raise RuntimeError("could not read available memory")
     return status.avail_phys / (1024 ** 3)
+
+
+def monitoring_pod_status():
+    """Record only pod readiness reasons, never logs or Kubernetes credentials."""
+    try:
+        body = json.loads(cmd([KUBECTL, "-n", "monitoring", "get", "pods", "-o", "json"], timeout=30))
+        return json.dumps([
+            {"name": pod["metadata"]["name"], "phase": pod.get("status", {}).get("phase"),
+             "conditions": [{"type": condition.get("type"), "reason": condition.get("reason")}
+                            for condition in pod.get("status", {}).get("conditions", [])
+                            if condition.get("status") == "False"],
+             "waiting": [state["waiting"].get("reason")
+                         for container in pod.get("status", {}).get("containerStatuses", [])
+                         if (state := container.get("state", {})).get("waiting")],
+             "ready": [container.get("ready", False)
+                       for container in pod.get("status", {}).get("containerStatuses", [])]}
+            for pod in body.get("items", [])], sort_keys=True)
+    except (RuntimeError, ValueError, KeyError, subprocess.TimeoutExpired):
+        return "monitoring pod status unavailable"
 
 
 def wait_until(predicate, seconds=240, step=3):
@@ -234,7 +254,12 @@ def main():
         cmd([HELM, "install", "prometheus", str(PROM_ARCHIVE), "-n", "monitoring",
              "--set", "alertmanager.enabled=false", "--set", "prometheus-pushgateway.enabled=false",
              "--set", "server.persistentVolume.enabled=false"], timeout=1200)
-        cmd([KUBECTL, "-n", "monitoring", "rollout", "status", "deployment/prometheus-server", "--timeout=300s"])
+        check("prometheus_install", True, f"chart {PROM_CHART} installed")
+        try:
+            cmd([KUBECTL, "-n", "monitoring", "rollout", "status", "deployment/prometheus-server", "--timeout=300s"])
+        except (RuntimeError, subprocess.TimeoutExpired):
+            check("prometheus_rollout", False, monitoring_pod_status())
+            raise
         check("prometheus", True, f"chart {PROM_CHART} Ready")
 
         cmd([KUBECTL, "create", "namespace", "shop"])

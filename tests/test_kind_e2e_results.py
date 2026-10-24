@@ -1,10 +1,30 @@
 """Live-check evidence must identify one execution and the inputs it actually used."""
 
 import json
+import sys
 
 import pytest
 
 from scripts import kind_e2e
+
+
+def test_cli_output_decodes_invalid_utf8_without_losing_command_status(tmp_path, monkeypatch):
+    monkeypatch.setattr(kind_e2e, "ROOT", tmp_path)
+    output = kind_e2e.cmd([sys.executable, "-c", "import sys; sys.stdout.buffer.write(bytes([0x8f]))"])
+    assert output == "\ufffd"
+
+
+def test_monitoring_status_keeps_reasons_but_not_messages(monkeypatch):
+    body = {"items": [{"metadata": {"name": "prometheus-server-1"}, "status": {
+        "phase": "Pending", "conditions": [{"type": "PodScheduled", "status": "False",
+                                              "reason": "Unschedulable", "message": "private cluster detail"}],
+        "containerStatuses": [{"ready": False, "state": {"waiting": {
+            "reason": "ImagePullBackOff", "message": "private registry detail"}}}]}}]}
+    monkeypatch.setattr(kind_e2e, "cmd", lambda *args, **kwargs: json.dumps(body))
+    status = kind_e2e.monitoring_pod_status()
+    assert "Unschedulable" in status
+    assert "ImagePullBackOff" in status
+    assert "private" not in status
 
 
 def test_kind_results_are_execution_specific_and_do_not_overwrite(monkeypatch, tmp_path):
