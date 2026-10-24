@@ -79,6 +79,10 @@ add `CHAOS_TOKEN` to `.env`; the old launcher predates that rule.
 4. **Phase 7:** re-run the policy-affected scenarios (>= 5 seeds) and label every number with its policy file and system.
 5. **Optional, with Codex:** Kubernetes package A (section 5).
 
+The separate `friend/phase6-telegram` branch already has the first three Telegram commits, verified in tests only. To
+preserve or resume that work on another PC, fetch the friend branch and read `docs/TELEGRAM_CONTINUE_ON_NEW_PC.md` there.
+Do not treat it as merged into `plan-complete`.
+
 Each report covers: commits, test count, the verified-live list, % per area, and Docker schedule status.
 
 ## 4. Prompt for Claude Code (in `D:\eAI\eAI-release`)
