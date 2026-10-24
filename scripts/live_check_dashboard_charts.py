@@ -39,6 +39,15 @@ def ist():
     return datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
 
 
+def free_gb():
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import memguard
+        return round(memguard.free_ram_gb(), 2)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def get(backend, path):
     r = requests.get(f"{backend}{path}", timeout=5)
     r.raise_for_status()
@@ -55,6 +64,8 @@ def main():
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     started = ist()
     status = get(a.backend, "/status")           # fails loudly if the stack is not running
+    free_gb_start = free_gb()
+    load_s = None
     checks = []
 
     def check(cid, ok, detail):
@@ -74,8 +85,10 @@ def main():
         with sync_playwright() as p:
             b = p.chromium.launch()
             page = b.new_page(viewport={"width": 1400, "height": 1000})
-            page.goto(f"http://127.0.0.1:{a.port}/")
-            page.wait_for_selector("#svc_chart .main-svg", timeout=30000)
+            t_load = time.time()       # generous limits: a 30 s page load timed out once while the stack was running
+            page.goto(f"http://127.0.0.1:{a.port}/", timeout=120000, wait_until="domcontentloaded")
+            page.wait_for_selector("#svc_chart .main-svg", timeout=120000)
+            load_s = round(time.time() - t_load, 1)
             if a.service != "web":
                 page.locator("#chart_service").click()
                 page.get_by_role("option", name=a.service, exact=True).click()
@@ -126,7 +139,8 @@ def main():
             f"Commit: `{commit}` (dashboard run from this checkout's source); started {started}, finished {ist()}.",
             f"Backend: `{a.backend}` (brain mode `{status.get('mode')}`); read-only GET requests only. "
             "This is the real dashboard with live data, separate from the synthetic preview (`dashboard/preview/`).",
-            f"Service shown: `{a.service}`; warm-up {a.warmup} s.",
+            f"Service shown: `{a.service}`; warm-up {a.warmup} s; page ready after {load_s} s; "
+            f"free RAM at start {free_gb_start} GB.",
             "",
             "| id | result | detail |", "|---|---|---|"]
     body += [f"| {cid} | {'PASS' if ok else 'FAIL'} | {detail.replace('|', '/').replace(chr(9), ' = ')} |" for cid, ok, detail in checks]
