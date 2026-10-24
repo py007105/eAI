@@ -78,8 +78,12 @@ Then open http://127.0.0.1:8071. Port 8071 was free on the machine this was buil
 
 ## Screenshots
 
-`docs/screenshots/charts_preview_en.png`, `charts_preview_hi.png`, `charts_empty.png` — see
-`docs/handback/mihir.md` for status; the Chrome browser-automation tool was not connected in this
-session, so these could not be captured here. See the hand-back for what to do next.
+Captured 2026-10-24 00:34 IST in headless Chromium (Playwright) from the running preview, by the main session
+(`dashboard/preview/capture_screenshots.py`). The synthetic-data banner is visible in all three:
+- `docs/screenshots/charts_preview_en.png`: English, inventory, tick 59 ("inventory memory is at 74% of its limit. It is
+  rising about 38% of the limit per minute.");
+- `docs/screenshots/charts_preview_hi.png`: the same in Hindi;
+- `docs/screenshots/charts_empty.png`: inventory at tick 0, the empty state ("Nothing to report for this service at this
+  tick."; a single point, so no visible lines).
 
 **Verified on synthetic data only; not connected to the live dashboard.**
