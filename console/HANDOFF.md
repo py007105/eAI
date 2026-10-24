@@ -2,7 +2,9 @@
 
 ## Branch and scope
 
-Work is isolated on `team/console`, based on `origin/plan-complete` at `7cc615a48d8378dcf781b4f7e3deb428c16654c7`. Every project change is inside `console/`. No backend files, protected refs, tags, Docker services, or clusters were changed. No push or merge into `plan-complete` was performed.
+Work is isolated on `team/console`, based on `origin/plan-complete` at `7cc615a48d8378dcf781b4f7e3deb428c16654c7`. Every project change is inside `console/`. No backend files, protected refs, tags, Docker services, or clusters were changed. No merge or push to `plan-complete` was performed.
+
+The implementation is in commit `87bffad` (`Console: build read-only landing and operations UI`). The initial documentation and handoff are in `5286940` (`Console: document API contract and presentation handoff`). This handoff update records the finished checks and visual review.
 
 ## Delivered
 
