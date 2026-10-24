@@ -1,17 +1,71 @@
 # EternalAI
 
-A predictive cloud recovery assistant. It watches live telemetry from a four-service application (web, orders, payments, inventory), detects anomalies, ranks the
-root-cause service, proposes or runs an approved recovery runbook, and **verifies** recovery (an internal check) by passing a synthetic checkout through all four services over an
-observation window. When it cannot fix something, it says so, keeps the evidence and stops.
+An autonomous operations and predictive recovery assistant for backend microservices that detects anomalies, forecasts resource exhaustion, identifies root-cause services, executes policy-governed Docker runbooks, and verifies recovery with synthetic end-to-end checkouts.
 
-> **Status: benchmark v1 and the reduced v2 evaluation are finished.** Every number in this repository comes from a script you can rerun and is written to a file under `docs/results/`. Read `docs/EVALUATION.md` (methods and limitations) before any number.
+## Headline Numbers (Current, Verified & Honest)
 
-> **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
-> 1. **The ask-first arm is invalid.** The benchmark harness handed the brain and the simulated operator the placeholder token `change-me` (an import of the config module loaded it from `.env`), so the brain refused every approval (HTTP 503) and the operator ignored the refusal; the first proposal then sat unapproved and, because a pending approval never expires, blocked all later detection (42 of 45 runs). Its 0 of 30 recoveries say nothing about ask-first operation (`docs/postmortems/ask-first-arm-stuck-incident-v1.md`). Both faults are fixed on the v2 branch and evaluated on fresh seeds.
-> 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
-> 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
->
-> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), the pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs, and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
+All numbers are produced by committed scripts from raw benchmark and test records under `docs/results/`. Read `docs/EVALUATION.md` for full methodologies and limitations.
+
+| Metric | Result | Target / Baseline | Conditions & Scope | Source File | Status |
+|---|---|---|---|---|---|
+| **Disk Fill Warning Lead Time** | **86.4 s** (median) | >= 30 s | 5 warned runs [73.7s, 75.5s, 86.4s, 86.5s, 87.0s]; watch-only mode | `docs/results/forecast_check.md` | Verified live |
+| **Memory Leak Warning Lead Time** | **18.3 s** (median) | >= 30 s | **FAILED TARGET**: 5 warned runs [8.1s, 9.8s, 18.3s, 19.1s, 34.5s]; steep fill slope before OOM | `docs/results/forecast_check.md` | Verified live (honest failure) |
+| **Healthy-Run False Incidents** | **1 / 24** (4.2%) | <= 2 / 24 | Autopilot on fresh v2 seeds; baseline `threshold_restart` opened **6 / 24** | `docs/results/benchmark_v2.md` | Verified live |
+| **Harmful Actions on Healthy Runs** | **0 / 24** (0%) | 0 / 24 | 0 actions executed in 24 autopilot and 8 ask-first healthy runs | `docs/results/benchmark_v2.md` | Verified live |
+| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | 3 runs each across 6 faults; verified by internal synthetic checkout; mean failed req: 11.15% | `docs/results/benchmark_v2.md` | Verified live |
+| **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | Human approval mode; 0 approval failures; verified by internal checkout | `docs/results/benchmark_v2.md` | Verified live |
+| **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (66.7%) | >= 2 / 3 | Seed 426 restarted wrong service (`inventory`); now guarded by close-candidates rule | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | Verified live |
+| **Cross-System Fault Transfer** | **56.4%** macro-F1 | ~55-60% | Train Ticket (53 real cases), HistGradientBoosting on Dataset A; balanced accuracy 58.6% | `docs/results/dataset_a_model.md` | Offline result (NOT live) |
+| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | 105 runs, 33,576 windows of monitored application; ECE = 0.003; in-distribution | `docs/results/models_cv_v2.md` | Verified live model |
+
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph SUT["System Under Test (Live Docker Stack)"]
+        Web["Web Service (:8080)"]
+        Orders["Orders Service"]
+        Payments["Payments Service"]
+        Inventory["Inventory Service"]
+        Web --> Orders
+        Orders --> Payments
+        Orders --> Inventory
+    end
+
+    subgraph Telemetry["Monitoring Infrastructure"]
+        Prom["Prometheus (:9090)"]
+        SUT -. Metrics Scraping .-> Prom
+    end
+
+    subgraph Brain["EternalAI Engine (:8000)"]
+        Engine["Engine Loop (every 2s)"]
+        Detector["Detector (Learned Limits + IsolationForest)"]
+        Forecaster["Forecaster (Theil-Sen Trends)"]
+        Ranker["Root-Cause Ranker (Service Graph)"]
+        Classifier["Fault Classifier (HistGradientBoosting + Novelty Gate)"]
+        KB["Knowledge Base & Fix Ranker (data/kb/)"]
+        Policy["Rulebook & Policy Engine (Auto / Ask-First / Watch)"]
+        Verifier["Internal Verifier (Synthetic Checkout Probe)"]
+
+        Engine --> Detector --> Forecaster --> Ranker --> Classifier --> KB --> Policy
+        Policy -. Execute Runbook .-> Executor["Docker Executor"]
+        Executor -. Action (Restart / Recreate / Rollback / Clean) .-> SUT
+        Verifier -. Synthetic Check .-> Web
+    end
+
+    subgraph OperatorUI["Operator & Evaluation Interfaces"]
+        Dashboard["Dash UI Dashboard (:8050)"]
+        Evaluator["Independent Evaluator (:8200) <br/> [Private Fault Truth & Loadgen]"]
+        Telegram["Telegram Notifications <br/> [Sanskar's branch / PR]"]
+        K8s["Kubernetes Native Driver <br/> [Rajat's branch / roadmap]"]
+    end
+
+    Prom --> Engine
+    Engine --> Dashboard
+    Engine -. Approvals / Reports .-> Telegram
+    Evaluator -. Inject Faults & Score Impact .-> SUT
+    Evaluator -. Compute User Impact (Failed Req %) .-> Brain
+```
 
 ## Quick start
 
@@ -33,6 +87,20 @@ docker compose up -d
 Requires Docker with Compose. Python 3.11+ only for running the scripts and tests outside containers. Without an LLM key every report is a deterministic template report;
 the system works the same. The approve, reject and mode endpoints are refused until `ETERNALAI_APPROVAL_TOKEN` is set to something other than the placeholder.
 Stop everything with `docker compose down`.
+
+## Limitations
+
+> **Status: benchmark v1 and the reduced v2 evaluation are finished.** Every number in this repository comes from a script you can rerun and is written to a file under `docs/results/`. Read `docs/EVALUATION.md` (methods and limitations) before any number.
+
+> **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
+> 1. **The ask-first arm is invalid.** The benchmark harness handed the brain and the simulated operator the placeholder token `change-me` (an import of the config module loaded it from `.env`), so the brain refused every approval (HTTP 503) and the operator ignored the refusal; the first proposal then sat unapproved and, because a pending approval never expires, blocked all later detection (42 of 45 runs). Its 0 of 30 recoveries say nothing about ask-first operation (`docs/postmortems/ask-first-arm-stuck-incident-v1.md`). Both faults are fixed on the v2 branch and evaluated on fresh seeds.
+> 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
+> 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
+>
+> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
+
+Short form limitations (full list in `docs/EVALUATION.md`):
+72 training runs, one application, scripted faults, laboratory public data, optimistic cross-validation scores, n = 5 per benchmark cell, recovery **self-reported** by the system's own checkout (the independent measure is the load generator's failed-request %), benchmark brains were configured without LLM keys but the per-run report provider is not recorded (design limitation), the Gemini path tried only a few times and Groq untested.
 
 ## What it does
 
@@ -89,10 +157,6 @@ See also:
 - `docs/EVALUATION.md` (methods, limitations, how to reproduce) and `docs/EVALUATION_PLAN.md` (the benchmark rules, fixed before results)
 - `docs/results/` (generated tables: public-dataset, own-application and cross-system results are kept separate; `benchmark.md` is the v1 benchmark; `forecast_check.md` is the v3 forecast check: memory lead FAILED, disk PASSED)
 - `docs/MODEL_CARD.md`, `docs/DATA.md`, `docs/DATA_QUALITY.md`, `docs/postmortems/`
-
-## Limitations (short form; the full list is in `docs/EVALUATION.md`)
-
-72 training runs, one application, scripted faults, laboratory public data, optimistic cross-validation scores, n = 5 per benchmark cell, recovery **self-reported** by the system's own checkout (the independent measure is the load generator's failed-request %), benchmark brains were configured without LLM keys but the per-run report provider is not recorded (design limitation), the Gemini path tried only a few times and Groq untested.
 
 ## Repository layout
 
