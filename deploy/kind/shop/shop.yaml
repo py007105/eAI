@@ -1,0 +1,218 @@
+# EternalAI's own 4-service demo shop on kind (the services our trained models were trained on).
+# Images are built locally from ./app and ./loadgen (same build args as docker-compose.yml) and loaded with
+# `kind load docker-image`, so imagePullPolicy is Never. Memory limits equal docker-compose.yml's mem_limit.
+#
+# Differences from docker-compose.yml, on purpose:
+# - No livenessProbe: as with Compose `restart: "no"`, recovery is EternalAI's job, not the kubelet's. A readinessProbe on
+#   /healthz reports a hung service as NotReady, which EternalAI's Kubernetes state reader sees as "not running".
+# - /data is an emptyDir (the Compose named volumes are per-host Docker volumes).
+# - OTEL_SDK_DISABLED=true: there is no Jaeger in the kind check.
+# - CHAOS_TOKEN comes from the Secret `shop-chaos` (key `token`), created at run time by scripts/kind_e2e.py with a
+#   random value; no token value is in this file.
+# - loadgen runs in its own namespace so that it is not part of the shop topology the brain discovers.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loadgen
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: shop
+  annotations:
+    eternalai.io/depends-on: ""
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: inventory}
+  template:
+    metadata:
+      labels: {app: inventory, eai.role: app}
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: inventory
+          image: eai/inventory:v1
+          imagePullPolicy: Never
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: OTEL_SDK_DISABLED, value: "true"}
+            - name: CHAOS_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-chaos, key: token}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 2
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes: [{name: data, emptyDir: {}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+  namespace: shop
+  annotations:
+    eternalai.io/depends-on: ""
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: payments}
+  template:
+    metadata:
+      labels: {app: payments, eai.role: app}
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: payments
+          image: eai/payments:v1
+          imagePullPolicy: Never
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: OTEL_SDK_DISABLED, value: "true"}
+            - name: CHAOS_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-chaos, key: token}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 2
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes: [{name: data, emptyDir: {}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders
+  namespace: shop
+  annotations:
+    eternalai.io/depends-on: "inventory,payments"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: orders}
+  template:
+    metadata:
+      labels: {app: orders, eai.role: app}
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: orders
+          image: eai/orders:v1
+          imagePullPolicy: Never
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: OTEL_SDK_DISABLED, value: "true"}
+            - name: CHAOS_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-chaos, key: token}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 2
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts: [{name: data, mountPath: /data}]
+      volumes: [{name: data, emptyDir: {}}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: shop
+  annotations:
+    eternalai.io/depends-on: "orders,inventory"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web, eai.role: app}
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: web
+          image: eai/web:v1
+          imagePullPolicy: Never
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: OTEL_SDK_DISABLED, value: "true"}
+            - name: CHAOS_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-chaos, key: token}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 2
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: inventory, namespace: shop}
+spec:
+  selector: {app: inventory}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: payments, namespace: shop}
+spec:
+  selector: {app: payments}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: orders, namespace: shop}
+spec:
+  selector: {app: orders}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: web, namespace: shop}
+spec:
+  selector: {app: web}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+  namespace: loadgen
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: loadgen}
+  template:
+    metadata:
+      labels: {app: loadgen, eai.role: loadgen}
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: loadgen
+          image: eai/loadgen:v1
+          imagePullPolicy: Never
+          ports: [{name: metrics, containerPort: 9100}]
+          env:
+            - {name: TARGET_URL, value: "http://web.shop.svc.cluster.local:8000"}
+            - {name: BASE_RPS, value: "6"}
+            - {name: SURGE_EVERY_S, value: "0"}
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {memory: 128Mi}

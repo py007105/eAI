@@ -1,0 +1,121 @@
+# A plain Prometheus for the kind check (replaces the heavy prometheus-community chart, whose server did not become
+# Ready in the 24 Oct 14:01 run). Same image and 2 s scrape interval as docker-compose.yml / telemetry/prometheus.yml.
+# It discovers our shop pods with kubernetes_sd_configs and labels them exactly like the Compose scrape config
+# (job "app", instance_name = service name), so the brain's Docker-style queries (eternalai/collector.py Q) work
+# unchanged when the brain runs with KUBERNETES_METRICS=app.
+#
+# instance is set to "<service>:8000" (as in Compose) instead of the pod address, so a service keeps one series across
+# pod replacement (restart, rollback). Two pods of one service then share one label set and Prometheus scrapes one of
+# them; that is acceptable for this check (one replica per service, except briefly during a rollout or scale test).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: prometheus, namespace: monitoring}
+---
+# Read-only pod discovery, only in the two namespaces Prometheus scrapes (no ClusterRole).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: prometheus-discovery, namespace: shop}
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: prometheus-discovery, namespace: shop}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: prometheus-discovery}
+subjects: [{kind: ServiceAccount, name: prometheus, namespace: monitoring}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: prometheus-discovery, namespace: loadgen}
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: prometheus-discovery, namespace: loadgen}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: prometheus-discovery}
+subjects: [{kind: ServiceAccount, name: prometheus, namespace: monitoring}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: prometheus-config, namespace: monitoring}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 2s
+      evaluation_interval: 5s
+    scrape_configs:
+      - job_name: app
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: {names: [shop]}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_eai_role]
+            regex: app
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            regex: http
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: instance_name
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: instance
+            replacement: "${1}:8000"
+      - job_name: loadgen
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: {names: [loadgen]}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: loadgen
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            regex: metrics
+            action: keep
+          - target_label: instance
+            replacement: "loadgen:9100"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: prometheus, namespace: monitoring}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: prometheus}
+  template:
+    metadata:
+      labels: {app: prometheus}
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.55.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.retention.time=2h
+          ports: [{name: http, containerPort: 9090}]
+          readinessProbe:
+            httpGet: {path: /-/ready, port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts: [{name: config, mountPath: /etc/prometheus}]
+      volumes: [{name: config, configMap: {name: prometheus-config}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: prometheus, namespace: monitoring}
+spec:
+  selector: {app: prometheus}
+  ports: [{name: http, port: 9090, targetPort: http}]
