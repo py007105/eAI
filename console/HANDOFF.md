@@ -1,5 +1,49 @@
 # EternalAI Console handoff
 
+## Upgrade: live incident view, graphs, sources, investigation trace — 25 October 2026, 2:07-2:30 AM IST
+
+**Backend:** `demo-stable-1` (`49155ea`), started per `docs/DEMO_CHECKLIST.md` 0.3-0.5: autopilot, kill switch OFF, 300 s approval override, per-run tokens outside git. No Telegram bot.
+**LLM:** none configured; the running brain's `GEMINI_API_KEY` and `GROQ_API_KEY` are empty (presence checked, values never read). Every report therefore shows "Report written by: template".
+
+### What was added (all inside `console/`; GET-only; every live value from the API)
+
+| area | what it shows | data source |
+|---|---|---|
+| **Live Incident** (`/console/live`) | the stages Detect → Diagnose → Policy decision → Approval → Fix executed → Verified recovered, each lit from real fields with time and seconds since opening; the current stage pulses (off under reduced motion). Also: root-cause service, likely cause, runbook, risk, policy reason, approver badge (Telegram / Dashboard / Autopilot), report text and provider, evidence, forecast chart when the incident has `forecasts`. With no open incident: "All services healthy · watching" with live scores, plus the last closed incident (within 10 min) | `/incidents` (`actions`, `verification`, `timeline`, `ranking`, `report`, `report_meta`, `evidence`, `forecasts`), `/services` |
+| **Overview graphs** | Continuous watch (last successful check; fixed and verified / waiting for approval / blocked by kill switch / abstained, **counted from returned incidents**), anomaly score over time (2 s buffer, gaps on failed polls), time to diagnose and to verified recovery per incident, actions per minute by runbook, evaluator scorecard table + bars ("Evaluator not running" when `/scorecard` fails; polled separately every 10 s so it never marks the console disconnected) | `/services` buffer, `/incidents`, `/audit`, `/scorecard` |
+| **Sources & Integrations** | Docker Compose runtime with the **live** allow-listed runbooks and risks; Prometheus 2 s scrape; Telegram (separate bot via the REST API) with executed actions by channel, **derived from audit records**, and approvals in returned incidents; LLM reports (Gemini; evidence ids validated by the backend; template fallback; the LLM never acts); Kubernetes validated offline. Each static fact has a source label | `/status` → `policy.runbook_risk`, `/audit`, `/incidents`; `telemetry/prometheus.yml`; `eternalai/llm.py`; `docs/results/k8s_offline_validation.md`; `docs/results/dry_run_*` |
+| **Incident detail** | report provider exactly as `report_meta.provider` says (a template is never relabelled as LLM; LLM fallback reasons when present); **Investigation trace** built only from the incident's evidence items (source icon, evidence id, summary), ranked causes with margin (or "abstained: insufficient evidence"), policy verdict, approval with channel badge, action and verification; missing parts "Not reported" | `/incidents` |
+| **Polish** | readable rulebook rows and chips instead of raw JSON (Overview, Safety); 3D map with larger glowing nodes coloured by live health, the root-cause node red with a label, edges animated only while an incident is open; landing page with a live KPI strip (mode, services healthy, open incidents, last verified recovery), a 5-step "How it works" row, and a main button to the live view | `/status`, `/services`, `/incidents`, `/audit` |
+
+### Live verification (one authorised fault: checklist step a, crash on web, autopilot; run `36d507ee9e`, 2:21-2:23 AM)
+On `demo-stable-1` the checklist's step a is the crash scenario; there is no separate freeze scenario in that build.
+
+- **Live Incident, without reload:** the pipeline appeared with Detect done and Diagnose current. It then reached Detect / Diagnose / Policy decision / Fix executed / **Verified recovered**, with Approval **skipped** (policy allowed it). Times: +0.7 s, +7.6 s, +7.6 s, +12.9 s, +36.2 s.
+- **Topology:** web **`down` (red, "not running")** during the incident and **`ok`** after recovery; the 3D view rendered (1 canvas).
+- **Overview:** Continuous watch "Fixed and verified 1" (from 1 returned incident); the charts updated. **Audit** shows `restart_service on web`. **Sources** shows Autopilot 1.
+- **Investigation trace:** ev1-ev6 with Prometheus / Docker / Logs / Deploy history / Dependencies / Knowledge base, then causes, policy, approval, action, verification. Evidence items carry no timestamps in this API, so they show "time not reported".
+- **Evaluator:** detected 5.4 s; verified recovery 41.7 s; 0 harmful interventions.
+- No page reload after the fault; no browser console errors.
+- **Not captured:** the 3D view *during* the incident. The screenshot caught "Loading lightweight 3D map…" because the 1 MB 3D chunk took more than 4 s on first load; the canvas rendered right after.
+
+### Checks
+- `npm run test -- --run`: **34 passed**. This includes 15 new tests in `tests/upgrade.test.ts`: stage derivation, approver channels, report provenance, investigation trace, outcome counts, chart mappings, missing fields → "Not reported".
+- Two existing tests in `tests/console.test.tsx` were made exact, not looser, because new real content appears on the same pages: the zero count is now scoped to the metric cards, and "Returned evidence" may appear in both the evidence list and the trace.
+- `npm run lint` exit 0; `npm run build` exit 0.
+
+### Screenshots (SHA256)
+
+```
+e05070a2acbc051dc4e2d173c09257f8649ab7e01d042bb0718dbbaca6725625  evidence/live-20261025-upgrade/live_incident_mid_1280x720.png
+0546f4f5fb3808e7697a82e715f4beab9197124387bfe36093435f3b43e6d2ba  evidence/live-20261025-upgrade/live_incident_verified_1280x720.png
+8131befb923505453e1e8115b061f145d15a9592cd26f5c2a7c16da2e1fa1251  evidence/live-20261025-upgrade/topology_during_incident_1280x720.png
+49bc333938e8d8b17e9d44a0a89f73596c85ef9140f8f3aae0894ae4af7113f1  evidence/live-20261025-upgrade/topology_after_recovery_1280x720.png
+ef96f6338919578f70bfeb6c0441d3edfaab977b4739821274888de5f67c4e80  evidence/live-20261025-upgrade/topology_3d_during_incident_1280x720.png   (shows the 3D loading state)
+8c1538172c4031d7875c9d91040584f7a9bcd2c2eb31bca28b398a2f1620bfdb  evidence/live-20261025-upgrade/overview_after_incident_1280x720.png
+d63fd0b582cfcef7abbce041bb8b16405b139cdcc746ec680732fda10e27c682  evidence/live-20261025-upgrade/overview_full_after_incident.png
+fe0aace5642be26ea5414a32e382d95cb2fdafb8e3b8bf34303be59e68452317  evidence/live-20261025-upgrade/incident_trace_1280x720.png
+```
+
 ## Live verification against the real backend — 25 October 2026, 1:46-2:00 AM IST
 
 - **Backend ref:** `demo-stable-1` (`49155ea`), started exactly as in `docs/DEMO_CHECKLIST.md` 0.3-0.5 (per-run tokens in a file outside git, 300 s approval override, autopilot, kill switch OFF, scorecard renamed to 0 runs). The Telegram bot was not started.

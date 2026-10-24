@@ -10,8 +10,10 @@ import {
   LayoutDashboard,
   Menu,
   Network,
+  Plug,
   ShieldCheck,
   X,
+  Zap,
 } from "lucide-react";
 import {
   auditResult,
@@ -36,8 +38,18 @@ import { recordedResultsExcerpt } from "./lib/results";
 import type { Sample } from "./lib/history";
 const ThreeMap = lazy(() => import("./components/ThreeMap"));
 const ScoreChart = lazy(() => import("./components/ScoreChart"));
+const LiveIncident = lazy(() => import("./pages/LiveIncident"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const Charts = lazy(() => import("./components/ChartsSection"));
+import PolicyRows from "./components/PolicyRows";
+import { HowItWorks, LandingKpis } from "./components/LandingKpis";
+import ReportProvider from "./components/ReportProvider";
+import InvestigationTrace from "./components/InvestigationTrace";
+import { newestActive } from "./lib/pipeline";
 type Page =
   | "overview"
+  | "live"
+  | "integrations"
   | "incidents"
   | "topology"
   | "approvals"
@@ -56,6 +68,7 @@ const nav: {
     icon: LayoutDashboard,
     path: "/console",
   },
+  { key: "live", label: "Live Incident", icon: Zap, path: "/console/live" },
   {
     key: "incidents",
     label: "Incidents",
@@ -86,6 +99,12 @@ const nav: {
     label: "Verified Results",
     icon: Gauge,
     path: "/console/results",
+  },
+  {
+    key: "integrations",
+    label: "Sources & Integrations",
+    icon: Plug,
+    path: "/console/integrations",
   },
 ];
 function routeFromPath(
@@ -247,8 +266,11 @@ function Landing() {
               recovery verification in one read-only console.
             </p>
             <div className="hero-actions">
-              <a href="/console" className="btn btn-primary" onClick={handle}>
-                Open Console <ArrowRight size={15} />
+              <a href="/console/live" className="btn btn-primary" onClick={handle}>
+                Watch the live incident view <ArrowRight size={15} />
+              </a>
+              <a href="/console" className="btn" onClick={handle}>
+                Open Console
               </a>
               <a href="/console/results" className="btn" onClick={handle}>
                 View Verified Results
@@ -259,6 +281,7 @@ function Landing() {
                 ? "API telemetry is currently connected."
                 : "Operational telemetry is available only when the API is connected."}
             </div>
+            <LandingKpis />
           </div>
           <Architecture />
         </section>
@@ -266,6 +289,7 @@ function Landing() {
           <div className="container">
             <div className="eyebrow">FROM SIGNAL TO EVIDENCE</div>
             <h2>Follow the incident, not just the alert.</h2>
+            <HowItWorks />
             <p className="section-intro">
               The console brings together the information the service API
               reports: affected services, diagnostic evidence, proposed actions,
@@ -439,6 +463,8 @@ function PageContent({
 }) {
   const names: Record<Page, string> = {
     overview: "Overview",
+    live: "Live Incident",
+    integrations: "Sources & Integrations",
     incidents: "Incidents",
     topology: "Topology",
     approvals: "Approvals",
@@ -465,7 +491,20 @@ function PageContent({
         <ConnectionBadge />
       </div>
       {route.page === "overview" ? (
-        <Overview onNavigate={onNavigate} />
+        <>
+          <Overview onNavigate={onNavigate} />
+          <Suspense fallback={<div className="empty">Loading charts…</div>}>
+            <Charts />
+          </Suspense>
+        </>
+      ) : route.page === "live" ? (
+        <Suspense fallback={<div className="empty">Loading…</div>}>
+          <LiveIncident />
+        </Suspense>
+      ) : route.page === "integrations" ? (
+        <Suspense fallback={<div className="empty">Loading…</div>}>
+          <Integrations />
+        </Suspense>
       ) : route.page === "incidents" ? (
         <Incidents incidentId={route.incidentId} onNavigate={onNavigate} />
       ) : route.page === "topology" ? (
@@ -485,6 +524,8 @@ function PageContent({
 const descriptions: Record<Page, string> = {
   overview:
     "Current operating mode, reported service state, and latest incident evidence.",
+  live: "The newest open incident, stage by stage, from the API's incident fields and timeline.",
+  integrations: "Runtime, telemetry and integration facts, each with its source.",
   incidents: "Reported incidents with a read-only evidence narrative.",
   topology:
     "Service dependencies returned by the API; links do not represent traffic.",
@@ -760,10 +801,8 @@ function PolicySummary({ status }: { status: UnknownRecord }) {
       </div>
       <div>
         <div className="metric-label">Rulebook summary</div>
-        <div className="report" style={{ marginTop: 8 }}>
-          {model?.policy
-            ? JSON.stringify(model.policy, null, 2)
-            : "Not reported"}
+        <div style={{ marginTop: 8 }}>
+          <PolicyRows policy={model?.policy} />
         </div>
       </div>
       <div>
@@ -1134,7 +1173,9 @@ function IncidentNarrative({
               : (textValue(incident.report) ?? "Not reported")
           }
         />
+        <ReportProvider meta={incident.report_meta} />
       </div>
+      <InvestigationTrace incident={incident} />
       <div className="panel-subsection">
         <div className="panel-title">
           <h2>Incident timeline</h2>
@@ -1202,6 +1243,7 @@ function Topology() {
     });
   const [selected, setSelected] = useState<string>();
   const [view, setView] = useState<"2d" | "3d">("2d");
+  const { data: liveData } = useTelemetry();
   const selectedData = selected && services ? services[selected] : undefined;
   const positions = names.map((name, i) => {
     const angle = (i / Math.max(names.length, 1)) * Math.PI * 2;
@@ -1325,7 +1367,17 @@ function Topology() {
                   }
                 >
                   <WebGLErrorBoundary onFailure={() => setView("2d")}>
-                    <ThreeMap names={names} topology={topology} />
+                    <ThreeMap
+                      names={names}
+                      topology={topology}
+                      states={Object.fromEntries(names.map((n) => [n, serviceState(services?.[n])]))}
+                      root={(() => {
+                        const inc = newestActive(liveData.incidents.value);
+                        const r = inc && Array.isArray(inc.ranking) ? inc.ranking[0] : undefined;
+                        return isRecord(r) ? textValue(r.service) : undefined;
+                      })()}
+                      incidentOpen={!!newestActive(liveData.incidents.value)}
+                    />
                   </WebGLErrorBoundary>
                 </Suspense>
               )}
@@ -1524,10 +1576,10 @@ function Safety() {
           <section className="panel" style={{ marginTop: 12 }}>
             <div className="panel-title">
               <h2>Rulebook summary</h2>
-              <small>Raw fields preserved</small>
+              <small>From /status → policy</small>
             </div>
             {policy ? (
-              <pre className="report">{JSON.stringify(policy, null, 2)}</pre>
+              <PolicyRows policy={policy} />
             ) : (
               <div className="empty">Policy details not reported</div>
             )}

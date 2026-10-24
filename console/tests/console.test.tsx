@@ -91,7 +91,9 @@ describe("read-only console screens", () => {
     await waitFor(() =>
       expect(screen.getAllByText("watch-only").length).toBeGreaterThan(0),
     );
-    expect(screen.getAllByText("0")).toHaveLength(2);
+    // the two reported zeros in the metric cards (open incidents, pending approvals); other panels may show 0 too
+    const metricZeros = [...document.querySelectorAll(".metric-grid .metric-value")].filter((e) => e.textContent?.trim() === "0");
+    expect(metricZeros).toHaveLength(2);
     expect(screen.getByText("Score 0")).toBeInTheDocument();
     expect(screen.getByText("No score reported")).toBeInTheDocument();
   });
@@ -111,8 +113,9 @@ describe("read-only console screens", () => {
     reportIncident();
     render(<App />);
     await screen.findByRole("heading", { name: "Incident detail" });
+    // the evidence summary appears in the evidence list and in the investigation trace
     await waitFor(() =>
-      expect(screen.getByText("Returned evidence")).toBeInTheDocument(),
+      expect(screen.getAllByText("Returned evidence").length).toBeGreaterThan(0),
     );
     expect(screen.queryByText("Confidence 91%")).not.toBeInTheDocument();
   });
