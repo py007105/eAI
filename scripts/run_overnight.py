@@ -62,7 +62,12 @@ def main():
     ap.add_argument("--gate-latest", default="23:30")
     ap.add_argument("--resume-latest", default="01:30")
     ap.add_argument("--combined-latest", default="04:15")
+    ap.add_argument("--steps", default="gate,resume,combined", help="comma-separated subset, run in the fixed order")
     a = ap.parse_args()
+    wanted = [s for s in a.steps.split(",") if s]
+    unknown = set(wanted) - {"gate", "resume", "combined"}
+    if unknown:
+        sys.exit(f"unknown steps: {sorted(unknown)}")
     logdir = Path(a.log_dir)
     logdir.mkdir(parents=True, exist_ok=True)
     pidf = logdir / "runner.pid"
@@ -109,7 +114,7 @@ def main():
             time.sleep(min(60, (start - now()).total_seconds()))
         status["state"] = "waiting for the lock and memory"
         save()
-        ok = wait_until(lambda: stack_lock.is_free() and memguard.free_ram_gb() >= a.min_free_gb, latest["gate"],
+        ok = wait_until(lambda: stack_lock.is_free() and memguard.free_ram_gb() >= a.min_free_gb, latest[wanted[0]],
                         "lock FREE and enough free RAM for the first step")
         if not ok:
             status["state"] = "not started: lock or memory not available before the gate's latest start"
@@ -126,6 +131,7 @@ def main():
         steps = [("gate", a.candidate, [py, "-u", "scripts/run_gate_sequence.py", "--reference", a.reference]),
                  ("resume", a.candidate, [py, "-u", "scripts/resume_eval_v3.py", "--original", a.reference]),
                  ("combined", a.combined, [py, "-u", "scripts/live_check_combined.py"])]
+        steps = [s for s in steps if s[0] in wanted]
         for name, cwd, cmd in steps:
             rec = {"name": name, "cwd": cwd, "command": " ".join(cmd[1:])}
             status["steps"].append(rec)

@@ -24,3 +24,10 @@ def test_a_second_runner_is_refused(tmp_path):
     r = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_overnight.py"), "--log-dir", str(tmp_path),
                         "--candidate", "x", "--combined", "y", "--reference", "z"], capture_output=True, text=True, timeout=60)
     assert r.returncode != 0 and "another runner is alive" in r.stderr
+
+
+def test_unknown_step_is_refused(tmp_path):
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_overnight.py"), "--log-dir", str(tmp_path),
+                        "--candidate", "x", "--combined", "y", "--reference", "z", "--steps", "resume,promote"],
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode != 0 and "unknown steps: ['promote']" in r.stderr
