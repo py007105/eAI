@@ -78,9 +78,12 @@ def service_figure(history: History, service: str, lang: str = "en") -> go.Figur
     fig.add_hline(y=1.0, line=dict(color=PALETTE["muted"], dash="dash"))
     fig.update_layout(
         template=TEMPLATE, height=260,
+        # own margins + automargin: with the template's 20 px right margin the % tick labels overlapped each other
+        margin=dict(l=60, r=60, t=20, b=40),
         xaxis=dict(title=dict(text=ct("axis_seconds_ago", lang))),
-        yaxis=dict(title=dict(text=ct("axis_times_normal", lang))),
-        yaxis2=dict(title=dict(text=ct("axis_percent", lang)), overlaying="y", side="right"),
+        yaxis=dict(title=dict(text=ct("axis_times_normal", lang), standoff=16), automargin=True, nticks=5),
+        yaxis2=dict(title=dict(text=ct("axis_percent", lang), standoff=8), overlaying="y", side="right",
+                    automargin=True, showgrid=False, tickformat=".0f", nticks=5, rangemode="tozero"),
         legend=dict(orientation="h"),
     )
     return fig

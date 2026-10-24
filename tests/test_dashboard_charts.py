@@ -41,6 +41,14 @@ def test_service_figure_has_one_trace_per_present_feature_and_uses_eternal_templ
     assert fig.layout.template.layout.paper_bgcolor == "rgba(0,0,0,0)"  # identifies the "eternal" template
 
 
+def test_axes_have_room_for_their_labels():
+    """Regression: with the template's 20 px right margin the % tick labels overlapped (docs/results/dashboard_charts_live.md)."""
+    lay = service_figure(_history(), "inventory", "en").layout
+    assert lay.margin.r >= 50 and lay.margin.l >= 50
+    assert lay.yaxis.automargin and lay.yaxis2.automargin
+    assert lay.yaxis2.tickformat == ".0f" and lay.yaxis2.showgrid is False and lay.yaxis2.nticks == 5
+
+
 def test_unknown_service_gives_the_empty_figure():
     h = _history()
     fig = service_figure(h, "does-not-exist", "en")
