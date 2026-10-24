@@ -307,7 +307,7 @@ def freeze_service(service: str) -> str:
 
 
 # ------------------------------------------------------------------ results
-def write_results(head, run_id, started_at, image_id, *, target="boutique", configuration=None, branch=None):
+def write_results(head, run_id, started_at, image_id, target="boutique", configuration=None, branch=None):
     finished_at = now_ist()
     shop = target == "shop"
     if configuration is None:
@@ -699,10 +699,10 @@ def parse_args(argv=None):
     return ap.parse_args(argv)
 
 
-def main(argv=None):
-    args = parse_args(argv)
+def main(argv=()):
+    args = parse_args(list(argv))
     head = cmd(["git", "rev-parse", "HEAD"])
-    branch = cmd(["git", "branch", "--show-current"])
+    branch = cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
     run_id = datetime.now(IST).strftime("%Y%m%dT%H%M%S") + "-" + secrets.token_hex(4)
     started_at = now_ist()
     state = {"origin": f"{branch}@{head[:7]}", "held": False, "cluster": False, "forwards": [], "image_id": None}
@@ -736,10 +736,9 @@ def main(argv=None):
             except (Exception, SystemExit) as exc:
                 check("lock_release", False, type(exc).__name__)
         configuration = shop_configuration() if args.target == "shop" else None
-        write_results(head, run_id, started_at, state["image_id"], target=args.target,
-                      configuration=configuration, branch=branch)
+        write_results(head, run_id, started_at, state["image_id"], args.target, configuration, branch)
     return 0 if CHECKS and all(item["result"] == "PASS" for item in CHECKS) else 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
