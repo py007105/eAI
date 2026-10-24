@@ -37,6 +37,13 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Telegram tap: DONE** (dry run 1, `demo-stable-1`, bot from `team/ui-telegram-sanskar` `4bdb017`, unchanged).
   - Bad deploy on payments → rollback approved by the owner's Telegram tap; executed 7:37:41 PM IST with audit actor `human:telegram:7769231832`; verified recovered 7:38:04 PM.
   - Not a benchmark number. Source: `docs/results/dry_run_1_20261024-1948.md`.
+- **Dry run 2** (10:29-10:36 PM, `demo-stable-1`, checklist order a → c → b → d): **all four steps PASS.**
+  - a) crash on web → autopilot restart: detected 5.2 s, recovered 43.4 s after the crash.
+  - c) kill switch ON + disk fill: diagnosed `disk_fill`, "blocked - kill switch is on: nothing is executed", 0 actions.
+  - b) bad deploy on payments: rollback approved by a **Telegram tap after 44.7 s** (`human:telegram:7769231832`), verified recovered.
+  - d) report: complete.
+  - The bot could not reach Telegram from 8:38 to 10:32 PM (network); it recovered before step b.
+  - Not a benchmark number. Source: `docs/results/dry_run_2_20261024-2236.md`.
 - **Kubernetes:** validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster. Not merged; it stays on `team/k8s-rajat` (`7f53164`). Source: `docs/results/k8s_offline_validation.md`.
 
 ## 2. Autopilot alone under the current policy (v3, no human present)
