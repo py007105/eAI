@@ -1,0 +1,8 @@
+# Demo-only compose override (outside git). Gives a person 300 s instead of the brain's default 120 s to approve.
+# The brain reads ETERNALAI_APPROVAL_TTL_S (eternalai/config.py line 33 at demo-stable-1); the main compose file does not
+# forward it, so this file adds it. No code is changed. Use it as the LAST -f file:
+#   docker compose -p eai -f docker-compose.yml -f D:\eAI\demo\compose.demo-ttl300.yml up -d ...
+services:
+  eternalai:
+    environment:
+      ETERNALAI_APPROVAL_TTL_S: "300"
