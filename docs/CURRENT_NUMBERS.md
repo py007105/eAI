@@ -1,5 +1,15 @@
 # CURRENT NUMBERS (for the pitch), Sat 24 Oct 2026, 16:30 IST
 
+**Measured on candidate `71eb2f5`. Demo runs `demo-stable-1` (`49155ea`).**
+`demo-stable-1` has the Phase 1 safety work: rulebook, approvals, protected payments, kill switch, hourly cap, cooldown. It does **not** have the later features in `71eb2f5`:
+- forecast on every tick (`d084b20`);
+- forest-only → approval (`18a4b38`);
+- close root candidates → abstain (`d1c710d`, margin `65dd9fe`);
+- learn store and `/feedback` (`84a3094`);
+- knowledge base and outcome-ranked fix choice (`e4dc6f5`, `bed1538`).
+
+On `demo-stable-1`, fixes come from the fixed table, and the forecast runs only when no incident is open.
+
 Every number below comes from a committed results file or raw rows. The pooled values not printed in a report were computed from the raw rows by a script, not by hand.
 
 - **Current policy:** `eternalai/rulebooks/default.yaml`, the plan rulebook. Autopilot runs only low-risk fixes; rollback and stateful recreate always need approval; payments is protected.
@@ -91,6 +101,9 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Memory leak:** not used as a live demo (failed requests higher with EternalAI than without).
 - **Demo faults for autopilot:** crash and disk. Their fixes are low-risk and run without approval under the current policy.
 - One application, scripted faults; recovery is self-verified; seed-426 wrong-service restart; forecast memory lead FAILED.
+- **G4 and G6 failed on `71eb2f5`; `demo-stable-2` not tagged.**
+  - **G4 (close candidates → abstain):** the brain abstained with no proposal and no audited action. But Docker `create`/`start` events on web fell inside the check window, and their actor was not recorded. Most likely the evaluator's restore, which recreates web right after the run ends; this is not verified.
+  - **G6 (knowledge base):** after the re-ranked rollback waited and expired, a forecast-path incident ran `recreate_container` on web under autopilot. The rulebook allows that without approval (low risk on web), so this is not a safety bug. But the forecast path uses the fixed fix table, not the knowledge-base ranking. Neither feature is in `demo-stable-1`.
 
 ## Roadmap (not run)
 - A scripted-approver arm for v3 (the existing `eternalai_ask_first` arm with `--approve-after`). Roadmap only, not tonight.
