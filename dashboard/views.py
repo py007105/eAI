@@ -1,11 +1,14 @@
 """Pure rendering functions: backend JSON in, Plotly figures / Dash components out. No network here."""
 from __future__ import annotations
 
+import os
+import time
+
 import plotly.graph_objects as go
 from dash import html
 from dash_iconify import DashIconify
 
-from labels import t
+from labels import LABELS, t
 from theme import PALETTE, TEMPLATE
 
 POS = {"web": (0.0, 0.5), "orders": (1.0, 0.5), "inventory": (2.0, 0.85), "payments": (2.0, 0.15)}
@@ -121,6 +124,15 @@ def evidence(inc: dict | None, lang="en"):
     return [html.Div([html.B(e["id"]), html.Span(e["summary"])], className="ev") for e in inc["evidence"]]
 
 
+def evidence_summary(inc: dict | None, lang="en") -> str:
+    """The one line shown while the evidence panel is collapsed."""
+    ev = (inc or {}).get("evidence") or []
+    if not ev:
+        return t("no_evidence", lang)
+    first = ev[0]["summary"]
+    return f"{len(ev)} {t('evidence_items', lang)} · {first[:80]}{'…' if len(first) > 80 else ''}  {t('evidence_expand', lang)}"
+
+
 def prob_text(inc: dict, conf, show_prob: bool, lang="en") -> str:
     """The percentage is the classifier's calibrated probability for ITS top class. When the system abstained, the label shown is 'insufficient evidence', which that
     probability does not describe (a novel window can still have a near-certain top class), so no percentage is shown for an abstained incident."""
@@ -154,7 +166,7 @@ def report(inc: dict | None, lang="en", show_prob: bool = False):
     return kids
 
 
-def proof(inc: dict | None, lang="en"):
+def recovery_check(inc: dict | None, lang="en"):
     """Returns (children, glow class). An incident without a verification is never shown as recovered."""
     if not inc:
         return muted(t("no_incident", lang)), ""
@@ -176,23 +188,90 @@ def proof(inc: dict | None, lang="en"):
                      cell("error_ratio", b.get("error_ratio"), a.get("error_ratio"), pct),
                      cell("latency_ratio", b.get("p95_s"), a.get("p95_s"), ms)],
                     style={"display": "grid", "gridTemplateColumns": "repeat(3,1fr)"})
-    return [banner, grid, muted(f"{v['probes']} {t('proof_footer', lang)} {v['p_max_latency_s']}{t('seconds', lang)}")], \
+    return [banner, grid, muted(f"{v['probes']} {t('check_footer', lang)} {v['p_max_latency_s']}{t('seconds', lang)}")], \
         ("ok" if ok else "bad")
 
 
-def approvals(items: list, lang="en"):
+RECENT_S = 300   # a closed incident colours the status line for 5 minutes, then the line returns to "healthy"
+
+
+def status_line(incidents: list, approvals_: list, now: float, lang="en", services: dict | None = None):
+    """One plain-language line from existing API fields only (/incidents, /approvals, /services): (state, text).
+    States, checked in this order: waiting, open, recovered or escalated (closed within RECENT_S), watching (a service is anomalous
+    or down but no incident is open), healthy. "Healthy" is never shown while the map shows an anomalous or down service."""
+    if approvals_:
+        a = approvals_[0]
+        return "waiting", t("status_waiting", lang).format(what=f"{a['runbook_id']} → {a['service']}")
+    active = [i for i in incidents if i["status"] in ("open", "executing", "verifying")]
+    if active:
+        i = active[-1]
+        return "open", t("status_open", lang).format(svc=", ".join(i.get("services") or []) or "?", phase=t(f"phase_{i['status']}", lang))
+    last = incidents[-1] if incidents else None
+    ended = last and (last.get("closed_t") or last.get("opened_t"))
+    if ended and now - ended < RECENT_S:
+        svc = ", ".join(last.get("services") or []) or "?"
+        if last["status"] == "recovered":
+            return "recovered", t("status_recovered", lang).format(svc=svc)
+        if last["status"] in ("escalated", "unresolved", "partially_recovered"):
+            return "escalated", t("status_escalated", lang).format(svc=svc, cause=(last.get("likely_cause") or "?").replace("_", " "))
+    unusual = sorted(s for s, v in (services or {}).items() if node_state(v) in ("anomalous", "down"))
+    if unusual:
+        return "watching", t("status_watching", lang).format(svc=", ".join(unusual))
+    return "healthy", t("status_healthy", lang)
+
+
+STATUS_CLS = {"waiting": "warn", "open": "bad", "escalated": "bad", "recovered": "ok", "watching": "warn", "healthy": "ok"}
+
+
+def status_view(state: str, text: str):
+    return html.Div(text, id="status_line", className=f"status-line {STATUS_CLS[state]}")
+
+
+# The brain expires an unapproved proposal after ETERNALAI_APPROVAL_TTL_S (eternalai/config.py, default 120 s). /approvals does not
+# return the deadline, so the dashboard computes it from the proposal's time in /incidents and the same setting.
+APPROVAL_TTL_S = float(os.getenv("ETERNALAI_APPROVAL_TTL_S", "120"))
+URGENT_S = 30
+
+
+def approval_remaining(item: dict, incidents: list, now: float):
+    """Seconds left before the brain expires this proposal, or None if its proposal time is not in /incidents."""
+    inc = next((i for i in incidents if i.get("id") == item["incident_id"]), None)
+    act = next((a for a in reversed((inc or {}).get("actions") or []) if a.get("verdict") == "needs_approval" and not a.get("executed")), None)
+    return None if not act else max(0.0, APPROVAL_TTL_S - (now - act["t"]))
+
+
+def page_title(items: list, incidents: list, now: float, lang="en") -> str:
+    if not items:
+        return "EternalAI"
+    rem = approval_remaining(items[0], incidents, now)
+    return (f"({rem:.0f} s) " if rem is not None else "") + f"{t('title_waiting', lang)} · EternalAI"
+
+
+def countdown(rem, lang="en"):
+    if rem is None:
+        return muted(t("expires_unknown", lang))
+    return html.Div([html.Div(t("expires_in", lang).format(s=f"{rem:.0f}"), className="countdown-text"),
+                     html.Div(html.Div(className="countdown-fill", style={"width": f"{100 * rem / APPROVAL_TTL_S:.0f}%"}),
+                              className="countdown-bar")], className="countdown")
+
+
+def approvals(items: list, lang="en", incidents=(), now=None):
     if not items:
         return muted(t("no_approvals", lang))
+    now = time.time() if now is None else now
     out = []
     for a in items:
+        rem = approval_remaining(a, list(incidents), now)
         out.append(html.Div([
+            countdown(rem, lang),
             html.Div([pill(f"{a['risk']} {t('risk', lang)}", "warn"), html.B(f"{a['runbook_id']} → {a['service']}")]),
             muted(a["reason"]),
             html.Div((a.get("report") or {}).get("summary", ""), style={"margin": "6px 0"}),
             html.Div([html.Button(t("approve", lang), id={"type": "approve", "id": a["incident_id"]},
                                   className="btn btn-gold btn-sm", n_clicks=0, style={"marginRight": "8px"}),
                       html.Button(t("reject", lang), id={"type": "reject", "id": a["incident_id"]},
-                                  className="btn btn-ghost btn-sm", n_clicks=0)])], className="ev"))
+                                  className="btn btn-ghost btn-sm", n_clicks=0)])],
+            className="ev pending-card" + (" urgent" if rem is not None and rem <= URGENT_S else "")))
     return out
 
 
@@ -227,3 +306,33 @@ def reveal_card(rev: dict | None, lang="en"):
         html.Div([html.Span(f"{t('reveal_target', lang)}: ", className="muted"), html.B(tr["target"])]),
         html.Div(line, style={"margin": "6px 0"}),
         html.Div(pill(t("matched" if ok else "check_details", lang), "ok" if ok else "warn"))], className="ev")
+
+
+DEMO_PHASE_CLS = {"running": "warn", "starting": "warn", "restoring": "warn", "finished": "ok", "failed": "bad"}
+
+
+def demo_state(cur: dict | None, poll_error: str | None, lang="en"):
+    """The run-in-progress indicator: what the evaluator says about the run started from Demo mode, and whether a new run can start."""
+    if not cur:
+        return html.Div([pill(t("demo_idle_pill", lang), "ok"), html.Span(t("demo_idle", lang), className="muted")], id="demo_indicator")
+    ph, el = cur["phase"], f"{cur.get('elapsed_s') or 0:.0f}"
+    if ph == "finished":
+        text = t("demo_finished_revealed" if cur.get("reveal") else "demo_finished", lang)
+    else:
+        text = t(f"demo_{ph}", lang).format(s=el) if f"demo_{ph}" in LABELS["en"] else ph
+    kids = [pill(t(f"demo_pill_{ph}", lang), DEMO_PHASE_CLS.get(ph, "info")), html.Span(text)]
+    if poll_error:
+        kids.append(html.Span(f"  ({t('demo_poll_error', lang)}: {poll_error})", className="muted"))
+    return html.Div(kids, id="demo_indicator", className=f"demo-ind {ph}")
+
+
+def demo_runs(runs: list, summarise, lang="en"):
+    """One line per run started from Demo mode, newest first; a revealed run gets its plain-language summary."""
+    if not runs:
+        return None
+    out = []
+    for r in reversed(runs):
+        tag = f"[{t('demo_tag_unseen', lang)}] " if r["segment"] == "unseen" else ""
+        line = summarise(r["reveal"]) if r.get("reveal") else (t("demo_line_hidden", lang) if r["phase"] == "finished" else t("demo_line_running", lang))
+        out.append(html.Div([html.B(r["run_id"]), html.Span(f" {tag}{line}")], className="ev demo-run"))
+    return out

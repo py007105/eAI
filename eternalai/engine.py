@@ -7,6 +7,7 @@ fallbacks instead of silently pretending.
 from __future__ import annotations
 
 import json
+import sqlite3
 import threading
 import time
 import uuid
@@ -17,18 +18,28 @@ import numpy as np
 
 from . import artifacts, config
 from .classify import ABSTAIN, CAUSE_RUNBOOKS, rule_diagnose
+from .kb import KBError, load_kb, ranked_fixes, ranked_runbooks
 from .collector import DockerView, Prom
 from .dedupe import ReleaseGrace, Suppressor, downstream_of
-from .detect import Persistence, service_anomalous
+from .detect import Persistence, anomaly_source, service_anomalous
 from .executor import ExecutionError, Executor
 from .features.window import fit_baseline, window_features
 from .investigate import Investigator, remember_verified
 from .llm import llm_enabled, make_report, template_report
 from .policy import PolicyEngine
 from .rca import deepest_anomalous, evidence_table
+from .store import LearnStore, StoreError
 from .verify import verify_recovery
 
 CLOSED = ("recovered", "partially_recovered", "unresolved", "escalated")
+
+
+def load_root_margin() -> float | None:
+    path = artifacts.ARTIFACT_DIR / "root_margin.json"
+    try:
+        return float(json.loads(path.read_text(encoding="utf-8"))["margin"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 EVIDENCE_DIR = Path("runtime/evidence")
 
 
@@ -55,6 +66,8 @@ class Incident:
     diagnosed: bool = False
     before: dict | None = None      # measured when the incident was diagnosed
     after: dict | None = None       # measured after the verification window
+    root_features: dict | None = None   # the root service's window features at diagnosis (learn store, dataset-A-style rows)
+    candidates: list = field(default_factory=list)  # runbooks in ranked order at diagnosis; a failed fix retries the next one once
 
     def log(self, msg):
         self.timeline.append({"t": time.time(), "msg": msg})
@@ -62,7 +75,8 @@ class Incident:
     def public(self) -> dict:
         d = {k: getattr(self, k) for k in ("id", "opened_t", "closed_t", "kind", "status", "services", "ranking",
                                           "likely_cause", "confidence", "abstained", "report", "report_meta",
-                                          "actions", "verification", "timeline", "forecasts", "diagnosis", "before", "after")}
+                                          "actions", "verification", "timeline", "forecasts", "diagnosis", "before", "after",
+                                          "root_features")}
         d["evidence"] = [{"id": e.id, "tool": e.tool, "service": e.service, "summary": e.summary} for e in self.evidence]
         return d
 
@@ -70,7 +84,7 @@ class Incident:
 class Engine:
     use_models = True   # baseline engines (eternalai/baselines.py) set this False and never load trained artifacts
 
-    def __init__(self, mode: str = config.MODE):
+    def __init__(self, mode: str | None = None):
         self.prom, self.dv = Prom(), DockerView()
         self.executor, self.policy = Executor(), PolicyEngine(mode)
         self.persist = Persistence(3)
@@ -92,23 +106,44 @@ class Engine:
             self.baselines = {}
         # The feature window must be the one the models were trained with (train/serve consistency).
         self.window_s = float((self.cls_meta or self.det_meta or {}).get("window_s", 30.0))
+        # plan §9.4: two strong root candidates -> unknown. The margin comes from out-of-fold training incidents
+        # (models/choose_root_margin.py); without the file the rule is off and /status says so.
+        self.root_margin = load_root_margin() if self.use_models else None
+        # Package C: knowledge base + measured outcomes (data/kb). Missing -> the fixed table; invalid -> reported in /status.
+        self.kb, self.kb_error = None, None
+        try:
+            self.kb = load_kb()
+        except (KBError, OSError, ValueError) as e:
+            self.kb_error = f"{type(e).__name__}: {e}"
         self.models_loaded = {"detectors": self.detectors is not None, "classifier": self.classifier is not None,
                               "ranker": self.ranker is not None, "baselines": bool(self.baselines)}
         self.busy: set[str] = set()   # services with an action in flight
+        # learn store (plan §9.7): closed incidents, actions, outcomes, feedback. A store that cannot open is reported, not fatal.
+        self.store, self.store_error = None, None
+        try:
+            self.store = LearnStore()
+        except (StoreError, OSError) as e:
+            self.store_error = f"{type(e).__name__}: {e}"
         self.last_closed: dict = {}
 
     # ------------------------------------------------------------ observation
     def _observe(self):
         states = self.dv.poll()
         feats, scores, anom, raw = {}, {}, {}, {}
-        frames = {}
+        frames, failed = {}, {}
         for s in config.SERVICES:
             df = self.prom.signals(s, 150)
             frames[s] = df
+            failed[s] = list(df.attrs.get("failed_queries", []))
             base = self.baselines.get(s) or fit_baseline(df.iloc[: len(df) // 2])  # live fallback, flagged in status
             f = window_features(df, base, self.window_s)
             st = states.get(s)
-            down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
+            if "up" in failed[s]:
+                # The `up` QUERY failed (Prometheus error), which says nothing about the service: judge "down" from Docker only.
+                # Otherwise a monitoring outage would make every healthy service look down (and open incidents on them).
+                down = st is not None and not st.running
+            else:
+                down = (st is not None and not st.running) or f.get("up_frac") == 0 or not np.isfinite(f.get("up_frac", np.nan))
             if self.detectors and s in self.detectors:
                 sc = self.detectors[s].score(f)
                 a = service_anomalous(self.detectors[s], f, down)
@@ -131,6 +166,7 @@ class Engine:
                               "score": None if not np.isfinite(sc) else round(sc, 4), "anomalous": bool(a),
                               "state": {"running": st.running, "image_tag": st.image_tag} if st else None}
         self.frames = frames
+        self.telemetry_failed = {s: q for s, q in failed.items() if q}   # reported by /status; empty when all queries worked
         return feats, scores, anom
 
     def _app_snapshot(self, probe: bool) -> dict:
@@ -175,6 +211,7 @@ class Engine:
                 inc._noted = True
         self.suppress.update(anom)
         confirmed = self.suppress.filter(confirmed)
+        to_diagnose = None
         with self.lock:
             self._expire_pending(now)
             # v2: an incident waiting for approval does not block detection. Services it already covers are not re-opened
@@ -198,9 +235,25 @@ class Engine:
                 # An incident opens ~6 s after onset (3 persistent ticks). Diagnose once a full feature window lies after
                 # the onset, because the classifier was trained on such windows only.
                 if not open_inc.diagnosed and now - open_inc.opened_t >= max(4.0, self.window_s - 4.0):
-                    self._try_diagnose(open_inc, feats, scores, anom)
-        if not open_inc:
-            self._predictive(feats, now)
+                    to_diagnose = open_inc
+        if to_diagnose is not None:   # outside the lock: the API must not wait on telemetry and Docker calls
+            self._try_diagnose(to_diagnose, feats, scores, anom)
+        self._predictive(feats, now)   # every tick: a warning attaches to an open incident or opens a predicted one
+        self._store_closed()
+
+    def _store_closed(self):
+        """Write newly closed incidents to the learn store. Snapshot under the lock, write outside it (no I/O under the lock)."""
+        store = getattr(self, "store", None)
+        if store is None:
+            return
+        with self.lock:
+            todo = [(i, i.public()) for i in self.incidents if i.status in CLOSED and not getattr(i, "_stored", False)]
+        for inc, snap in todo:
+            try:
+                store.record_incident(snap)
+                inc._stored = True
+            except (sqlite3.Error, OSError, ValueError) as e:
+                self.store_error = f"{type(e).__name__}: {e}"
 
     def reset_run_state(self) -> dict:
         """v2 (harness independence): forget per-run state so the next benchmark run starts clean. v1 carried a cooldown from one run into the
@@ -217,8 +270,10 @@ class Engine:
                     inc.log("reset between runs: incident closed")
                     self._preserve(inc)
                     closed.append(inc.id)
-            cleared = {"cooldown_services": sorted(self.policy.history), "breakers": sorted(self.policy.breaker_open)}
+            cleared = {"cooldown_services": sorted(self.policy.history), "breakers": sorted(self.policy.breaker_open),
+                       "actions_this_hour": len(self.policy.executed)}
             self.policy.history.clear()
+            self.policy.executed = []
             self.policy.breaker_open.clear()
             self.suppress, self.persist = Suppressor(), Persistence(3)
             self.first_anom.clear()
@@ -246,15 +301,25 @@ class Engine:
     # ------------------------------------------------------------ diagnosis
     def _try_diagnose(self, inc: Incident, feats, scores, anom):
         """An exception during diagnosis must never leave an incident 'open' forever (an open incident blocks all new
-        ones): escalate it with the error recorded and the evidence preserved."""
+        ones): escalate it with the error recorded and the evidence preserved.
+
+        Called WITHOUT the engine lock. EternalAI's own `_diagnose` does its slow work (Prometheus queries, Docker calls, log
+        reads, evidence building, model inference) unlocked and takes the lock only to read and write incident state, so the
+        API (/approvals, /incidents) never waits on telemetry. The benchmark baseline brains override `_diagnose` and were
+        written for the old contract (called under the lock); they keep it, unchanged."""
         try:
-            self._diagnose(inc, feats, scores, anom)
+            if type(self)._diagnose is Engine._diagnose:
+                self._diagnose(inc, feats, scores, anom)
+            else:
+                with self.lock:
+                    self._diagnose(inc, feats, scores, anom)
         except Exception as e:
-            self.last_error = f"diagnosis failed: {type(e).__name__}: {e}"
-            inc.diagnosed = True
-            inc.status, inc.closed_t = "escalated", time.time()
-            inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
-            self._preserve(inc)
+            with self.lock:
+                self.last_error = f"diagnosis failed: {type(e).__name__}: {e}"
+                inc.diagnosed = True
+                inc.status, inc.closed_t = "escalated", time.time()
+                inc.log(f"diagnosis failed ({type(e).__name__}); escalated to a human")
+                self._preserve(inc)
 
     def _diagnosis_record(self, root: str, p, feats_root: dict) -> dict:
         """v2 item B: keep what v1 threw away (the top class behind an abstention, why it abstained, how novel the window was,
@@ -269,17 +334,44 @@ class Engine:
                 "limits_exceeded": det.out_of_range(feats_root) if det is not None else None}
 
     def _diagnose(self, inc: Incident, feats, scores, anom):
+        """Diagnose `inc`. Called without the lock (see `_try_diagnose`): read state under the lock, compute unlocked, apply
+        under the lock. If the incident changed meanwhile (closed by a reset, or diagnosed already), the result is dropped."""
+        with self.lock:
+            services = list(inc.services)
+            onset = {s: self.first_anom.get(s) for s in config.SERVICES}
+        d = self._diagnose_compute(services, onset, feats, scores, anom)
+        with self.lock:
+            if inc.diagnosed or inc.status != "open":
+                return
+            inc.ranking, inc.diagnosis = d["ranking"], d["diagnosis"]
+            inc.likely_cause, inc.confidence, inc.abstained = d["label"], d["confidence"], d["abstained"]
+            inc.evidence = d["evidence"]
+            inc.root_features = d.get("root_features")
+            inc.candidates = list(d["ctx"].get("candidates") or [])
+            # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
+            # report replaces the text later (a live Gemini call took ~7 s in testing).
+            inc.report, inc.diagnosed = d["report"].model_dump(), True
+            inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
+            inc.log(f"diagnosed {d['label']} on {d['root']}")
+            self._propose(inc, d["root"], d["report"].runbook_id if not d["abstained"] else None, unusual=d.get("unusual", False))
+            self._llm_upgrade_async(inc, d["ctx"])
+
+    def _diagnose_compute(self, services: list, onset: dict, feats, scores, anom) -> dict:
+        """The slow part of a diagnosis, run WITHOUT the engine lock: Prometheus (dependency failures), Docker (state, logs),
+        evidence building, ranking and classification. Touches no shared incident state."""
         depfail = self._depfail()
-        onset = {s: self.first_anom.get(s) for s in config.SERVICES}
         table = evidence_table(scores, anom, onset, depfail, feats)
         if self.ranker:
-            inc.ranking = self.ranker.rank(table)
+            ranking = self.ranker.rank(table)
         else:  # fallback: old-prototype style rule, flagged in status
             order = deepest_anomalous(anom) or list(config.SERVICES)
-            inc.ranking = [{"service": s, "score": round(1 / (i + 1), 3)} for i, s in enumerate(order)]
-        root = inc.ranking[0]["service"]
+            ranking = [{"service": s, "score": round(1 / (i + 1), 3)} for i, s in enumerate(order)]
+        root = ranking[0]["service"]
+        gap = ranking[0]["score"] - ranking[1]["score"] if len(ranking) > 1 else 1.0
+        margin = getattr(self, "root_margin", None)
+        close = bool(self.ranker) and margin is not None and gap < margin
         inv = Investigator(self.prom, self.dv)
-        for s in {root, *inc.services}:
+        for s in {root, *services}:
             inv.metrics(s, feats[s]); inv.container(s); inv.error_logs(s); inv.deploy_history(s)
         inv.dependency_failures(depfail)
         inv.forecast(root, self.frames[root])
@@ -288,30 +380,36 @@ class Engine:
         if self.classifier:
             p = self.classifier.predict(feats[root])
             label, conf, abst, probs = p.label, p.confidence, p.abstained, p.probs
-            inc.diagnosis = self._diagnosis_record(root, p, feats[root])
+            diagnosis = self._diagnosis_record(root, p, feats[root])
         else:
             label, conf, abst, probs = rule_diagnose(feats[root]), None, False, {}
-            inc.diagnosis = {"root": root, "rule_label": label}
+            diagnosis = {"root": root, "rule_label": label}
+        if close and not abst:   # two strong candidates: a single-fault model can be fooled, do not guess (plan §9.4)
+            label, abst = ABSTAIN, True
+            diagnosis = {**diagnosis, "abstain_reason": f"two close root candidates: {ranking[0]['service']} and "
+                         f"{ranking[1]['service']} (support gap {gap:.3f} < margin {margin:.3f})"}
+        diagnosis = {**diagnosis, "root_gap": round(float(gap), 4), "root_margin": margin}
+        down = (st is not None and not st.running) or feats[root].get("up_frac") == 0
+        source = anomaly_source((self.detectors or {}).get(root), feats[root], down)
+        diagnosis = {**diagnosis, "anomaly_source": source}
         if st is not None and not st.running and st.oom_killed:
             label, abst = "memory_leak", False  # container was OOM-killed: direct evidence
         if label == "healthy":                  # anomalous but classified healthy => do not guess
             label, abst = ABSTAIN, True
-        inc.likely_cause, inc.confidence, inc.abstained = label, conf, abst
         inv.similar_incidents(label if not abst else "unknown fault")
-        inc.evidence = inv.items
         alts = [c for c, v in sorted(probs.items(), key=lambda kv: -kv[1]) if c not in ("healthy", label)][:2]
-        cands = [] if abst else list(CAUSE_RUNBOOKS.get(label, []))
+        # Package C (plan §9.5): candidates in outcome-ranked order from the knowledge base; the fixed table when no KB is loaded
+        kb = getattr(self, "kb", None)
+        fixes = [] if abst else ranked_fixes(kb, label)
+        cands = [] if abst else ranked_runbooks(kb, label)
+        diagnosis = {**diagnosis, "fix_ranking": [f.public() for f in fixes][:6]}
         ctx = {"cause": label, "confidence": conf or 0.0, "candidates": cands, "alternatives": alts,
-               "ranking": inc.ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary}
-                                                        for e in inc.evidence]}
-        # The action never waits for an LLM: the deterministic report and runbook come first, a real LLM
-        # report replaces the text later (a live Gemini call took ~7 s in testing).
-        rep = template_report(ctx)
-        inc.report, inc.diagnosed = rep.model_dump(), True
-        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
-        inc.log(f"diagnosed {label} on {root}")
-        self._propose(inc, root, rep.runbook_id if not abst else None)
-        self._llm_upgrade_async(inc, ctx)
+               "ranking": ranking[:3], "evidence": [{"id": e.id, "tool": e.tool, "summary": e.summary} for e in inv.items]}
+        return {"ranking": ranking, "root": root, "diagnosis": diagnosis, "label": label, "confidence": conf,
+                "unusual": source == "forest_only",
+                "root_features": {k: round(float(v), 6) for k, v in feats[root].items()
+                                  if not k.endswith("_obs") and isinstance(v, (int, float)) and np.isfinite(v)},
+                "abstained": abst, "evidence": inv.items, "ctx": ctx, "report": template_report(ctx)}
 
     def _llm_upgrade_async(self, inc: Incident, ctx: dict):
         if not llm_enabled():
@@ -332,13 +430,13 @@ class Engine:
                 inc.log(f"report by {meta['provider']} ({meta['latency_s']}s)")
         threading.Thread(target=work, daemon=True).start()
 
-    def _propose(self, inc: Incident, service: str, runbook: str | None):
+    def _propose(self, inc: Incident, service: str, runbook: str | None, unusual: bool = False):
         if runbook is None:
             inc.status, inc.closed_t = "escalated", time.time()
             inc.log("no safe automatic action: escalated to a human with evidence preserved")
             self._preserve(inc)
             return
-        d = self.policy.evaluate(runbook, service)
+        d = self.policy.evaluate(runbook, service, fault=inc.likely_cause, user_impact=self._user_impact(), unusual=unusual)
         act = {"t": time.time(), "runbook_id": runbook, "service": service, "verdict": d.verdict,
                "reason": d.reason, "risk": d.risk, "executed": False, "approved_by": None}
         inc.actions.append(act)
@@ -353,12 +451,20 @@ class Engine:
             inc.status, inc.closed_t = "escalated", time.time()
             self._preserve(inc)
 
+    def _user_impact(self) -> bool | None:
+        """Are users affected? The entry services (no callers) are anomalous. None if not observed yet."""
+        entries = [s for s in config.SERVICES if not config.CALLERS.get(s)]
+        seen = [self.latest[s].get("anomalous") for s in entries if s in self.latest]
+        return any(bool(a) for a in seen) if seen else None
+
     # ------------------------------------------------------------ act + verify
     def approve(self, inc_id: str, approver: str):
         with self.lock:
             inc = next((i for i in self.incidents if i.id == inc_id), None)
             if not inc or inc.status != "awaiting_approval":
                 raise ValueError("no pending approval for that incident")
+            if self.policy.kill_switch:
+                raise ValueError("kill switch is on: nothing is executed, not even approved actions")
             act = next(a for a in reversed(inc.actions) if a["verdict"] == "needs_approval" and not a["executed"])
             act["approved_by"] = approver
         self._run_async(inc, act, actor=f"human:{approver}")
@@ -381,7 +487,7 @@ class Engine:
         svc = act["service"]
         inc.before = self._app_snapshot(probe=True)  # measured just before acting, with short timeouts
         try:
-            res = self.executor.run(act["runbook_id"], svc, actor, [e.id for e in inc.evidence][:6])
+            res = self.executor.run(act["runbook_id"], svc, actor, [e.id for e in inc.evidence][:6], reason=act.get("reason", ""))
             act["executed"], act["result"], act["executed_t"] = True, res, time.time()
             self.policy.record_execution(svc)
             inc.log(f"executed {act['runbook_id']} on {svc} by {actor}")
@@ -396,16 +502,61 @@ class Engine:
         v = verify_recovery(config.OBSERVATION_S)
         v["t"] = time.time()
         inc.verification = v
+        act["verification"] = v          # per attempt: a retry replaces inc.verification, not this
         inc.after = self._app_snapshot(probe=False) | {"checkout_success": v["success_rate"]}
         inc.log(f"verification: {v['outcome']} ({v['success_rate']:.0%} of {v['probes']} checkouts)")
+        log_v = getattr(self.executor, "log_verification", None)
+        if log_v:
+            log_v(inc.id, act["runbook_id"], svc, v["outcome"], v["success_rate"])
         if v["outcome"] == "recovered":
             self.policy.record_recovered(svc)
             inc.status, inc.closed_t = "recovered", time.time()
             remember_verified(inc.likely_cause, svc, (inc.report or {}).get("summary", ""), act["runbook_id"])
+        elif self._retry_second_candidate(inc, act, v):
+            return               # the incident stays active: the second fix is executing, awaiting approval, or was blocked
         else:
             inc.status = v["outcome"] if v["outcome"] != "unresolved" else "unresolved"
             inc.closed_t = time.time()
             self._preserve(inc)  # stop repeated interventions; policy breaker handles the rest
+        self.last_closed = {"t": time.time()}
+        self.persist.runs.clear()
+        self.first_anom.clear()
+
+    def _retry_second_candidate(self, inc: Incident, act: dict, v: dict) -> bool:
+        """Plan P8/L5 (max 2 attempts per incident): after a failed verification, propose the next ranked candidate runbook
+        ONCE, through the unchanged policy (approval, protected services, kill switch, breaker, hourly cap all apply).
+        - The retry waits out the remaining per-service cooldown instead of bypassing it.
+        - If the retry also fails verification, the incident is escalated to a human.
+        Returns True when this call decided the incident's next state (retry proposed, or escalated after the retry);
+        False when there is no different candidate (the caller closes the incident as before)."""
+        executed = [a for a in inc.actions if a.get("executed")]
+        if len(executed) >= 2:
+            inc.status, inc.closed_t = "escalated", time.time()
+            inc.log(f"retry with {act['runbook_id']} did not recover ({v['outcome']}): escalated to a human with "
+                    "evidence preserved")
+            self._preserve(inc)
+            self._clear_after_close()
+            return True
+        used = {a["runbook_id"] for a in inc.actions}
+        nxt = next((r for r in inc.candidates if r not in used), None)
+        if nxt is None:
+            return False
+        acts = self.policy.history.get(act["service"], [])
+        wait = max(0.0, self.policy.rulebook.cooldown_s - (time.time() - acts[-1]) + 0.5) if acts else 0.0
+        inc.log(f"verification {v['outcome']} after {act['runbook_id']}: retrying once with the second candidate {nxt}"
+                + (f" after the remaining {wait:.0f} s cooldown" if wait else ""))
+        if wait:
+            time.sleep(wait)
+        with self.lock:
+            if inc.status != "verifying":      # closed meanwhile (e.g. reset_run_state): do nothing
+                return True
+            unusual = (inc.diagnosis or {}).get("anomaly_source") == "forest_only"
+            self._propose(inc, act["service"], nxt, unusual=unusual)
+            if inc.status in CLOSED:           # the policy blocked the retry: _propose escalated and preserved it
+                self._clear_after_close()
+        return True
+
+    def _clear_after_close(self):
         self.last_closed = {"t": time.time()}
         self.persist.runs.clear()
         self.first_anom.clear()
@@ -416,35 +567,66 @@ class Engine:
         self.last_closed = {"t": time.time()}
 
     # ------------------------------------------------------------ prediction
-    def _predictive(self, feats, now):
-        """Open a 'predicted' incident when memory or disk growth is steady and exhaustion is near."""
-        with self.lock:
-            if any(i.status in ("open", "awaiting_approval", "verifying", "executing") for i in self.incidents):
-                return
+    ACTIVE = ("open", "awaiting_approval", "verifying", "executing")
+
+    def _forecast_warnings(self) -> list[tuple]:
+        """(service, evidence, forecast) for every memory/disk forecast that counts as a warning: earliest exhaustion closer
+        than PREDICT_HORIZON_S and the resource above 25% of its limit. Telemetry only; no lock."""
         inv = Investigator(self.prom, self.dv)
+        out = []
         for s in config.SERVICES:
-            for e in inv.forecast(s, self.frames[s]):
+            frame = (getattr(self, "frames", None) or {}).get(s)
+            if frame is None:
+                continue
+            for e in inv.forecast(s, frame):
                 f = e.data
                 if f["eta_earliest_s"] < config.PREDICT_HORIZON_S and f["share_of_limit_now"] > 0.25:
-                    cause = "memory_leak" if f["resource"] == "memory" else "disk_fill"
-                    with self.lock:
-                        inc = Incident(uuid.uuid4().hex[:8], now, kind="predicted", services=[s])
-                        inc.ranking, inc.likely_cause, inc.forecasts = [{"service": s, "score": 1.0}], cause, [f]
-                        inc.confidence = None
-                        inc.log(f"forecast: {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
-                        inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)
-                        inc.evidence = inv.items
-                        cands = CAUSE_RUNBOOKS[cause]
-                        ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
-                               "ranking": inc.ranking, "evidence": [
-                                   {"id": x.id, "tool": x.tool, "summary": x.summary} for x in inc.evidence]}
-                        rep = template_report(ctx)
-                        inc.report, inc.diagnosed = rep.model_dump(), True
-                        inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
-                        self.incidents.append(inc)
-                        self._propose(inc, s, rep.runbook_id)
-                        self._llm_upgrade_async(inc, ctx)
-                    return
+                    out.append((s, e, f))
+        return out
+
+    def _predictive(self, feats, now):
+        """Forecast memory and disk exhaustion on EVERY tick (plan §9.2).
+
+        A warning is attached, with its time, to the active incident on that service (or, if none covers it, to the newest
+        active incident): one warning per service and resource, logged on the timeline. With no active incident a warning
+        opens a 'predicted' incident whose fix goes through the policy as usual. Until 2026-10-21 this ran only when no
+        incident was open; reactive detection always opened one first, so no warning was ever issued live
+        (docs/FORECAST_CHECK.md)."""
+        warnings = self._forecast_warnings()
+        if not warnings:
+            return
+        with self.lock:
+            active = [i for i in self.incidents if i.status in self.ACTIVE]
+            if active:
+                for s, _e, f in warnings:
+                    inc = next((i for i in reversed(active) if s in i.services), active[-1])
+                    if any(x.get("service", s) == s and x["resource"] == f["resource"] for x in inc.forecasts):
+                        continue
+                    inc.forecasts.append({**f, "service": s, "t": now})
+                    inc.log(f"forecast: {s} {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
+                return
+        s, _e, f = warnings[0]
+        inv = Investigator(self.prom, self.dv)
+        cause = "memory_leak" if f["resource"] == "memory" else "disk_fill"
+        inv.metrics(s, feats[s]); inv.container(s); inv.deploy_history(s)   # Docker/telemetry: outside the lock
+        ranking = [{"service": s, "score": 1.0}]
+        cands = CAUSE_RUNBOOKS[cause]
+        ctx = {"cause": cause, "confidence": 0.0, "candidates": cands, "alternatives": [],
+               "ranking": ranking, "evidence": [{"id": x.id, "tool": x.tool, "summary": x.summary} for x in inv.items]}
+        rep = template_report(ctx)
+        with self.lock:
+            if any(i.status in self.ACTIVE for i in self.incidents):
+                return   # a reactive incident opened meanwhile; the next tick attaches the warning to it
+            inc = Incident(uuid.uuid4().hex[:8], now, kind="predicted", services=[s])
+            inc.ranking, inc.likely_cause, inc.forecasts = ranking, cause, [{**f, "service": s, "t": now}]
+            inc.confidence = None
+            inc.log(f"forecast: {s} {f['resource']} exhaustion in {f['eta_earliest_s']:.0f}-{f['eta_latest_s']:.0f}s")
+            inc.evidence = inv.items
+            inc.report, inc.diagnosed = rep.model_dump(), True
+            inc.report_meta = {"provider": "template", "llm_pending": llm_enabled()}
+            self.incidents.append(inc)
+            self._propose(inc, s, rep.runbook_id)
+            self._llm_upgrade_async(inc, ctx)
 
     # ------------------------------------------------------------ loop
     def run_forever(self, interval=2.0):
@@ -454,9 +636,11 @@ class Engine:
                 self.tick()
             except Exception as e:  # keep the loop alive; the error is visible in status
                 self.last_error = f"{type(e).__name__}: {e}"
+                self.last_error_t = time.time()
             time.sleep(max(0.0, interval - (time.time() - t0)))
 
     def stop(self):
         self._stop.set()
 
     last_error: str | None = None
+    last_error_t: float | None = None

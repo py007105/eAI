@@ -1,0 +1,23 @@
+# Reproduces the policy of the system measured in benchmark v2 (git tag benchmark-system-v2, eternalai/policy.py there).
+# Use it only to re-run or compare with those numbers; every number produced under it is labelled with this file.
+#   ETERNALAI_POLICY_FILE=benchmark-v2.yaml
+reproduces: benchmark-system-v2
+
+mode: ask-first
+auto_allowed_risks: [low, medium]   # v2: autopilot executed low and medium, nothing was high
+protected_services: []
+database_services: []
+max_actions_per_hour: null          # no hourly cap in v2
+cooldown_s: 90
+max_unverified_actions_per_service: 2
+namespaces: []
+
+runbook_risk:
+  restart_service: low
+  clear_temp_path: low
+  recreate_container: medium        # medium on orders/payments/inventory, low on web (below)
+  rollback_release: medium
+
+service_risk:
+  web: {recreate_container: low, rollback_release: low}
+fault_overrides: {}

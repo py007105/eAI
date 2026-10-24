@@ -1,0 +1,92 @@
+
+== 2026-10-24 15:09 IST docker compose up -d --force-recreate inventory payments orders prometheus web eternalai dashboard evaluator loadgen
+ Container eai-payments-1 Recreate 
+ Container eai-prometheus-1 Recreate 
+ Container eai-inventory-1 Recreate 
+ Container eai-inventory-1 Recreated 
+ Container eai-payments-1 Recreated 
+ Container eai-orders-1 Recreate 
+ Container eai-prometheus-1 Recreated 
+ Container eai-orders-1 Recreated 
+ Container eai-web-1 Recreate 
+ Container eai-web-1 Recreated 
+ Container eai-evaluator-1 Recreate 
+ Container eai-eternalai-1 Recreate 
+ Container eai-loadgen-1 Recreate 
+ Container eai-loadgen-1 Recreated 
+ Container eai-evaluator-1 Recreated 
+ Container eai-eternalai-1 Recreated 
+ Container eai-dashboard-1 Recreate 
+ Container eai-dashboard-1 Recreated 
+ Container eai-prometheus-1 Starting 
+ Container eai-inventory-1 Starting 
+ Container eai-payments-1 Starting 
+ Container eai-prometheus-1 Started 
+ Container eai-inventory-1 Started 
+ Container eai-payments-1 Started 
+ Container eai-orders-1 Starting 
+ Container eai-orders-1 Started 
+ Container eai-web-1 Starting 
+ Container eai-web-1 Started 
+ Container eai-loadgen-1 Starting 
+ Container eai-evaluator-1 Starting 
+ Container eai-eternalai-1 Starting 
+ Container eai-loadgen-1 Started 
+ Container eai-evaluator-1 Started 
+ Container eai-eternalai-1 Started 
+ Container eai-dashboard-1 Starting 
+ Container eai-dashboard-1 Started 
+
+== 2026-10-24 15:10 IST D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe scripts/stock_gate.py --restock --force
+{"t": 1792834829.2729933, "threshold": 50000, "seed_level": 100000, "before": {"sku-lamp": 99792, "sku-mug": 99801, "sku-bag": 99797, "sku-book": 99806}, "restocked": true, "rows_updated": 4, "after_restock": {"sku-lamp": 99997, "sku-mug": 100000, "sku-bag": 100000, "sku-book": 99997}, "brain_incidents_in_restock_window": []}
+
+== 2026-10-24 15:10 IST D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe -u scripts/run_benchmark.py --arm eternalai_autopilot --manage-stack --reps 5 --seed0 600 --raw D:\eAI\eAI-eval-71eb2f5\results\benchmark-v3\20261024T150914-22eb30c0\raw.jsonl --models-label models-v2 (frozen) + root margin 0.1215 + data/kb; rulebook default.yaml --policy-file  --min-free-gb 1.5 --scenarios crash latency error_spike memory_leak disk_fill bad_deploy cpu_burn traffic_surge good_deploy
+eternalai_autopilot error_spike seed 622: detected=True recovered=False failed%=19.77
+eternalai_autopilot good_deploy seed 638: detected=False recovered=None failed%=0.84
+eternalai_autopilot latency seed 631: detected=True recovered=False failed%=0.0
+eternalai_autopilot error_spike seed 632: detected=True recovered=False failed%=19.44
+eternalai_autopilot cpu_burn seed 636: detected=True recovered=False failed%=26.28
+eternalai_autopilot disk_fill seed 634: detected=True recovered=True failed%=0.0
+eternalai_autopilot crash seed 630: detected=True recovered=True failed%=35.53
+eternalai_autopilot bad_deploy seed 635: detected=True recovered=False failed%=19.26
+eternalai_autopilot memory_leak seed 633: detected=True recovered=True failed%=5.0
+eternalai_autopilot traffic_surge seed 637: detected=False recovered=None failed%=0.0
+eternalai_autopilot cpu_burn seed 646: detected=True recovered=False failed%=0.0
+eternalai_autopilot disk_fill seed 644: detected=True recovered=True failed%=0.0
+eternalai_autopilot good_deploy seed 648: detected=False recovered=None failed%=0.56
+eternalai_autopilot error_spike seed 642: detected=True recovered=False failed%=24.25
+eternalai_autopilot traffic_surge seed 647: detected=False recovered=None failed%=0.0
+eternalai_autopilot latency seed 641: detected=True recovered=False failed%=0.0
+eternalai_autopilot bad_deploy seed 645: detected=True recovered=False failed%=18.32
+eternalai_autopilot memory_leak seed 643: detected=True recovered=False failed%=1.13
+eternalai_autopilot crash seed 640: detected=True recovered=True failed%=44.44
+
+== 2026-10-24 16:08 IST D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe scripts/stock_gate.py --restock
+{"t": 1792838327.0832267, "threshold": 50000, "seed_level": 100000, "before": {"sku-lamp": 97018, "sku-mug": 96931, "sku-bag": 97017, "sku-book": 96996}, "restocked": false, "after_restock": {"sku-lamp": 97018, "sku-mug": 96931, "sku-bag": 97017, "sku-book": 96996}}
+
+== 2026-10-24 16:08 IST D:\eAI\eAI-workspace\eAI\.venv\Scripts\python.exe -u scripts/run_benchmark.py --arm no_action --manage-stack --reps 5 --seed0 600 --raw D:\eAI\eAI-eval-71eb2f5\results\benchmark-v3\20261024T150914-22eb30c0\raw.jsonl --models-label models-v2 (frozen) + root margin 0.1215 + data/kb; rulebook default.yaml --policy-file  --min-free-gb 1.5 --scenarios memory_leak
+no_action memory_leak seed 603: detected=False recovered=False failed%=0.0
+no_action memory_leak seed 613: detected=False recovered=False failed%=0.0
+no_action memory_leak seed 623: detected=False recovered=False failed%=0.0
+no_action memory_leak seed 633: detected=False recovered=False failed%=0.0
+no_action memory_leak seed 643: detected=False recovered=False failed%=0.3
+
+== 2026-10-24 16:26 IST docker compose stop
+ Container eai-loadgen-1 Stopping 
+ Container eai-dashboard-1 Stopping 
+ Container eai-evaluator-1 Stopping 
+ Container eai-evaluator-1 Stopped 
+ Container eai-loadgen-1 Stopped 
+ Container eai-dashboard-1 Stopped 
+ Container eai-eternalai-1 Stopping 
+ Container eai-eternalai-1 Stopped 
+ Container eai-prometheus-1 Stopping 
+ Container eai-web-1 Stopping 
+ Container eai-web-1 Stopped 
+ Container eai-orders-1 Stopping 
+ Container eai-orders-1 Stopped 
+ Container eai-inventory-1 Stopping 
+ Container eai-payments-1 Stopping 
+ Container eai-inventory-1 Stopped 
+ Container eai-payments-1 Stopped 
+ Container eai-prometheus-1 Stopped 

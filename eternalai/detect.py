@@ -101,6 +101,19 @@ def service_anomalous(detector: ServiceDetector, feats: dict, down: bool) -> boo
     return bool(down) or detector.anomalous(feats)
 
 
+def anomaly_source(detector: ServiceDetector | None, feats: dict, down: bool) -> str:
+    """Why a service looks anomalous: "down" (not scraped / not running), "limits" (at least one signal outside its learned
+    healthy range), "forest_only" (only the joint Isolation Forest score is high: no single signal explains it, the plan's
+    "unusual combination", §9.1), or "none"."""
+    if down:
+        return "down"
+    if detector is None:
+        return "none"
+    if detector.out_of_range(feats):
+        return "limits"
+    return "forest_only" if detector.score(feats) > detector.threshold else "none"
+
+
 class Persistence:
     """Open an incident only after `k` consecutive anomalous ticks for the same service."""
 

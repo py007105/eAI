@@ -14,6 +14,8 @@ import json
 import sys
 import time
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 SERVICES = ["web", "orders", "payments", "inventory"]
 EV, EAI, PROM = "http://localhost:8200", "http://localhost:8000", "http://localhost:9090"
@@ -36,7 +38,7 @@ def collect(a):
         f = out / f"traffic_surge_{seed}.json"
         if f.exists():
             continue
-        r = httpx.post(f"{EV}/runs", json={"scenario": "traffic_surge", "seed": seed, "timeout_s": 90, "healthy_s": 60}, timeout=20)
+        r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": "traffic_surge", "seed": seed, "timeout_s": 90, "healthy_s": 60}, timeout=20))
         if r.status_code != 200:
             print(f"{seed}: could not start ({r.status_code})", flush=True)
             continue

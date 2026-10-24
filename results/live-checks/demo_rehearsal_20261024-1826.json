@@ -1,0 +1,152 @@
+{
+ "kind": "demo rehearsal (not a gate, not a benchmark)",
+ "checkout": "D:\\eAI\\eAI-demo-stable-1",
+ "commit": "49155ea",
+ "tag": "demo-stable-1",
+ "started": "2026-10-24 18:26:38 IST",
+ "steps": {
+  "1_crash_autopilot": {
+   "run_id": "3436f365e0",
+   "t_inject": "2026-10-24 18:28:45 IST",
+   "detected": true,
+   "time_to_detect_s": 5.3,
+   "recovered": true,
+   "time_to_verified_recovery_s": 46.6,
+   "failed_request_pct": 52.01,
+   "incidents": [
+    {
+     "id": "92e5eb8b",
+     "status": "recovered",
+     "cause": "down",
+     "services": [
+      "web"
+     ],
+     "verification": "recovered",
+     "actions": [
+      {
+       "runbook_id": "restart_service",
+       "service": "web",
+       "verdict": "execute",
+       "risk": "low",
+       "reason": "autopilot: low-risk runbook allowed by the rulebook",
+       "executed": true,
+       "approved_by": null,
+       "t": 1792846738.160823,
+       "executed_t": 1792846748.5585372
+      }
+     ]
+    }
+   ],
+   "audit": [
+    {
+     "t": 1792846748.5545545,
+     "runbook": "restart_service",
+     "service": "web",
+     "actor": "autopilot",
+     "ok": true
+    },
+    {
+     "t": 1792846771.729693,
+     "runbook": "restart_service",
+     "service": "web",
+     "actor": null,
+     "ok": null
+    }
+   ],
+   "result": "PASS"
+  },
+  "2_disk_autopilot": {
+   "run_id": "ad26de5343",
+   "t_inject": "2026-10-24 18:30:59 IST",
+   "detected": true,
+   "time_to_detect_s": 7.2,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "failed_request_pct": 0.0,
+   "incidents": [
+    {
+     "id": "c04c482a",
+     "status": "escalated",
+     "cause": "disk_fill",
+     "services": [
+      "web"
+     ],
+     "verification": null,
+     "actions": [
+      {
+       "runbook_id": "clear_temp_path",
+       "service": "web",
+       "verdict": "blocked",
+       "risk": "low",
+       "reason": "kill switch is on: nothing is executed",
+       "executed": false,
+       "approved_by": null,
+       "t": 1792846874.023835,
+       "executed_t": null
+      }
+     ]
+    }
+   ],
+   "audit": [],
+   "other_actions_without_approval": [],
+   "result": "FAIL"
+  },
+  "3_bad_deploy_ask_first": {
+   "run_id": "0e8538282b",
+   "t_inject": "2026-10-24 18:32:44 IST",
+   "detected": true,
+   "time_to_detect_s": 27.4,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "failed_request_pct": 23.08,
+   "incidents": [
+    {
+     "id": "c8a9cb14",
+     "status": "escalated",
+     "cause": "bad_deploy",
+     "services": [
+      "orders",
+      "payments"
+     ],
+     "verification": null,
+     "actions": [
+      {
+       "runbook_id": "rollback_release",
+       "service": "payments",
+       "verdict": "blocked",
+       "risk": "high",
+       "reason": "kill switch is on: nothing is executed",
+       "executed": false,
+       "approved_by": null,
+       "t": 1792847000.4819748,
+       "executed_t": null
+      }
+     ]
+    }
+   ],
+   "audit": [],
+   "pending": null,
+   "approver_recorded": null,
+   "wait_proposal_to_execution_s": null,
+   "executed_without_approval": [],
+   "result": "NOT APPROVED"
+  }
+ },
+ "free_gb_at_start": 3.71,
+ "approval_ttl_s": "brain default (ETERNALAI_APPROVAL_TTL_S is not passed by this commit's compose file)",
+ "build_exit": 0,
+ "up_exit": 0,
+ "status": {
+  "mode": "autopilot",
+  "policy_file": "default.yaml",
+  "auto_allowed_risks": [
+   "low"
+  ],
+  "protected": [
+   "payments"
+  ]
+ },
+ "restock_exit": 0,
+ "mode_switch_http": 409,
+ "finished": "2026-10-24 18:33:55 IST"
+}

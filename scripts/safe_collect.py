@@ -22,6 +22,8 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import memguard  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 EV = "http://localhost:8200"
 TIMEOUT = {"memory_leak": 100, "disk_fill": 80}
@@ -59,7 +61,7 @@ def collect_one(scen, seed, out: Path, prom, services, min_free_gb, log=print):
         return False
     memguard.wait_for_memory(min_free_gb, log=log)
     ages = stack_ages_min()
-    r = httpx.post(f"{EV}/runs", json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT), "healthy_s": 60}, timeout=20)
+    r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT), "healthy_s": 60}, timeout=20))
     r.raise_for_status()
     rid = r.json()["run_id"]
     while httpx.get(f"{EV}/runs/{rid}/status", timeout=10).json()["state"] == "running":

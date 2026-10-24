@@ -2,6 +2,9 @@
 .env
 *.pem
 *.key
+*.token
+telegram.env
+approval.token
 # python
 .venv/
 __pycache__/

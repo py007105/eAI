@@ -1,0 +1,506 @@
+{
+ "commit": "f58e579",
+ "started": "2026-10-24 19:58:10 IST",
+ "status_policy": {
+  "file": "default.yaml",
+  "reproduces": null,
+  "auto_allowed_risks": [
+   "low"
+  ],
+  "protected_services": [
+   "payments"
+  ],
+  "database_services": [],
+  "max_actions_per_hour": 10,
+  "cooldown_s": 40.0,
+  "max_unverified_actions_per_service": 2,
+  "namespaces": [
+   "shop"
+  ],
+  "runbook_risk": {
+   "restart_service": "low",
+   "clear_temp_path": "low",
+   "recreate_container": "low",
+   "rollback_release": "high"
+  },
+  "service_risk": {
+   "orders": {
+    "recreate_container": "high"
+   },
+   "payments": {
+    "recreate_container": "high"
+   },
+   "inventory": {
+    "recreate_container": "high"
+   }
+  },
+  "fault_overrides": {
+   "error_spike": {
+    "risk": "medium"
+   },
+   "latency_spike": {
+    "risk": "medium"
+   },
+   "cpu_runaway": {
+    "risk": "medium",
+    "act_only_if_user_impact": true
+   },
+   "db_slowdown": {
+    "action": "escalate"
+   }
+  }
+ },
+ "crash_web": {
+  "run_id": "13c815ab26",
+  "score": {
+   "run_id": "13c815ab26",
+   "scenario": "crash",
+   "target": "web",
+   "failed_request_pct": 31.49,
+   "incidents_opened": 1,
+   "actions_executed": 1,
+   "detected": true,
+   "time_to_detect_s": 4.4,
+   "false_alerts": 0,
+   "extra_incidents": 0,
+   "diagnosis_top1": true,
+   "diagnosis_top3": true,
+   "cause_correct": true,
+   "abstained": false,
+   "abstained_correctly": null,
+   "harmful_interventions": 0,
+   "recovered": true,
+   "time_to_verified_recovery_s": 41.1,
+   "final_status": "recovered",
+   "window_s": 49.2,
+   "t_end": 1792852275.8834255
+  },
+  "incidents": [
+   {
+    "id": "234d3179",
+    "status": "recovered",
+    "cause": "down",
+    "services": [
+     "web"
+    ],
+    "action": {
+     "runbook_id": "restart_service",
+     "service": "web",
+     "verdict": "execute",
+     "risk": "low",
+     "reason": "autopilot: low-risk runbook allowed by the rulebook",
+     "executed": true,
+     "approved_by": null
+    },
+    "verification": "recovered"
+   }
+  ]
+ },
+ "crash_payments": {
+  "run_id": "89e0533467",
+  "score": {
+   "run_id": "89e0533467",
+   "scenario": "crash",
+   "target": "payments",
+   "failed_request_pct": 31.26,
+   "incidents_opened": 2,
+   "actions_executed": 0,
+   "detected": true,
+   "time_to_detect_s": 3.9,
+   "false_alerts": 0,
+   "extra_incidents": 1,
+   "diagnosis_top1": true,
+   "diagnosis_top3": true,
+   "cause_correct": true,
+   "abstained": false,
+   "abstained_correctly": null,
+   "harmful_interventions": 0,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "final_status": "awaiting_approval",
+   "window_s": 150.1,
+   "t_end": 1792852483.2019484
+  },
+  "incidents": [
+   {
+    "id": "56c62cb3",
+    "status": "escalated",
+    "cause": "down",
+    "services": [
+     "payments"
+    ],
+    "action": {
+     "runbook_id": "restart_service",
+     "service": "payments",
+     "verdict": "rejected_by_live-check",
+     "risk": "low",
+     "reason": "payments is a protected service: every action needs approval",
+     "executed": false,
+     "approved_by": null
+    },
+    "verification": null
+   },
+   {
+    "id": "205108a2",
+    "status": "escalated",
+    "cause": "down",
+    "services": [
+     "orders",
+     "web"
+    ],
+    "action": {
+     "runbook_id": "restart_service",
+     "service": "payments",
+     "verdict": "expired_unapproved",
+     "risk": "low",
+     "reason": "payments is a protected service: every action needs approval",
+     "executed": false,
+     "approved_by": null
+    },
+    "verification": null
+   }
+  ],
+  "proposal": {
+   "runbook_id": "restart_service",
+   "risk": "low",
+   "reason": "payments is a protected service: every action needs approval"
+  }
+ },
+ "crash_inventory_killswitch": {
+  "run_id": "d4139d65cb",
+  "score": {
+   "run_id": "d4139d65cb",
+   "scenario": "crash",
+   "target": "inventory",
+   "failed_request_pct": 100.0,
+   "incidents_opened": 1,
+   "actions_executed": 0,
+   "detected": true,
+   "time_to_detect_s": 5.3,
+   "false_alerts": 0,
+   "extra_incidents": 0,
+   "diagnosis_top1": true,
+   "diagnosis_top3": true,
+   "cause_correct": true,
+   "abstained": false,
+   "abstained_correctly": null,
+   "harmful_interventions": 0,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "final_status": "escalated",
+   "window_s": 24.8,
+   "t_end": 1792852576.9876728
+  },
+  "incidents": [
+   {
+    "id": "014d27d4",
+    "status": "escalated",
+    "cause": "down",
+    "services": [
+     "inventory",
+     "orders",
+     "web"
+    ],
+    "action": {
+     "runbook_id": "restart_service",
+     "service": "inventory",
+     "verdict": "blocked",
+     "risk": "low",
+     "reason": "kill switch is on: nothing is executed",
+     "executed": false,
+     "approved_by": null
+    },
+    "verification": null
+   }
+  ],
+  "killswitch": {
+   "kill_switch": true,
+   "mode": "watch-only"
+  }
+ },
+ "bad_deploy_orders": {
+  "run_id": "7a78eb777f",
+  "score": {
+   "run_id": "7a78eb777f",
+   "scenario": "bad_deploy",
+   "target": "orders",
+   "failed_request_pct": 16.07,
+   "incidents_opened": 1,
+   "actions_executed": 1,
+   "detected": true,
+   "time_to_detect_s": 27.8,
+   "false_alerts": 0,
+   "extra_incidents": 0,
+   "diagnosis_top1": true,
+   "diagnosis_top3": true,
+   "cause_correct": true,
+   "abstained": false,
+   "abstained_correctly": null,
+   "harmful_interventions": 0,
+   "recovered": true,
+   "time_to_verified_recovery_s": 75.3,
+   "final_status": "recovered",
+   "window_s": 83.9,
+   "t_end": 1792852724.2620406
+  },
+  "incidents": [
+   {
+    "id": "359cb098",
+    "status": "recovered",
+    "cause": "bad_deploy",
+    "services": [
+     "orders",
+     "web"
+    ],
+    "action": {
+     "runbook_id": "rollback_release",
+     "service": "orders",
+     "verdict": "needs_approval",
+     "risk": "high",
+     "reason": "autopilot: high-risk action always requires approval",
+     "executed": true,
+     "approved_by": "live-check"
+    },
+    "verification": "recovered"
+   }
+  ],
+  "proposal": {
+   "service": "orders",
+   "runbook_id": "rollback_release",
+   "risk": "high",
+   "reason": "autopilot: high-risk action always requires approval"
+  }
+ },
+ "approvals_latency": {
+  "n": 2105,
+  "p50_s": 0.0047636000090278685,
+  "p95_s": 0.07444299996132031,
+  "max_s": 2.0322662999969907,
+  "errors": 0
+ },
+ "finished": "2026-10-24 20:09:47 IST",
+ "execution_id": "manual",
+ "checks": [
+  {
+   "id": "startup.compose_requires_chaos_token",
+   "what": "docker compose refuses to start without CHAOS_TOKEN",
+   "result": "PASS",
+   "detail": "error while interpolating services.evaluator.environment.CHAOS_TOKEN: required variable CHAOS_TOKEN is missing a value: set CHAOS_TOKEN to a real secret in .env",
+   "t": "2026-10-24 19:58:11 IST"
+  },
+  {
+   "id": "startup.web_refuses_default_token",
+   "what": "eai/web:v1 refuses the old default chaos token",
+   "result": "PASS",
+   "detail": "exit 1",
+   "t": "2026-10-24 19:58:14 IST"
+  },
+  {
+   "id": "startup.evaluator_refuses_default_token",
+   "what": "eai/evaluator:v1 refuses the old default chaos token",
+   "result": "PASS",
+   "detail": "exit 1",
+   "t": "2026-10-24 19:58:16 IST"
+  },
+  {
+   "id": "startup.brain_up",
+   "what": "brain answers /status",
+   "result": "PASS",
+   "detail": "",
+   "t": "2026-10-24 19:58:30 IST"
+  },
+  {
+   "id": "startup.stock",
+   "what": "inventory restocked and verified (scripts/stock_gate.py)",
+   "result": "PASS",
+   "detail": "{\"sku-lamp\": 100000, \"sku-mug\": 100000, \"sku-bag\": 100000, \"sku-book\": 100000}, \"brain_incidents_in_restock_window\": []}",
+   "t": "2026-10-24 19:59:19 IST"
+  },
+  {
+   "id": "net.ports_localhost",
+   "what": "every published port is bound to 127.0.0.1",
+   "result": "PASS",
+   "detail": [
+    "eai-dashboard-1 8050/tcp -> 127.0.0.1",
+    "eai-eternalai-1 8000/tcp -> 127.0.0.1",
+    "eai-evaluator-1 8200/tcp -> 127.0.0.1",
+    "eai-prometheus-1 9090/tcp -> 127.0.0.1",
+    "eai-web-1 8000/tcp -> 127.0.0.1"
+   ],
+   "t": "2026-10-24 19:59:22 IST"
+  },
+  {
+   "id": "policy.default_rulebook",
+   "what": "brain runs the plan rulebook (default.yaml: auto low only, payments protected, 10/h, 40 s)",
+   "result": "PASS",
+   "detail": {
+    "file": "default.yaml",
+    "mode": "autopilot"
+   },
+   "t": "2026-10-24 19:59:24 IST"
+  },
+  {
+   "id": "net.fault_start_needs_token",
+   "what": "starting a fault without or with a wrong token is refused (403)",
+   "result": "PASS",
+   "detail": {
+    "brain /challenge/start, no token": 403,
+    "evaluator /runs, no token": 403,
+    "evaluator /runs, wrong token": 403
+   },
+   "t": "2026-10-24 19:59:30 IST"
+  },
+  {
+   "id": "policy.killswitch_roundtrip",
+   "what": "kill switch on -> watch-only; leaving watch-only refused (409); off; autopilot again",
+   "result": "PASS",
+   "detail": {
+    "on": {
+     "kill_switch": true,
+     "mode": "watch-only"
+    },
+    "leave_http": 409,
+    "off": {
+     "kill_switch": false,
+     "mode": "watch-only"
+    },
+    "back_http": 200
+   },
+   "t": "2026-10-24 19:59:39 IST"
+  },
+  {
+   "id": "live.autopilot_low_executes",
+   "what": "crash on web: low-risk restart executed by autopilot and verified",
+   "result": "PASS",
+   "detail": {
+    "incidents": [
+     [
+      "recovered",
+      "restart_service",
+      "execute"
+     ]
+    ]
+   },
+   "t": "2026-10-24 20:01:25 IST"
+  },
+  {
+   "id": "live.protected_waits",
+   "what": "crash on payments (protected): low risk but waits for approval; rejected; nothing executed",
+   "result": "PASS",
+   "detail": {
+    "proposal": {
+     "runbook_id": "restart_service",
+     "risk": "low",
+     "reason": "payments is a protected service: every action needs approval"
+    },
+    "reject_http": 200,
+    "executed_on_payments": 0
+   },
+   "t": "2026-10-24 20:05:02 IST"
+  },
+  {
+   "id": "live.killswitch_blocks",
+   "what": "kill switch on, crash on inventory: proposal blocked, nothing executed; back to autopilot after",
+   "result": "PASS",
+   "detail": {
+    "incidents": [
+     [
+      "escalated",
+      "blocked",
+      "kill switch is on: nothing is executed"
+     ]
+    ],
+    "executed": 0,
+    "mode_restored_http": 200
+   },
+   "t": "2026-10-24 20:06:33 IST"
+  },
+  {
+   "id": "live.high_risk_needs_approval",
+   "what": "bad_deploy on orders in autopilot: rollback (high) waits; runs only after approval",
+   "result": "PASS",
+   "detail": {
+    "proposal": {
+     "service": "orders",
+     "runbook_id": "rollback_release",
+     "risk": "high",
+     "reason": "autopilot: high-risk action always requires approval"
+    },
+    "executed_before_approval": 0,
+    "approve_http": 200,
+    "verification": [
+     "recovered"
+    ]
+   },
+   "t": "2026-10-24 20:08:56 IST"
+  },
+  {
+   "id": "lock.approvals_fast_live",
+   "what": "GET /approvals during the four runs: p95 under 0.2 s, no errors",
+   "result": "PASS",
+   "detail": {
+    "n": 2105,
+    "p50_s": 0.0048,
+    "p95_s": 0.0744,
+    "max_s": 2.0323,
+    "errors": 0
+   },
+   "t": "2026-10-24 20:08:56 IST"
+  },
+  {
+   "id": "audit.reason_and_verification",
+   "what": "audit records carry the policy reason; verification results are audited",
+   "result": "PASS",
+   "detail": {
+    "actions": [
+     [
+      "restart_service",
+      "web",
+      "autopilot",
+      "autopilot: low-risk runbook allowed by the rulebook"
+     ],
+     [
+      "rollback_release",
+      "orders",
+      "human:live-check",
+      "autopilot: high-risk action always requires approval"
+     ]
+    ],
+    "verifications": [
+     [
+      "web",
+      "recovered"
+     ],
+     [
+      "orders",
+      "recovered"
+     ]
+    ]
+   },
+   "t": "2026-10-24 20:08:58 IST"
+  },
+  {
+   "id": "telemetry.prometheus_outage",
+   "what": "Prometheus stopped: brain keeps answering, reports the failed queries, opens no incident",
+   "result": "PASS",
+   "detail": {
+    "failed_services": [
+     "inventory",
+     "orders",
+     "payments",
+     "web"
+    ],
+    "new_incidents": [],
+    "last_error": null
+   },
+   "t": "2026-10-24 20:09:35 IST"
+  },
+  {
+   "id": "telemetry.recovers",
+   "what": "after Prometheus is back the failed-query list empties",
+   "result": "PASS",
+   "detail": "",
+   "t": "2026-10-24 20:09:47 IST"
+  }
+ ]
+}

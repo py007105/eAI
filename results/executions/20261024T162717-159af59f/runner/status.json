@@ -1,0 +1,32 @@
+{
+ "pid": 25620,
+ "launched": "2026-10-24T15:34:17+05:30",
+ "window": [
+  "2026-10-24T15:34:00+05:30",
+  "2026-10-24T20:00:00+05:30"
+ ],
+ "latest_start": {
+  "gate": "2026-10-24T18:30:00+05:30",
+  "resume": "2026-10-25T01:30:00+05:30",
+  "combined": "2026-10-24T04:15:00+05:30"
+ },
+ "min_free_gb": 3.0,
+ "steps": [
+  {
+   "name": "gate",
+   "cwd": "D:\\eAI\\eAI-eval-71eb2f5",
+   "command": "-u scripts/run_gate_sequence.py --reference 20261024T001813-4cedc8bf",
+   "start": "2026-10-24T16:27:17+05:30",
+   "free_gb_at_start": 4.29,
+   "exit": 0,
+   "end": "2026-10-24T17:20:55+05:30",
+   "new_execution_folders": [
+    "20261024T162717-159af59f"
+   ]
+  }
+ ],
+ "state": "finished",
+ "lock_taken": "2026-10-24T16:27:17+05:30",
+ "lock_released": "2026-10-24T17:20:56+05:30",
+ "finished": "2026-10-24T17:20:56+05:30"
+}

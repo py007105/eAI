@@ -93,8 +93,12 @@ class Injector:
         self._threads.append(t)
 
     # ------------------------------------------------------------ scenarios
-    def inject(self, scenario: str, svc: str, rng):
-        """Introduce the fault. Returns the private parameters that are logged as ground truth."""
+    def inject(self, scenario: str, svc: str, rng, variant: str | None = None):
+        """Introduce the fault. Returns the private parameters that are logged as ground truth.
+
+        `variant` is opt-in and used only by the forecast check: "gradual" disk fill writes 2-4 MB every 2 s until stopped,
+        reaching the 300 MB "disk full" threshold in about 150-300 s. The default burst (15-35 MB every 2 s for 30 s)
+        reaches it in under 30 s, too fast for any trend forecast. Benchmarks never set a variant."""
         if scenario == "crash":
             self._container(svc).kill()
             return {}
@@ -113,6 +117,10 @@ class Injector:
             # seconds look the same. Docs record this change.)
             self._chaos(svc, "leak_stream", mb)
             return {"leak_mb_per_2s": mb, "mode": "in-process stream"}
+        if scenario == "disk_fill" and variant == "gradual":
+            mb = rng.choice([2, 3, 4])
+            self._chaos(svc, "disk_stream", mb)
+            return {"fill_mb_per_2s": mb, "mode": "in-process gradual stream", "variant": "gradual"}
         if scenario == "disk_fill":
             mb = rng.choice([15, 25, 35])
             # A runaway job inside the service dumps files for ~30 s and stops; the files stay until cleaned.

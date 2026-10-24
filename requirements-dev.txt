@@ -1,0 +1,5 @@
+# Everything needed to run the test suite on a developer machine (the containers use their own requirements files).
+-r eternalai/requirements.txt
+-r dashboard/requirements.txt
+-r data/requirements.txt
+pytest==9.1.1

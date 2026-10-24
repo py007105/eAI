@@ -11,7 +11,9 @@ with `secrets` and is NOT printed, so the presenter does not know it; the evalua
 approvals and the service map for any run; its own reveal button only works for runs it started, so the reveal is done here.
 """
 import argparse
+import getpass
 import json
+import os
 import secrets
 import sys
 
@@ -30,8 +32,13 @@ def main():
     ap.add_argument("--base", default=EVALUATOR)
     a = ap.parse_args()
     if a.cmd == "start":
+        # Starting a run injects a real fault, so the evaluator requires the approval token. Taken from the environment or typed
+        # at a hidden prompt; never printed.
+        token = os.getenv("ETERNALAI_APPROVAL_TOKEN") or getpass.getpass("approval token (hidden): ")
         scen = UNSEEN if a.unseen else secrets.choice(POOL)
-        r = httpx.post(f"{a.base}/runs", json={"scenario": scen}, timeout=15)
+        r = httpx.post(f"{a.base}/runs", json={"scenario": scen}, timeout=15, headers={"X-Approval-Token": token.strip()})
+        if r.status_code in (403, 503):
+            sys.exit(f"{r.status_code}: the evaluator refused the approval token")
         r.raise_for_status()
         out = {"run_id": r.json()["run_id"], "segment": "UNSEEN FAULT (labelled)" if a.unseen else "hidden pick from supported faults and healthy runs"}
         print(json.dumps(out))

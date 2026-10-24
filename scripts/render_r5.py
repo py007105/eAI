@@ -11,10 +11,12 @@ import json
 import time
 from pathlib import Path
 
-ORDER = ["1813a0c878", "aad57af45f", "9118ad85c9", "2cdc9b587b", "81448e49df"]
+ORDER = ["1813a0c878", "aad57af45f", "9118ad85c9", "2cdc9b587b", "81448e49df", "2e9a6526f6", "b9c959c7ec"]
+R5B = {"2e9a6526f6", "b9c959c7ec"}   # the R5b session (20 Oct, from 01:40 IST)
 # what the presenter reported for each run (their words, abridged); the observer note is theirs, not an inference
 PRESENTER = {"1813a0c878": "proposal expired; presenter was not watching", "aad57af45f": "proposal expired; presenter was not watching",
-             "9118ad85c9": "0 incidents", "2cdc9b587b": "saw the card and clicked Approve", "81448e49df": "abstained, 0 actions"}
+             "9118ad85c9": "0 incidents", "2cdc9b587b": "saw the card and clicked Approve", "81448e49df": "abstained, 0 actions",
+             "2e9a6526f6": "0 incidents, 0 actions; presenter was not watching", "b9c959c7ec": "clicked Approve on the dashboard"}
 
 
 def ts(x):
@@ -56,6 +58,7 @@ def main():
     windows = {}
     for n, r in enumerate(ORDER, 1):
         t, s = truth[r], rows[r]
+        r_label = f"{r} (R5b)" if r in R5B else r
         inc = next((i for i in incs if t["t_inject"] - 1 <= i["opened_t"] <= s["t_end"]), None)
         act = inc["actions"][0] if inc and inc["actions"] else None
         exp = next((e["t"] for e in (inc or {}).get("timeline", []) if "expired" in e["msg"] or "rejected by" in e["msg"]), None)
@@ -66,7 +69,7 @@ def main():
                    else ("abstained" if inc and inc["abstained"] else "no incident" if not inc else "-"))
         if act and act["verdict"] == "expired_unapproved":
             outcome += "; **visibility unresolved, observer not watching**" if r in ("1813a0c878", "aad57af45f") else ""
-        L.append(f"| {n} | {r} | {t['scenario']} / {t['target']} | {ts(t['t_inject'])} | {inc['id'] + ' (' + inc['likely_cause'] + ')' if inc else 'none'} | "
+        L.append(f"| {n} | {r_label} | {t['scenario']} / {t['target']} | {ts(t['t_inject'])} | {inc['id'] + ' (' + inc['likely_cause'] + ')' if inc else 'none'} | "
                  f"{round(inc['opened_t'] - t['t_inject'], 1) if inc else '-'} | {act['runbook_id'] + ' → ' + act['service'] if act else 'none'} | "
                  f"{ts(act['t']) + ' to ' + ts(end) + f' ({end - act[chr(116)]:.1f} s)' if act and end else '-'} | {outcome} | "
                  f"{s.get('time_to_verified_recovery_s') or '-'} | {s['failed_request_pct']} | {PRESENTER[r]} |")
@@ -99,6 +102,16 @@ def main():
         seg = [c for c in cap if t["t_inject"] <= c["t"] <= s["t_end"]]
         L.append(f"- {r} ({t['scenario']}): {len(seg)} captured seconds between injection and the end of scoring; brain listed a proposal in "
                  f"{sum(bool(c['brain']['pending']) for c in seg)}, dashboard showed an Approve button in {sum((c['dash'].get('approve_buttons') or 0) > 0 for c in seg)}.")
+    L += ["", "Incidents during R5 and R5b that opened outside every run's scoring window (cause unverified; not fault detections; the evaluator did not count them):", ""]
+    first = min(truth[r]["t_inject"] for r in ORDER)
+    wins = {r: (truth[r]["t_inject"] - 1, rows[r]["t_end"]) for r in ORDER}
+    for i in incs:
+        if i["opened_t"] < first or any(lo <= i["opened_t"] <= hi for lo, hi in wins.values()):
+            continue
+        prev = max((r for r in ORDER if rows[r]["t_end"] <= i["opened_t"]), key=lambda r: rows[r]["t_end"], default=None)
+        rel = f"{i['opened_t'] - rows[prev]['t_end']:.0f} s after the end of {prev}'s scoring window" if prev else "before the first R5 run"
+        L.append(f"- {i['id']} {ts(i['opened_t'])} on {', '.join(i['services'])}: {i['likely_cause']}, abstained {i['abstained']}, {i['status']}, "
+                 f"{len(i['actions'])} actions; opened {rel}")
     r5_audit = [e for e in audit if e["t"] >= min(truth[r]["t_inject"] for r in ORDER)]
     L += ["", "Approval audit entries during R5 (brain `/audit`):", ""] + [f"- {ts(e['t'])}: {e['runbook']} on {e['service']} by {e['actor']}, ok={e['ok']}" for e in r5_audit]
     L += ["", "## Notes", "",
@@ -110,7 +123,10 @@ def main():
           "`while ($true) { $a = @((Invoke-RestMethod http://localhost:8000/approvals) | Where-Object { $_ }); if ($a.Count) { \"$(Get-Date -f HH:mm:ss) PENDING\"; "
           "$a | Select-Object incident_id, service, runbook_id | Format-Table } else { \"$(Get-Date -f HH:mm:ss) none pending\" }; Start-Sleep 2 }`. "
           "`scripts/approval_capture.py` replaces it for evidence.",
-          "- Still open for R5b: Reject clicked by hand, and the five-minute sequence timed end to end."]
+          "- Audit form: every dashboard approval is logged by the brain with actor `human:dashboard`, while the incident's action records "
+          "`approved_by: dashboard`. Both come from the same call (`eternalai/engine.py`: `approve()` stores the approver name; the executor is given "
+          "`actor=f\"human:{approver}\"`), so they are the same approval, not a difference in how it was made.",
+          "- **OPEN (not done in R5 or R5b): Reject clicked by hand; the five-minute sequence timed end to end; a fallback recording.**"]
     Path(a.out).write_text("\n".join(L) + "\n", encoding="utf-8")
     print("\n".join(L))
 

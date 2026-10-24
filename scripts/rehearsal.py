@@ -85,7 +85,7 @@ def run_step(step, token, smp, results):
     body = {"scenario": scen, "timeout_s": TIMEOUT.get(scen, 90), "healthy_s": 60}
     if step.get("seed") is not None:
         body["seed"] = step["seed"]
-    rid = call("POST", f"{EV}/runs", json=body).json()["run_id"]
+    rid = call("POST", f"{EV}/runs", token, json=body).json()["run_id"]
     rec["run_id"] = rid
     approved, proposals, first_seen = [], [], {}
     state = "running"

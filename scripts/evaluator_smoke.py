@@ -6,6 +6,9 @@ import sys
 import time
 
 import httpx
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 EV = "http://localhost:8200"
 body = {"timeout_s": 25, "healthy_s": 20}
@@ -13,7 +16,7 @@ if len(sys.argv) > 1:
     body["scenario"] = sys.argv[1]
 if len(sys.argv) > 2:
     body["target"] = sys.argv[2]
-r = httpx.post(f"{EV}/runs", json=body, timeout=10).json()
+r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json=body, timeout=10)).json()
 print("started:", r)
 rid = r["run_id"]
 time.sleep(3)

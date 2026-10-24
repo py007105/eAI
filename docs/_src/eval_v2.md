@@ -49,7 +49,7 @@ An external container health log (`scripts/health_watch.py`, once a minute, read
 
 ### What remains undemonstrated
 
-- **Forecast lead time**: forecasting is implemented and unit-tested, but its live lead time was not demonstrated.
+- **Forecast lead time**: The pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs.
 - **Groq** was never tested (no key was available).
 - **Gemini**: see the LLM paragraph in section 5 (Limitations) for the tests actually performed; the benchmark brains ran without LLM keys, so the LLM did not contribute to any benchmark number.
 - **Other applications**: nothing was tested on another application.

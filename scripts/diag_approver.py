@@ -10,6 +10,10 @@ import argparse
 import time
 
 import httpx
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 EV, EAI = "http://localhost:8200", "http://localhost:8000"
 
@@ -22,7 +26,7 @@ ap.add_argument("--timeout-s", type=int, default=90)
 a = ap.parse_args()
 assert a.seed >= 2000, "diagnostic runs must use non-benchmark seeds"
 
-r = httpx.post(f"{EV}/runs", json={"scenario": a.scenario, "seed": a.seed, "timeout_s": a.timeout_s, "healthy_s": 60}, timeout=20)
+r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": a.scenario, "seed": a.seed, "timeout_s": a.timeout_s, "healthy_s": 60}, timeout=20))
 rid = r.json()["run_id"]
 print("run", rid, flush=True)
 t_start, first_seen, last = time.time(), {}, None

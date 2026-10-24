@@ -14,10 +14,11 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import config
 from .engine import Engine
+from .rulebook import canonical_mode
 
 EVALUATOR_URL = os.getenv("EVALUATOR_URL", "http://localhost:8200")
 engine: Engine | None = None
@@ -64,6 +65,17 @@ class Mode(BaseModel):
     mode: str
 
 
+class KillSwitch(BaseModel):
+    on: bool
+
+
+class Feedback(BaseModel):
+    approver: str = Field("operator", max_length=64)
+    confirmed: bool                                     # the diagnosis was right
+    correct_fault: str | None = Field(None, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")   # if not: what it really was
+    note: str = Field("", max_length=500)
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -81,6 +93,14 @@ def status():
                             "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
                             "data_hash": (engine.cls_meta or {}).get("data_hash")},
             "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
+            "last_error_t": getattr(engine, "last_error_t", None),
+            "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
+            "policy": engine.policy.rulebook.summary(),
+            "root_margin": getattr(engine, "root_margin", None),
+            "knowledge_base": engine.kb.summary() if getattr(engine, "kb", None) else {"error": getattr(engine, "kb_error", None)},
+            "learn_store": {"path": str(engine.store.path) if getattr(engine, "store", None) else None,
+                            "error": getattr(engine, "store_error", None)},
+            "telemetry_failed": getattr(engine, "telemetry_failed", {}),
             "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
                                   for i in engine.incidents)}
 
@@ -137,10 +157,23 @@ def reject(iid: str, who: Who, x_approval_token: str | None = Header(None)):
 @app.post("/mode")
 def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
     _auth(x_approval_token)
-    if m.mode not in ("watch-only", "ask-first", "autopilot"):
-        raise HTTPException(400, "mode must be watch-only, ask-first or autopilot")
-    engine.policy.mode = m.mode
-    return {"mode": m.mode}
+    try:
+        mode = canonical_mode(m.mode)          # plan names watch / ask / autopilot are accepted too
+    except ValueError:
+        raise HTTPException(400, "mode must be watch-only, ask-first or autopilot (or watch, ask)")
+    if engine.policy.kill_switch and mode != "watch-only":
+        raise HTTPException(409, "kill switch is on: switch it off before leaving watch-only")
+    engine.policy.mode = mode
+    return {"mode": mode}
+
+
+@app.post("/killswitch")
+def killswitch(k: KillSwitch, x_approval_token: str | None = Header(None)):
+    """Switch execution off (on=true) or back on (on=false). On: the mode becomes watch-only (plan §14), the policy blocks every
+    action and approvals are refused. Off: the mode stays watch-only until someone changes it with POST /mode."""
+    _auth(x_approval_token)
+    engine.policy.set_kill_switch(k.on)
+    return {"kill_switch": engine.policy.kill_switch, "mode": engine.policy.mode}
 
 
 @app.post("/admin/reset")
@@ -154,6 +187,59 @@ def admin_reset(x_approval_token: str | None = Header(None)):
         raise HTTPException(409, str(e))
 
 
+def _store():
+    if getattr(engine, "store", None) is None:
+        raise HTTPException(503, f"learn store unavailable: {getattr(engine, 'store_error', None)}")
+    return engine.store
+
+
+@app.post("/feedback/{iid}")
+@app.post("/api/feedback/{iid}")          # the plan's route name (§15.2)
+def feedback(iid: str, fb: Feedback, x_approval_token: str | None = Header(None)):
+    """A human confirms or corrects the diagnosis of a closed incident; the row becomes labelled training data (plan §9.7)."""
+    _auth(x_approval_token)
+    if not fb.confirmed and not fb.correct_fault:
+        raise HTTPException(400, "if the diagnosis was wrong, give correct_fault")
+    try:
+        fid = _store().add_feedback(iid, fb.approver, fb.confirmed, fb.correct_fault, fb.note)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True, "feedback_id": fid}
+
+
+@app.get("/learn/stats")
+def learn_stats():
+    return _store().counts()
+
+
+@app.get("/learn/{iid}")
+def learn_incident(iid: str):
+    rec = _store().incident(iid)
+    if rec is None:
+        raise HTTPException(404, "not in the learn store (only closed incidents are stored)")
+    return rec
+
+
+@app.get("/kb/{fault}")
+@app.get("/api/kb/{fault}")              # the plan's route name (§15.2)
+def kb_entry(fault: str):
+    """Knowledge-base entry and ranked fixes for a live label (e.g. memory_leak) or a plan fault type (e.g. disk_filling).
+    Read-only. Rows are drafted with AI help and flagged unreviewed until the team reviews them."""
+    from .kb.labels import LIVE_TO_PLAN, PLAN_TO_LIVE
+    kb = getattr(engine, "kb", None)
+    if kb is None:
+        raise HTTPException(503, f"knowledge base not loaded: {getattr(engine, 'kb_error', None) or 'data/kb missing'}")
+    live = fault if fault in LIVE_TO_PLAN else PLAN_TO_LIVE.get(fault)
+    plan = LIVE_TO_PLAN.get(fault, fault)
+    entry = kb.entry(plan)
+    if entry is None and live is None:
+        raise HTTPException(404, f"no knowledge-base entry for {fault!r}")
+    from .kb import ranked_fixes
+    return {"fault": fault, "plan_fault_type": plan, "live_label": live, "entry": entry,
+            "ranked_fixes": [f.public() for f in ranked_fixes(kb, live)] if live else [],
+            "note": "ranked fixes exist only for faults the live classifier can name"}
+
+
 @app.get("/audit")
 def audit():
     return engine.executor.audit[-100:]
@@ -161,9 +247,13 @@ def audit():
 
 # ---- blind-challenge pass-through for the dashboard. The engine never reads these responses.
 @app.post("/challenge/start")
-def challenge_start():
-    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15)  # no scenario: the evaluator picks one itself
-    r.raise_for_status()
+def challenge_start(x_approval_token: str | None = Header(None)):
+    """Starts a real fault injection, so it needs the approval token; the token is forwarded to the evaluator."""
+    _auth(x_approval_token)
+    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15,   # no scenario: the evaluator picks one itself
+                   headers={"X-Approval-Token": x_approval_token})
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, r.json().get("detail", "evaluator refused"))
     return r.json()
 
 

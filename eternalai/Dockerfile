@@ -6,8 +6,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY eternalai ./eternalai
 # Frozen model artifacts and their metadata. If none are present the backend reports rule fallbacks in /status.
 COPY models/artifacts ./models/artifacts
-# Runbook text for retrieval is derived from the training workbook and is not committed, so the image does not contain it.
-# Provide it at run time with a bind mount and EAI_KNOWLEDGE_CSV (see docs/DEMO.md); without it retrieval says so.
+# Knowledge base and measured fix outcomes (Package C; built by scripts/build_kb.py from the owner's workbook, which is not in the image).
+COPY data/kb ./data/kb
+# Retrieval of knowledge-base text uses data/kb/knowledge_base.csv (rows flagged unreviewed); EAI_KNOWLEDGE_CSV overrides it.
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 CMD ["uvicorn", "eternalai.api:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

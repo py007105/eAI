@@ -1,0 +1,11 @@
+2026-10-24 15:34:17 IST runner start, PID 25620; window 15:34-20:00 IST
+2026-10-24 15:34:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.42 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 15:44:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.50 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 15:54:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.43 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 16:04:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.56 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 16:14:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.71 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 16:24:17 IST waiting: lock FREE and enough free RAM for the first step (free RAM 3.85 GB; lock: HELD by main | overnight runner (gate, evaluation resume, co)
+2026-10-24 16:27:17 IST lock taken atomically
+2026-10-24 16:27:17 IST gate: start (4.29 GB free)
+2026-10-24 17:20:55 IST gate: exit 0; new executions ['20261024T162717-159af59f']
+2026-10-24 17:20:56 IST lock released

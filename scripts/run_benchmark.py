@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "models"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import memguard  # noqa: E402
 from collect_runs import SCENARIOS, scenario_order  # noqa: E402
+from harness_auth import check_started, evaluator_headers  # noqa: E402
 
 EV = os.getenv("EVALUATOR_URL", "http://localhost:8200")
 EAI = os.getenv("EAI_PUBLIC_URL", "http://localhost:8000")
@@ -48,9 +49,9 @@ def sh(cmd, **env):
     return subprocess.run(cmd, shell=True, env=e, capture_output=True, text=True)
 
 
-def start_brain(brain, mode, token):
+def start_brain(brain, mode, token, policy_file=""):
     r = sh("docker compose up -d --force-recreate --no-deps eternalai", ETERNALAI_BRAIN=brain, ETERNALAI_MODE=mode,
-           ETERNALAI_APPROVAL_TOKEN=token, GEMINI_API_KEY="", GROQ_API_KEY="")
+           ETERNALAI_APPROVAL_TOKEN=token, ETERNALAI_POLICY_FILE=policy_file, GEMINI_API_KEY="", GROQ_API_KEY="")
     if r.returncode:
         sys.exit(f"could not start the brain: {r.stderr[-300:]}")
     for _ in range(90):
@@ -158,6 +159,8 @@ def main():
     ap.add_argument("--models-label", default="models-v1 (frozen; see docs/MODEL_CARD.md)", help="recorded with every row")
     ap.add_argument("--min-free-gb", type=float, default=1.0, help="v2: wait (and log) instead of starting a run while free RAM is below this; 0 disables")
     ap.add_argument("--raw", help="v2: results file (default docs/results/benchmark_raw.jsonl, the v1 file; v2 runs must use their own file)")
+    ap.add_argument("--policy-file", default="", help="rulebook for the brain (with --manage-stack), e.g. benchmark-v2.yaml; empty: "
+                    "the plan default. The file actually in use (from /status) is recorded with every row")
     ap.add_argument("--no-reset", action="store_true", help="v1 behaviour: do not reset the brain's per-run state between runs")
     ap.add_argument("--smoke", action="store_true", help="plumbing check on seeds that are in neither the training (1000-1707) "
                     "nor the benchmark (<1000) range; results go to docs/results/benchmark_smoke.jsonl and are not reported")
@@ -176,7 +179,7 @@ def main():
         if brain is None:
             stop_brain()
         else:
-            meta = start_brain(brain, mode, token)
+            meta = start_brain(brain, mode, token, a.policy_file)
     if brain is None:
         try:
             httpx.get(f"{EAI}/status", timeout=2)
@@ -205,8 +208,8 @@ def main():
                     continue
                 memguard.wait_for_memory(a.min_free_gb)
                 reset_res = reset_brain(token) if brain is not None and not a.no_reset else None
-                r = httpx.post(f"{EV}/runs", json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT),
-                                                   "healthy_s": 60}, timeout=20)
+                r = check_started(httpx.post(f"{EV}/runs", headers=evaluator_headers(), json={"scenario": scen, "seed": seed, "timeout_s": TIMEOUT.get(scen, DEFAULT_TIMEOUT),
+                                                   "healthy_s": 60}, timeout=20))
                 if r.status_code != 200:
                     print(f"{a.arm} {scen} seed {seed}: could not start ({r.status_code}); skipping")
                     continue
@@ -231,7 +234,8 @@ def main():
                         pass
                 row = {"arm": a.arm, "scenario": scen, "seed": seed, "rep": rep, "score": score, "params": truth["params"],
                        "target": truth["target"], "incidents": incidents, "brain_status": {
-                           k: meta.get(k) for k in ("brain", "mode", "model_meta", "calibration", "fallbacks_in_use")},
+                           k: meta.get(k) for k in ("brain", "mode", "model_meta", "calibration", "fallbacks_in_use", "policy")},
+                       "policy_file": (meta.get("policy") or {}).get("file"),
                        "approve_after_s": a.approve_after if a.arm == "eternalai_ask_first" else None,
                        "system_commit": SYSTEM_COMMIT, "models": a.models_label,
                        "approver": dict(astats) if a.arm == "eternalai_ask_first" else None, "brain_reset": reset_res,
