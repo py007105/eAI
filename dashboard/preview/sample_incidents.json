@@ -1,0 +1,79 @@
+{
+  "label": "SYNTHETIC SAMPLE DATA - hand-made, not telemetry",
+  "incidents": [
+    {
+      "id": "s1",
+      "status": "recovered",
+      "opened_t": 1000,
+      "closed_t": 1029,
+      "actions": [
+        {
+          "t": 1004,
+          "runbook_id": "restart_service",
+          "service": "web",
+          "verdict": "execute",
+          "executed": true,
+          "executed_t": 1006
+        }
+      ],
+      "verification": {
+        "outcome": "recovered",
+        "t": 1029,
+        "success_rate": 1.0
+      }
+    },
+    {
+      "id": "s2",
+      "status": "recovered",
+      "opened_t": 2000,
+      "closed_t": 2040,
+      "actions": [
+        {
+          "t": 2010,
+          "runbook_id": "recreate_container",
+          "service": "web",
+          "verdict": "needs_approval",
+          "executed": true,
+          "executed_t": 2012
+        }
+      ],
+      "verification": {
+        "outcome": "recovered",
+        "t": 2040,
+        "success_rate": 1.0
+      }
+    },
+    {
+      "id": "s3",
+      "status": "escalated",
+      "opened_t": 2100,
+      "closed_t": 2130,
+      "actions": [
+        {
+          "t": 2105,
+          "runbook_id": "rollback_release",
+          "service": "orders",
+          "verdict": "expired_unapproved",
+          "executed": false
+        }
+      ],
+      "verification": null
+    },
+    {
+      "id": "s4",
+      "status": "awaiting_approval",
+      "opened_t": 3000,
+      "closed_t": null,
+      "actions": [
+        {
+          "t": 3006,
+          "runbook_id": "restart_service",
+          "service": "payments",
+          "verdict": "needs_approval",
+          "executed": false
+        }
+      ],
+      "verification": null
+    }
+  ]
+}

@@ -346,3 +346,15 @@ Tests after the last Phase 1 commit: 462 passed, 2 deselected (also on a clean c
 | SQLite learn store, POST /feedback (and /api/feedback), training-row export | S1 (partial), S2 (partial), S3 | `84a3094` | tests only (live check pending) |
 | Docker schedule + lock helpers | - | `ae91e38` | tests |
 | Push of `plan-complete` and `demo-stable-1` to GitHub (owner's go, 2026-10-21) | - | - | done |
+
+### 2026-10-23 evening (freeze lifted for assigned work): Phase 4a live, Package C
+
+| item | rows | commit | verified |
+|---|---|---|---|
+| Baseline re-verified at `65dd9fe` | - | - | 489 passed, 2 deselected (20:52 IST) |
+| Coordination record (ownership, shared-file windows, contracts, Docker schedule) | - | `46a1aa4` | docs only (`docs/COORDINATION.md`) |
+| Phase 4a live check, spec committed before the run | D4, R5, S1-S3 | spec `1540245`, results `2b7956a` | **live** 10/10 (`docs/results/live_check_phase4a.md`, image `1540245`, 20:53-21:00 IST): learn store and feedback **verified live**; forest-only -> approval and close candidates -> abstain **active and consistent live, not triggered** (0 forest-only incidents; root gaps 0.92-0.97 vs margin 0.1215), so their behaviour stays **unit-tested only** |
+| Knowledge base files (17 faults, 72 fault x fix options, 23 fixes, 59 prototype runs, 186 runs measured on this stack) | X1, T3 | `e4dc6f5` | built from the workbook (SHA256 `fafdb1f8...`, not committed); all 17 KB rows `reviewed_by_team = no` |
+| Outcome-ranked fix choice wired into the engine; `GET /kb/{fault}`; retrieval uses the KB | X2, X3, I7 (part) | `bed1538` | tests; the proposed (first) runbook is unchanged for all six live labels (each is measured on this stack); **not yet live checked** |
+| Dataset-A classifier (plan split on real rows) next to the live classifier | C2, C3 (method), C4, C5, C6 | method `6d617df`, results `7800a56` | offline, one run: Train Ticket macro-F1 0.385 / 0.449 (plan definition, 53 incidents), 0.667 / 0.670 (exact/close, 34); majority 0.132 / 0.184; the validation-chosen unknown threshold does **not** separate unknowns (flags 64-66% of known vs 56% of logic bugs); the live classifier abstains on all 53. The plan's v2 balanced files are not on this machine (blocker for reproducing the plan's v2 numbers) |
+| Forecast check v3, 20 pre-registered runs | F1, F3 | images `2b7956a`, results `3b16e58` | **FAILED** the memory-lead criterion (median 18.3 s < 30 s); passed the others: memory warned 5/5, disk 5/5 with median lead 86.4 s, 0 wrong-service warnings, 0 warnings in 10 healthy runs, 0 actions in 20 watch-only runs. The forecast criteria are not items of `docs/RELEASE_GATE.md` (G1-G7, written before any candidate result); that gate is not changed after seeing results. F1/F3 stay open: a v4 (shorter look-back) only pre-registered on new seeds |

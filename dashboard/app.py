@@ -18,8 +18,11 @@ import requests
 from dash import ALL, Input, Output, State, callback_context, dcc, html
 
 sys.path.insert(0, str(Path(__file__).parent))
+import charts  # noqa: E402
 import demo  # noqa: E402
 import views  # noqa: E402
+from charts_labels import ct  # noqa: E402
+from explain_words import explain_service  # noqa: E402
 from labels import t  # noqa: E402
 from theme import TEMPLATE  # noqa: E402, F401  (registers the Plotly template)
 
@@ -45,6 +48,12 @@ class Poller:
     def __init__(self):
         self.cache, self._started = {}, False
         self.lock = threading.Lock()
+        self.history = charts.History(max_points=300)   # ~5 minutes of /services snapshots, one per poll
+
+    def record_services(self, val, now):
+        """Feed the chart history with one /services snapshot, stamped with the time this page polled it."""
+        with self.lock:
+            self.history.add({"t": now, "services": (val or {}).get("services") or {}})
 
     def start_once(self):
         with self.lock:
@@ -61,6 +70,8 @@ class Poller:
                     val = fetch(path)
                     with self.lock:
                         self.cache[key] = (val, time.time())
+                    if key == "services":
+                        self.record_services(val, time.time())
                 except (requests.RequestException, ValueError):
                     with self.lock:
                         self.cache.pop(key, None)
@@ -142,6 +153,14 @@ def layout():
                           html.Div(id="demo_msg", className="muted"), html.Div(id="demo_runs", style={"marginTop": "8px"})],
                          cls="glow-cyan"), lg=5),
             dbc.Col(card([html.Div(id="t_score"), html.Div(id="scorecard", style={"overflowX": "auto"})]), lg=7)]),
+        dbc.Row([
+            # Mihir's chart, explanation and statistics components, fed from the live backend
+            dbc.Col(card([html.Div(id="t_charts"),
+                          dcc.Dropdown(id="chart_service", options=[{"label": s, "value": s} for s in sorted(TOPOLOGY_FALLBACK)],
+                                       value="web", clearable=False, className="dark-dd", style={"width": "160px"}),
+                          dcc.Graph(id="svc_chart", config={"displayModeBar": False}),
+                          html.Div(id="svc_explain"), html.Div(id="charts_scope", className="muted")]), lg=7),
+            dbc.Col(card([html.Div(id="t_stats"), html.Div(id="svc_stats"), html.Div(id="stats_scope", className="muted")]), lg=5)]),
         dcc.Store(id="page_title"), html.Div(id="title_sink", hidden=True), dcc.Store(id="pending_ids"), html.Div(id="alert_sink", hidden=True),
         dcc.Interval(id="tick", interval=1500, n_intervals=0)])
 
@@ -289,6 +308,28 @@ def demo_view(_, lang):
         runs = [dict(r) for r in DEMO.runs]
     can_reveal = bool(cur and cur["phase"] == "finished" and not cur["reveal"])
     return (views.demo_state(cur, DEMO.last_poll_error, lang), views.demo_runs(runs, demo.summary, lang), busy, busy, not can_reveal)
+
+
+@app.callback(Output("t_charts", "children"), Output("svc_chart", "figure"), Output("svc_explain", "children"),
+              Output("charts_scope", "children"), Output("t_stats", "children"), Output("svc_stats", "children"),
+              Output("stats_scope", "children"),
+              Input("tick", "n_intervals"), Input("lang", "value"), Input("chart_service", "value"))
+def charts_view(_, lang, service):
+    """Live service chart, plain-language explanation and incident statistics. Reads only the poller's cache."""
+    lang, service = lang or "en", service or "web"
+    svc = poller.get("services")
+    if svc is None:      # backend down or data stale: no chart rather than an old one
+        fig, sentences = views.blank_fig(ct("no_chart_data", lang), 260), []
+    else:
+        with poller.lock:
+            fig = charts.service_figure(poller.history, service, lang)
+        features = ((svc.get("services") or {}).get(service) or {}).get("features")
+        sentences = explain_service(service, features, lang) if features is not None else []
+    explanation = html.Div([html.P(ct("explanation_title", lang), className="fw-bold", style={"marginBottom": "4px"})]
+                           + [html.P(s, style={"marginBottom": "2px"}) for s in sentences or [ct("no_sentences", lang)]])
+    stats = charts.incident_stats(poller.get("incidents") or [])
+    return (views.panel_title("mdi:chart-timeline-variant", "panel_charts", lang), fig, explanation, t("charts_scope", lang),
+            views.panel_title("mdi:table", "panel_stats", lang), charts.stats_table(stats, lang), t("stats_scope", lang))
 
 
 if __name__ == "__main__":
