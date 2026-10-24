@@ -1,0 +1,216 @@
+{
+ "execution_id": "20261024T150914-22eb30c0",
+ "kind": "resumption of evaluation v3",
+ "resumes_execution": "20261024T001813-4cedc8bf",
+ "original_commit": "71eb2f5",
+ "commit": "71eb2f5",
+ "resume_script_sha256": "171957c60d657dc358ce2680d96d16cca050e695d80ba0ea1cd14c4c1b1cd337",
+ "cases_module_sha256": "84ac03185766fce61835c4790b0adfff2bc62521f840ac35fd2d822a15cae13a",
+ "original_rows": 26,
+ "original_raw_sha256": "c2f5b9858ee953a15c5ae5c1fc4cabdb6a1318e0fe4afaf1d898703300c8f1b0",
+ "cases_to_resume": [
+  [
+   "eternalai_autopilot",
+   "error_spike",
+   622
+  ],
+  [
+   "eternalai_autopilot",
+   "good_deploy",
+   638
+  ],
+  [
+   "eternalai_autopilot",
+   "latency",
+   631
+  ],
+  [
+   "eternalai_autopilot",
+   "error_spike",
+   632
+  ],
+  [
+   "eternalai_autopilot",
+   "cpu_burn",
+   636
+  ],
+  [
+   "eternalai_autopilot",
+   "disk_fill",
+   634
+  ],
+  [
+   "eternalai_autopilot",
+   "crash",
+   630
+  ],
+  [
+   "eternalai_autopilot",
+   "bad_deploy",
+   635
+  ],
+  [
+   "eternalai_autopilot",
+   "memory_leak",
+   633
+  ],
+  [
+   "eternalai_autopilot",
+   "traffic_surge",
+   637
+  ],
+  [
+   "eternalai_autopilot",
+   "cpu_burn",
+   646
+  ],
+  [
+   "eternalai_autopilot",
+   "disk_fill",
+   644
+  ],
+  [
+   "eternalai_autopilot",
+   "good_deploy",
+   648
+  ],
+  [
+   "eternalai_autopilot",
+   "error_spike",
+   642
+  ],
+  [
+   "eternalai_autopilot",
+   "traffic_surge",
+   647
+  ],
+  [
+   "eternalai_autopilot",
+   "latency",
+   641
+  ],
+  [
+   "eternalai_autopilot",
+   "bad_deploy",
+   645
+  ],
+  [
+   "eternalai_autopilot",
+   "memory_leak",
+   643
+  ],
+  [
+   "eternalai_autopilot",
+   "crash",
+   640
+  ],
+  [
+   "no_action",
+   "memory_leak",
+   603
+  ],
+  [
+   "no_action",
+   "memory_leak",
+   613
+  ],
+  [
+   "no_action",
+   "memory_leak",
+   623
+  ],
+  [
+   "no_action",
+   "memory_leak",
+   633
+  ],
+  [
+   "no_action",
+   "memory_leak",
+   643
+  ]
+ ],
+ "steps": [
+  {
+   "command": "docker compose up -d --force-recreate inventory payments orders prometheus web eternalai dashboard evaluator loadgen",
+   "start": "2026-10-24 15:09 IST",
+   "exit": 0,
+   "end": "2026-10-24 15:09 IST"
+  },
+  {
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe scripts/stock_gate.py --restock --force",
+   "start": "2026-10-24 15:10 IST",
+   "exit": 0,
+   "end": "2026-10-24 15:10 IST"
+  },
+  {
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/run_benchmark.py --arm eternalai_autopilot --manage-stack --reps 5 --seed0 600 --raw D:\\eAI\\eAI-eval-71eb2f5\\results\\benchmark-v3\\20261024T150914-22eb30c0\\raw.jsonl --models-label models-v2 (frozen) + root margin 0.1215 + data/kb; rulebook default.yaml --policy-file  --min-free-gb 1.5 --scenarios crash latency error_spike memory_leak disk_fill bad_deploy cpu_burn traffic_surge good_deploy",
+   "start": "2026-10-24 15:10 IST",
+   "exit": 0,
+   "end": "2026-10-24 16:08 IST"
+  },
+  {
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe scripts/stock_gate.py --restock",
+   "start": "2026-10-24 16:08 IST",
+   "exit": 0,
+   "end": "2026-10-24 16:08 IST"
+  },
+  {
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/run_benchmark.py --arm no_action --manage-stack --reps 5 --seed0 600 --raw D:\\eAI\\eAI-eval-71eb2f5\\results\\benchmark-v3\\20261024T150914-22eb30c0\\raw.jsonl --models-label models-v2 (frozen) + root margin 0.1215 + data/kb; rulebook default.yaml --policy-file  --min-free-gb 1.5 --scenarios memory_leak",
+   "start": "2026-10-24 16:08 IST",
+   "exit": 0,
+   "end": "2026-10-24 16:26 IST"
+  },
+  {
+   "command": "docker compose stop",
+   "start": "2026-10-24 16:26 IST",
+   "exit": 0,
+   "end": "2026-10-24 16:26 IST"
+  }
+ ],
+ "completion": "complete: all 50 cases",
+ "started": "2026-10-24 15:09 IST",
+ "images": {
+  "eai/dashboard:v1": "sha256:b1025d55328fb7ff61f7437234694bf89ed1f78df288932306d51f47b03a6221",
+  "eai/eternalai:v2": "sha256:9396ae7bd98fcee6dbe74368eb90411e6a97bf3d299bad2d2ec39a5773069b52",
+  "eai/evaluator:v1": "sha256:435368583ad485fd0726b37d1feaf8600e91cdf0e463cf4e6441df1a8edc971e",
+  "eai/inventory:v1": "sha256:08d93df5370352a6d271e14cb816bc9de487ac60321267e1547fc17fc4698c86",
+  "eai/inventory:v2-good": "sha256:72bb4f54957ea69f1ebcd6f19cbe544fd622798e4cc43e2f2ecd6e8384f6e9f7",
+  "eai/inventory:v3-bad": "sha256:b1dbf6661337563c70a20e4655c0f80c884423008116e6f8317fd96c9135137c",
+  "eai/loadgen:v1": "sha256:de50673e64084378520610bb956e50343432612fa35d21e3f5cacd1d6f818eb0",
+  "eai/orders:v1": "sha256:70f1d313fc0037209af45054f42ef4e9c52bae67fd59b08b234c1ed2b29610ee",
+  "eai/orders:v2-good": "sha256:af2d43de310f2813045dce9ab3e55f21c3e27b569034d04a6e61dc5fb0b5899d",
+  "eai/orders:v3-bad": "sha256:336f2783035979bf68a1cbc594fc4e13d0ef70cbd0297a4f37c2c36502f41aae",
+  "eai/payments:v1": "sha256:3c51be6657b6b04f1a740302dfe0f3e834b67ea71a6bc581de56134d45782162",
+  "eai/payments:v2-good": "sha256:d205b0688478304fe6e6cf82c7d1a658ad37bff8d785e3edd8cd589620a47571",
+  "eai/payments:v3-bad": "sha256:fe23aeb034055cb9fb7854b8f8b9e20531db8a9adfe6f7c20b77d9ccfdca7dc3",
+  "eai/web:v1": "sha256:f25d665f5ec815bc9b9283a9a3928d198f586084f9b3a910bc24faea30de6d15",
+  "eai/web:v2-good": "sha256:fc1c3dc9cb1e72bacc6c43c3185db0bcacef063ade6540b1680c649c9031e9c1",
+  "eai/web:v3-bad": "sha256:eb069dfff32f425c778353b1e32144c3210290291d0cd48c2326258c372437b4",
+  "jaegertracing/all-in-one:1.64.0": "sha256:7e9591218e7ddd51e568ef892e3ea190ae420ecf97c4d718910a3f57e076c216",
+  "prom/prometheus:v2.55.1": "sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3"
+ },
+ "configuration": {
+  "eternalai/rulebooks/default.yaml": "e370c7e722af6c9387e4ac064ad8022a178a9bc513bba09fd48c9f05b41d85cf",
+  "models/artifacts/root_margin.json": "0e14e2db2d37b084334b4e2e66998c9a5937793a004bf24b16cc7a72ad124bbe",
+  "models/artifacts/detectors.joblib": "907f9047c5cf4a61331fe5e16a2724dc8616551a5ed5204f4e6aa50087ead08b",
+  "models/artifacts/classifier.joblib": "0c0810e394500f34761fb2ab01717fe56ebdef719b63525b89348bfcf82c9604",
+  "models/artifacts/ranker.joblib": "3589034ac53f46c8ee294c31e9e47affa3706a43b3ce66bda7601aa7f889f18d",
+  "data/kb/MANIFEST.json": "6fdfb2f9d6280b5a04212da1e14f6aff6f9a521f33f8868eda74e3b674aa3457",
+  "data/kb/outcomes_measured.csv": "5fe6c396d7ac2c37ed4edcdfc29b41da5faaac64ed6303656bf024ad26bde96e",
+  "docker-compose.yml": "9c81354e6b2ff77a122c323c5eafd11cf2d7d2dfd941ae9a23bd1c5670b8424e"
+ },
+ "lock_taken": "2026-10-24 15:09 IST",
+ "lock_released": "2026-10-24 16:26 IST",
+ "resume_check": {
+  "original_rows_unchanged": true,
+  "original": 26,
+  "added": 24,
+  "duplicates": [],
+  "added_but_not_missing": [],
+  "unplanned": [],
+  "still_missing": [],
+  "valid": true
+ },
+ "finished": "2026-10-24 16:26 IST"
+}
