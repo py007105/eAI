@@ -81,7 +81,7 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
 
 ### 5. Wrap-up & Q&A Transition (4:30 – 5:00)
 - **What to say**:
-  > *"EternalAI demonstrates that policy-governed SRE operations (low-risk fixes automatic, high-risk fixes need human approval) can be safe and verified without handing unconstrained terminal access to an LLM. The core is modular: Docker today; Kubernetes validated offline (Helm lint+render, 26/26 resources, 57 tests) but not run on a live cluster; and a separate Telegram bot over the REST API, verified live in a dry run. We are ready for your questions."*
+  > *"EternalAI demonstrates that policy-governed SRE operations (low-risk fixes automatic, high-risk fixes need human approval) can be safe and verified without handing unconstrained terminal access to an LLM. The core is modular: Docker today; Kubernetes validated offline (Helm lint+render, 26/26 resources, 57 tests) but not run on a live cluster (`docs/results/k8s_offline_validation.md`); and a separate Telegram bot over the REST API, verified live in a dry run. We are ready for your questions."*
 
 ---
 

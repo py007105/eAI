@@ -85,7 +85,7 @@ flowchart TD
 | **Forecasting** | Live Theil-Sen slope forecaster (disk fill & memory leak) | Multi-variate LSTM / Prophet for periodic seasonal spikes |
 | **Root-Cause Analysis** | Service graph topological ranker + gradient-boosted ranker | Full causal DAG learning on dynamic distributed traces |
 | **Fault Classification** | Calibrated gradient boosting (6 live classes + novelty gate) | Continuous active learning on production incidents |
-| **Fix Actions** | 4 audited Docker runbooks (restart, recreate, rollback, temp clean) | Kubernetes rolling restart, HPA horizontal scaling, pod migration |
+| **Fix Actions** | 4 audited Docker runbooks (restart, recreate, rollback, temp clean) | Kubernetes rolling restart, HPA horizontal scaling, pod migration (Kubernetes: validated offline only, `docs/results/k8s_offline_validation.md`; not run on a live cluster) |
 | **Safety Governance** | Deterministic rulebook (cooldowns, circuit breaker, ask-first token) | RBAC-partitioned namespaces, multi-party approver quorums |
 | **Verification** | Internal 4-service synthetic checkout pass over observation window | Independent evaluator-side e2e probe with audit traces |
 | **Notifications** | Dash UI live incident views + REST API; Telegram approval via a separate bot over the REST API, verified live in a dry run (a real tap approved a rollback) | Telegram merged into the release build |
@@ -107,7 +107,7 @@ All numbers are backed by executable scripts and generated result files in the r
 | **Live human approval** | rollback approved by a person in the dashboard (58.1 s) and by a Telegram tap (82.3 s); both verified recovered | - | demo rehearsal and dry run 1 on `demo-stable-1`, 300 s demo approval window; not a benchmark number | `docs/results/demo_rehearsal_20261024-1854.md`, `docs/results/dry_run_1_20261024-1948.md` | **Verified live** |
 | **Unseen Fault Abstention (`cpu_burn`)** | **2 / 3** (v2) and **4 / 5** (v3) | >= 2 / 3 | v2 seed 426 restarted a wrong service (`inventory`), a standing limitation. A close-candidates abstain rule was added later; it was not triggered live, and its gate check (G4) failed on candidate `71eb2f5` | `docs/results/benchmark_v2.md`, `docs/postmortems/cpu_burn_seed426.md` | **Verified live (rule: tests only)** |
 | **Cross-System Fault Transfer (Unseen System)** | **0.385** (plan features) / **0.449** (live-computable features) macro-F1 | majority 0.132 (same averaging) | Train Ticket (53 real cases), real rows only, macro-F1 over the test classes; offline, not used by the demo. The unknown-fault threshold does not separate unknown faults reliably | `docs/results/dataset_a_classifier.md` | **Offline result** |
-| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | offline grouped cross-validation on this application's own 105 runs (33,576 windows); in-distribution, optimistic; ECE = 0.003. This is the classifier the demo uses | `docs/results/models_cv_v2.md` | **Offline CV** |
+| **Live Classifier Grouped CV** | **0.991** macro-F1 | > 0.90 | forced-answer macro-F1 0.991 on 9,103 windows from 98 runs (offline grouped CV; data: 105 runs, 33,576 windows); in-distribution, optimistic; ECE = 0.003. This is the classifier the demo uses | `docs/results/models_cv_v2.md` | **Offline CV** |
 
 ---
 
@@ -115,5 +115,5 @@ All numbers are backed by executable scripts and generated result files in the r
 
 **Team Brahmastra** (Hackyard Build 2026, IIT Guwahati):
 - **Mihir Pukale** (Track Lead): Knowledge base review and outcome ranking validation, offline ML evaluation and cross-system transfer report, pitch pack and technical documentation.
-- **Rajat Raghatwan**: Kubernetes driver abstraction layer, Helm chart packaging and a kind end-to-end script (validated offline; not run on a live cluster).
-- **Sanskar Randive**: Telegram bot integration with interactive approval flows, Dash UI dashboard UX improvements, and notification dispatching.
+- **Rajat Raghatwan**: Kubernetes driver abstraction layer, Helm chart packaging and a kind end-to-end script (validated offline; not run on a live cluster; `docs/results/k8s_offline_validation.md`).
+- **Sanskar Randive**: Telegram bot as a separate process via the REST API (verified live in a dry run) with interactive approval flows, Dash UI dashboard UX improvements, and notification dispatching.
