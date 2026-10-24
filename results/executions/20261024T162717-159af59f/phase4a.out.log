@@ -1,0 +1,11 @@
+[PASS] setup.brain_up: brain answers /status 
+[PASS] setup.stock: inventory restocked and verified - , "sku-mug": 99999, "sku-bag": 100000, "sku-book": 100000}, "brain_incidents_in_restock_window": []}
+[PASS] A1: margin 0.121529 loaded, learn store open, default rulebook, autopilot - {'mode': 'autopilot', 'root_margin': 0.121529, 'learn_store': {'path': 'runtime/eternalai.db', 'error': None}, 'models': {'detectors': True, 'classifier': True, 'ranker': True, 'baselines': True}, 'policy_file': 'default.yaml'}
+[PASS] A2: every diagnosed incident records anomaly_source, root_gap and root_margin - {'diagnosed': 4, 'sources': ['down', 'limits']}
+[PASS] A3: close candidates abstain exactly when gap < margin; no forest-only incident ran automatically - {'close_gap_incidents': 0, 'abstained_close': 0, 'forest_only': 0, 'forest_only_auto_executed': 0, 'label_close': 'active and consistent live, not triggered', 'label_forest': 'active and consistent live, not triggered'}
+[PASS] A4: crash on web: restart_service executed by autopilot - [('restart_service', 'autopilot')]
+[PASS] A5: crash on payments: waits as protected; rejected; escalated; nothing executed on payments - {'reason': 'payments is a protected service: every action needs approval', 'reject_http': 200, 'executed': 0}
+[PASS] A6: error_spike on orders: waits (medium); nothing before approval; executed by human:live-check after - {'proposal': {'runbook_id': 'restart_service', 'risk': 'medium', 'reason': 'autopilot: medium-risk action requires approval'}, 'approve_http': 200, 'executed_before': 0, 'executed_after': [('restart_service', 'human:live-check')]}
+[PASS] B1: every closed incident of the runs is in the learn store and matches /incidents - {'closed': 4, 'mismatches': [], 'stats_before': {'incidents': 143, 'actions': 81, 'outcomes': 27, 'feedback': 2}, 'stats_after': {'incidents': 149, 'actions': 84, 'outcomes': 29, 'feedback': 2}}
+[PASS] B2: POST /feedback: 403 without token, 404 unknown id, 200 with token, visible in /learn/{id} - {'no_token': 403, 'unknown': 404, 'ok': 200, 'feedback_rows': 1}
+10/10 passed; wrote docs\results\live_check_phase4a.md

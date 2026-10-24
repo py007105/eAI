@@ -1,0 +1,284 @@
+{
+ "commit": "71eb2f5",
+ "execution_id": "20261024T162717-159af59f",
+ "started": "2026-10-24 17:07:32 IST",
+ "spec": "docs/RELEASE_GATE.md G5",
+ "script": "scripts/live_check_g5.py",
+ "free_gb_at_start": 2.65,
+ "initial_state": {
+  "files_equal_to_commit": {
+   "models/artifacts/root_margin.json": true,
+   "models/artifacts/detectors.joblib": true,
+   "data/kb/outcomes_measured.csv": true
+  },
+  "margin": 0.121529,
+  "restored": true
+ },
+ "calibration": [
+  {
+   "scenario": "error_spike",
+   "healthy_max": 0.3999,
+   "healthy_n": 19,
+   "fault_sustained": 0.6745,
+   "fault_n": 49,
+   "fault_peak": 0.6786,
+   "separable": true,
+   "threshold": 0.5372,
+   "t_inject": 1792842024.264258,
+   "t_end": 1792842175.9370875,
+   "incidents": [
+    {
+     "id": "0589616c",
+     "status": "escalated",
+     "cause": "error_spike",
+     "abstained": false,
+     "source": "limits",
+     "gap": 0.5877,
+     "reason": null,
+     "actions": [
+      [
+       "restart_service",
+       "web",
+       "expired_unapproved",
+       false
+      ]
+     ]
+    },
+    {
+     "id": "9423a90b",
+     "status": "escalated",
+     "cause": "error_spike",
+     "abstained": false,
+     "source": "limits",
+     "gap": 0.5877,
+     "reason": null,
+     "actions": [
+      [
+       "restart_service",
+       "web",
+       "expired_unapproved",
+       false
+      ]
+     ]
+    }
+   ],
+   "audited_actions": []
+  }
+ ],
+ "controlled": {
+  "file": "models/artifacts/detectors.joblib",
+  "substitution": "learned limits emptied for every service; web forest threshold -> 0.5372",
+  "substitution_exit": 0,
+  "original_threshold": "0.8432000608255995",
+  "brain_up_after_substitution": true,
+  "scenario": "error_spike",
+  "incidents": [
+   {
+    "id": "7838196b",
+    "status": "escalated",
+    "cause": "error_spike",
+    "abstained": false,
+    "source": "forest_only",
+    "gap": 0.9752,
+    "reason": null,
+    "actions": [
+     [
+      "restart_service",
+      "web",
+      "expired_unapproved",
+      false
+     ]
+    ]
+   }
+  ],
+  "audited_actions": [],
+  "docker_actions_on_target": [],
+  "forest_only_incidents": 1,
+  "first_actions": [
+   {
+    "t": 1792842383.8267317,
+    "runbook_id": "restart_service",
+    "service": "web",
+    "verdict": "expired_unapproved",
+    "reason": "unusual combination: only the joint anomaly score is high and no single signal explains it, so nothing runs automatically",
+    "risk": "medium",
+    "executed": false,
+    "approved_by": null
+   }
+  ],
+  "executed": [],
+  "unauthorised": [],
+  "restoration": {
+   "files_equal_to_commit": {
+    "models/artifacts/root_margin.json": true,
+    "models/artifacts/detectors.joblib": true,
+    "data/kb/outcomes_measured.csv": true
+   },
+   "margin": 0.121529,
+   "restored": true
+  }
+ },
+ "finished": "2026-10-24 17:19:44 IST",
+ "exit_state": {
+  "files_equal_to_commit": {
+   "models/artifacts/root_margin.json": true,
+   "models/artifacts/detectors.joblib": true,
+   "data/kb/outcomes_measured.csv": true
+  },
+  "margin": 0.121529,
+  "restored": true
+ },
+ "checks": [
+  {
+   "id": "setup.brain_up",
+   "what": "brain answers /status",
+   "result": "PASS",
+   "detail": "",
+   "t": "2026-10-24 17:08:30 IST"
+  },
+  {
+   "id": "setup.unmodified",
+   "what": "the brain starts with exactly this commit's files (SHA256) and margin 0.121529",
+   "result": "PASS",
+   "detail": {
+    "files_equal_to_commit": {
+     "models/artifacts/root_margin.json": true,
+     "models/artifacts/detectors.joblib": true,
+     "data/kb/outcomes_measured.csv": true
+    },
+    "margin": 0.121529,
+    "restored": true
+   },
+   "t": "2026-10-24 17:08:36 IST"
+  },
+  {
+   "id": "G5.calibration",
+   "what": "the live forest score separates a real fault on web from healthy (unmodified candidate)",
+   "result": "PASS",
+   "detail": {
+    "scenario": "error_spike",
+    "healthy_max": 0.3999,
+    "healthy_n": 19,
+    "fault_sustained": 0.6745,
+    "fault_n": 49,
+    "fault_peak": 0.6786,
+    "separable": true,
+    "threshold": 0.5372,
+    "t_inject": 1792842024.264258,
+    "t_end": 1792842175.9370875,
+    "incidents": [
+     {
+      "id": "0589616c",
+      "status": "escalated",
+      "cause": "error_spike",
+      "abstained": false,
+      "source": "limits",
+      "gap": 0.5877,
+      "reason": null,
+      "actions": [
+       [
+        "restart_service",
+        "web",
+        "expired_unapproved",
+        false
+       ]
+      ]
+     },
+     {
+      "id": "9423a90b",
+      "status": "escalated",
+      "cause": "error_spike",
+      "abstained": false,
+      "source": "limits",
+      "gap": 0.5877,
+      "reason": null,
+      "actions": [
+       [
+        "restart_service",
+        "web",
+        "expired_unapproved",
+        false
+       ]
+      ]
+     }
+    ],
+    "audited_actions": []
+   },
+   "t": "2026-10-24 17:13:26 IST"
+  },
+  {
+   "id": "G5",
+   "what": "controlled (modified runtime, detector boundary): a forest-only incident on web waits for approval ('unusual combination'); nothing executed; no autopilot action audited; no Docker action on web",
+   "result": "PASS",
+   "detail": {
+    "file": "models/artifacts/detectors.joblib",
+    "substitution": "learned limits emptied for every service; web forest threshold -> 0.5372",
+    "substitution_exit": 0,
+    "original_threshold": "0.8432000608255995",
+    "brain_up_after_substitution": true,
+    "scenario": "error_spike",
+    "incidents": [
+     {
+      "id": "7838196b",
+      "status": "escalated",
+      "cause": "error_spike",
+      "abstained": false,
+      "source": "forest_only",
+      "gap": 0.9752,
+      "reason": null,
+      "actions": [
+       [
+        "restart_service",
+        "web",
+        "expired_unapproved",
+        false
+       ]
+      ]
+     }
+    ],
+    "audited_actions": [],
+    "docker_actions_on_target": [],
+    "forest_only_incidents": 1,
+    "first_actions": [
+     {
+      "t": 1792842383.8267317,
+      "runbook_id": "restart_service",
+      "service": "web",
+      "verdict": "expired_unapproved",
+      "reason": "unusual combination: only the joint anomaly score is high and no single signal explains it, so nothing runs automatically",
+      "risk": "medium",
+      "executed": false,
+      "approved_by": null
+     }
+    ],
+    "executed": [],
+    "unauthorised": [],
+    "restoration": {
+     "files_equal_to_commit": {
+      "models/artifacts/root_margin.json": true,
+      "models/artifacts/detectors.joblib": true,
+      "data/kb/outcomes_measured.csv": true
+     },
+     "margin": 0.121529,
+     "restored": true
+    }
+   },
+   "t": "2026-10-24 17:18:46 IST"
+  },
+  {
+   "id": "G5.restore",
+   "what": "brain recreated from the image; files equal this commit (SHA256), margin 0.121529",
+   "result": "PASS",
+   "detail": {
+    "files_equal_to_commit": {
+     "models/artifacts/root_margin.json": true,
+     "models/artifacts/detectors.joblib": true,
+     "data/kb/outcomes_measured.csv": true
+    },
+    "margin": 0.121529,
+    "restored": true
+   },
+   "t": "2026-10-24 17:19:44 IST"
+  }
+ ]
+}

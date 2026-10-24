@@ -1,0 +1,388 @@
+{
+ "commit": "71eb2f5",
+ "execution_id": "20261024T162717-159af59f",
+ "started": "2026-10-24 16:39:19 IST",
+ "spec": "docs/LIVE_CHECK_PHASE4A.md",
+ "free_gb_at_start": 3.32,
+ "status": {
+  "mode": "autopilot",
+  "root_margin": 0.121529,
+  "learn_store": {
+   "path": "runtime/eternalai.db",
+   "error": null
+  },
+  "models": {
+   "detectors": true,
+   "classifier": true,
+   "ranker": true,
+   "baselines": true
+  },
+  "policy_file": "default.yaml"
+ },
+ "runs": [
+  {
+   "run_id": "5876052a48",
+   "scenario": "crash",
+   "target": "web",
+   "score": {
+    "run_id": "5876052a48",
+    "scenario": "crash",
+    "target": "web",
+    "failed_request_pct": 48.38,
+    "incidents_opened": 1,
+    "actions_executed": 1,
+    "detected": true,
+    "time_to_detect_s": 5.2,
+    "false_alerts": 0,
+    "extra_incidents": 0,
+    "diagnosis_top1": true,
+    "diagnosis_top3": true,
+    "cause_correct": true,
+    "abstained": false,
+    "abstained_correctly": null,
+    "harmful_interventions": 0,
+    "recovered": true,
+    "time_to_verified_recovery_s": 42.5,
+    "final_status": "recovered",
+    "window_s": 50.8,
+    "t_end": 1792840323.194292
+   }
+  },
+  {
+   "run_id": "d68ca77553",
+   "scenario": "crash",
+   "target": "payments",
+   "score": {
+    "run_id": "d68ca77553",
+    "scenario": "crash",
+    "target": "payments",
+    "failed_request_pct": 21.86,
+    "incidents_opened": 1,
+    "actions_executed": 0,
+    "detected": true,
+    "time_to_detect_s": 4.4,
+    "false_alerts": 0,
+    "extra_incidents": 0,
+    "diagnosis_top1": true,
+    "diagnosis_top3": true,
+    "cause_correct": true,
+    "abstained": false,
+    "abstained_correctly": null,
+    "harmful_interventions": 0,
+    "recovered": false,
+    "time_to_verified_recovery_s": null,
+    "final_status": "escalated",
+    "window_s": 32.6,
+    "t_end": 1792840413.711398
+   },
+   "proposal": {
+    "incident_id": "5e4cb853",
+    "service": "payments",
+    "runbook_id": "restart_service",
+    "risk": "low",
+    "reason": "payments is a protected service: every action needs approval",
+    "cause": "down",
+    "report": {
+     "summary": "payments shows signs of down (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes.",
+     "evidence_ids": [
+      "ev1",
+      "ev2",
+      "ev3",
+      "ev4",
+      "ev5",
+      "ev6"
+     ],
+     "likely_cause": "down",
+     "alternative_causes": [
+      "error_spike",
+      "bad_deploy"
+     ],
+     "runbook_id": "restart_service",
+     "missing_information": []
+    }
+   },
+   "executed_before": [],
+   "decision_http": 200
+  },
+  {
+   "run_id": "19f8e22e39",
+   "scenario": "error_spike",
+   "target": "orders",
+   "score": {
+    "run_id": "19f8e22e39",
+    "scenario": "error_spike",
+    "target": "orders",
+    "failed_request_pct": 13.0,
+    "incidents_opened": 1,
+    "actions_executed": 1,
+    "detected": true,
+    "time_to_detect_s": 12.1,
+    "false_alerts": 0,
+    "extra_incidents": 0,
+    "diagnosis_top1": true,
+    "diagnosis_top3": true,
+    "cause_correct": true,
+    "abstained": false,
+    "abstained_correctly": null,
+    "harmful_interventions": 0,
+    "recovered": true,
+    "time_to_verified_recovery_s": 53.6,
+    "final_status": "recovered",
+    "window_s": 63.1,
+    "t_end": 1792840534.527483
+   },
+   "proposal": {
+    "incident_id": "c9070ff3",
+    "service": "orders",
+    "runbook_id": "restart_service",
+    "risk": "medium",
+    "reason": "autopilot: medium-risk action requires approval",
+    "cause": "error_spike",
+    "report": {
+     "summary": "orders shows signs of error spike (classifier confidence 1.00). Proposed runbook: restart_service. Recovery is only confirmed after the synthetic checkout passes.",
+     "evidence_ids": [
+      "ev1",
+      "ev2",
+      "ev3",
+      "ev4",
+      "ev5",
+      "ev6"
+     ],
+     "likely_cause": "error_spike",
+     "alternative_causes": [
+      "bad_deploy",
+      "down"
+     ],
+     "runbook_id": "restart_service",
+     "missing_information": []
+    }
+   },
+   "executed_before": [],
+   "decision_http": 200
+  }
+ ],
+ "incidents": [
+  {
+   "id": "1bfc02cf",
+   "status": "recovered",
+   "cause": "down",
+   "abstained": false,
+   "anomaly_source": "down",
+   "root_gap": 0.9575,
+   "root": "web",
+   "abstain_reason": null,
+   "actions": [
+    [
+     "restart_service",
+     "web",
+     "execute",
+     true
+    ]
+   ]
+  },
+  {
+   "id": "5e4cb853",
+   "status": "escalated",
+   "cause": "down",
+   "abstained": false,
+   "anomaly_source": "down",
+   "root_gap": 0.9303,
+   "root": "payments",
+   "abstain_reason": null,
+   "actions": [
+    [
+     "restart_service",
+     "payments",
+     "rejected_by_live-check",
+     false
+    ]
+   ]
+  },
+  {
+   "id": "bba57779",
+   "status": "escalated",
+   "cause": "insufficient_evidence",
+   "abstained": true,
+   "anomaly_source": "limits",
+   "root_gap": 0.5118,
+   "root": "orders",
+   "abstain_reason": "novel",
+   "actions": []
+  },
+  {
+   "id": "c9070ff3",
+   "status": "recovered",
+   "cause": "error_spike",
+   "abstained": false,
+   "anomaly_source": "limits",
+   "root_gap": 0.9272,
+   "root": "orders",
+   "abstain_reason": null,
+   "actions": [
+    [
+     "restart_service",
+     "orders",
+     "needs_approval",
+     true
+    ]
+   ]
+  }
+ ],
+ "learn_stats": {
+  "before": {
+   "incidents": 143,
+   "actions": 81,
+   "outcomes": 27,
+   "feedback": 2
+  },
+  "after": {
+   "incidents": 149,
+   "actions": 84,
+   "outcomes": 29,
+   "feedback": 2
+  }
+ },
+ "finished": "2026-10-24 16:46:13 IST",
+ "checks": [
+  {
+   "id": "setup.brain_up",
+   "what": "brain answers /status",
+   "result": "PASS",
+   "detail": "",
+   "t": "2026-10-24 16:39:31 IST"
+  },
+  {
+   "id": "setup.stock",
+   "what": "inventory restocked and verified",
+   "result": "PASS",
+   "detail": ", \"sku-mug\": 99999, \"sku-bag\": 100000, \"sku-book\": 100000}, \"brain_incidents_in_restock_window\": []}",
+   "t": "2026-10-24 16:40:20 IST"
+  },
+  {
+   "id": "A1",
+   "what": "margin 0.121529 loaded, learn store open, default rulebook, autopilot",
+   "result": "PASS",
+   "detail": {
+    "mode": "autopilot",
+    "root_margin": 0.121529,
+    "learn_store": {
+     "path": "runtime/eternalai.db",
+     "error": null
+    },
+    "models": {
+     "detectors": true,
+     "classifier": true,
+     "ranker": true,
+     "baselines": true
+    },
+    "policy_file": "default.yaml"
+   },
+   "t": "2026-10-24 16:40:22 IST"
+  },
+  {
+   "id": "A2",
+   "what": "every diagnosed incident records anomaly_source, root_gap and root_margin",
+   "result": "PASS",
+   "detail": {
+    "diagnosed": 4,
+    "sources": [
+     "down",
+     "limits"
+    ]
+   },
+   "t": "2026-10-24 16:45:46 IST"
+  },
+  {
+   "id": "A3",
+   "what": "close candidates abstain exactly when gap < margin; no forest-only incident ran automatically",
+   "result": "PASS",
+   "detail": {
+    "close_gap_incidents": 0,
+    "abstained_close": 0,
+    "forest_only": 0,
+    "forest_only_auto_executed": 0,
+    "label_close": "active and consistent live, not triggered",
+    "label_forest": "active and consistent live, not triggered"
+   },
+   "t": "2026-10-24 16:45:46 IST"
+  },
+  {
+   "id": "A4",
+   "what": "crash on web: restart_service executed by autopilot",
+   "result": "PASS",
+   "detail": [
+    [
+     "restart_service",
+     "autopilot"
+    ]
+   ],
+   "t": "2026-10-24 16:45:46 IST"
+  },
+  {
+   "id": "A5",
+   "what": "crash on payments: waits as protected; rejected; escalated; nothing executed on payments",
+   "result": "PASS",
+   "detail": {
+    "reason": "payments is a protected service: every action needs approval",
+    "reject_http": 200,
+    "executed": 0
+   },
+   "t": "2026-10-24 16:45:46 IST"
+  },
+  {
+   "id": "A6",
+   "what": "error_spike on orders: waits (medium); nothing before approval; executed by human:live-check after",
+   "result": "PASS",
+   "detail": {
+    "proposal": {
+     "runbook_id": "restart_service",
+     "risk": "medium",
+     "reason": "autopilot: medium-risk action requires approval"
+    },
+    "approve_http": 200,
+    "executed_before": 0,
+    "executed_after": [
+     [
+      "restart_service",
+      "human:live-check"
+     ]
+    ]
+   },
+   "t": "2026-10-24 16:45:46 IST"
+  },
+  {
+   "id": "B1",
+   "what": "every closed incident of the runs is in the learn store and matches /incidents",
+   "result": "PASS",
+   "detail": {
+    "closed": 4,
+    "mismatches": [],
+    "stats_before": {
+     "incidents": 143,
+     "actions": 81,
+     "outcomes": 27,
+     "feedback": 2
+    },
+    "stats_after": {
+     "incidents": 149,
+     "actions": 84,
+     "outcomes": 29,
+     "feedback": 2
+    }
+   },
+   "t": "2026-10-24 16:46:05 IST"
+  },
+  {
+   "id": "B2",
+   "what": "POST /feedback: 403 without token, 404 unknown id, 200 with token, visible in /learn/{id}",
+   "result": "PASS",
+   "detail": {
+    "no_token": 403,
+    "unknown": 404,
+    "ok": 200,
+    "feedback_rows": 1
+   },
+   "t": "2026-10-24 16:46:13 IST"
+  }
+ ]
+}
