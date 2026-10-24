@@ -30,7 +30,11 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Healthy runs, v2 ask-first arm (8 runs: 4 traffic surge + 4 good deploy):** 0 of 8 opened an incident; 0 executed an action.
 - **Source:** `docs/results/benchmark_v2.md` (sections 3 and 4) and `results/benchmark-v2/rerun/benchmark_v2_evaluated.jsonl`.
 
-**Live human approval:** shown in the kind demo (bad deploy → rollback, approved by a person at the demo). Not a benchmark number. **PENDING** until Rajat's live run is verified.
+**Live human approval: DONE (Docker dashboard, `demo-stable-1`).**
+- **Rehearsal 2026-10-24 18:49-18:54 IST:** bad deploy on payments → `rollback_release` (high risk) proposed in ask-first, approved by the owner in the dashboard after 58.1 s, executed (audit actor `human:dashboard`) and verified recovered.
+- **Conditions:** approval window 300 s (demo override, no code change). This commit's dashboard records the approver as `dashboard`, not the person's name.
+- **Not a benchmark number.** Source: `docs/results/demo_rehearsal_20261024-1854.md`.
+- **Kubernetes:** a bonus if Rajat's kind run (bad deploy → rollback approved by him) is verified.
 
 ## 2. Autopilot alone under the current policy (v3, no human present)
 
