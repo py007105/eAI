@@ -20,8 +20,9 @@ occurred. Here:
    the run. Nobody approves during the run.
 4. In a `finally`, the brain is recreated from the image and verified (SHA256 of the three data files = this commit's,
    margin 0.121529).
-Statuses PASS / FAIL / INCOMPLETE; only PASS counts. Controlled-path evidence only: it does not show that forest-only
-anomalies occur naturally, nor generalisation.
+Statuses PASS / FAIL / INCOMPLETE; only PASS counts. This is an ADAPTIVE CONTROLLED INTEGRATION STIMULUS: the threshold
+is selected from scores observed in the same run. It is not a validation of the original threshold, not natural detection
+performance and not held-out generalisation; it shows only that the candidate's forest-only -> approval path works.
 """
 from __future__ import annotations
 
@@ -204,7 +205,10 @@ def write(out):
          "- Modified runtime configuration during the check (inside the running brain container only): "
          "`models/artifacts/detectors.joblib` with the learned limits emptied and web's forest threshold set from the live "
          "calibration below. Image, source, anomaly_source(), policy and executor unchanged; nobody approved.",
-         "- Controlled-path evidence only: not evidence that forest-only anomalies occur naturally, nor of generalisation.",
+         "- **Adaptive controlled integration stimulus.** Web's forest threshold was SELECTED FROM THE HEALTHY AND FAULT SCORES "
+         "OBSERVED IN THIS RUN (calibration below), so that a real fault crosses it. This exercises the forest-only -> "
+         "approval path of the candidate's code. It is **not** a validation of the original threshold, **not** a measure "
+         "of natural detection performance, and **not** evidence of held-out generalisation.",
          f"- Result: **{n} of {len(checks)} checks passed**; INCOMPLETE: {inc}. Raw record: `results/live-checks/g5.json`.",
          "", "| check | what | result | detail |", "|---|---|---|---|"]
     for c in checks:
