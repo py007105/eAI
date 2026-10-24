@@ -41,3 +41,24 @@ def test_cluster_profile_is_the_default(monkeypatch):
     args = {"METRICS_SOURCE": "kubernetes", "KUBERNETES_NAMESPACE": "shop", "PROMETHEUS_URL": "http://prom"}
     prom, _ = make_sources(args, apps=Mock(), core=Mock(), prom_client=httpx.Client(base_url="http://prom"))
     assert isinstance(prom, KubernetesProm)
+
+
+def test_docker_path_is_unchanged_and_ignores_kubernetes_metrics(monkeypatch):
+    """KUBERNETES_METRICS is read only on the Kubernetes path: the default (Docker) runtime still gets collector.Prom
+    with its default URL and a DockerView, with or without the variable, and the rulebook is not consulted."""
+    from eternalai import config
+    from eternalai.collector import Prom
+
+    class StubView:                       # DockerView would connect to Docker; only its selection is tested here
+        pass
+
+    def no_rulebook():
+        raise AssertionError("the Docker path must not read the rulebook")
+
+    monkeypatch.setattr("eternalai.sources.DockerView", StubView)
+    monkeypatch.setattr("eternalai.sources.rulebook.load", no_rulebook)
+    for env in ({}, {"RUNTIME": "docker"}, {"KUBERNETES_METRICS": "app"},
+                {"RUNTIME": "docker", "KUBERNETES_METRICS": "app", "PROMETHEUS_URL": "http://elsewhere:9090"}):
+        prom, view = make_sources(env)
+        assert type(prom) is Prom and isinstance(view, StubView)
+        assert str(prom.c.base_url).rstrip("/") == config.PROMETHEUS_URL.rstrip("/")
