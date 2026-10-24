@@ -226,7 +226,7 @@ def test_step4_live_flow_and_screenshots(tmp_path):
     assert "reply_markup" in msg1
 
     # 5. Screenshot 1: Dashboard showing awaiting approval
-    shot1_path = SHOTS_DIR / "live_telegram_1_awaiting_approval.png"
+    shot1_path = SHOTS_DIR / "live_telegram_1_awaiting_approval_simulated.png"
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": 1400, "height": 950})
@@ -274,7 +274,7 @@ def test_step4_live_flow_and_screenshots(tmp_path):
     assert edit_msg["reply_markup"] == {"inline_keyboard": []}
 
     # 8. Screenshot 2: Dashboard showing verified healthy status
-    shot2_path = SHOTS_DIR / "live_telegram_2_verified_healthy.png"
+    shot2_path = SHOTS_DIR / "live_telegram_2_verified_healthy_simulated.png"
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": 1400, "height": 950})
