@@ -63,6 +63,8 @@ def test_shop_values_set_app_metrics_and_our_frontend():
     assert env["KUBERNETES_FRONTEND_URL"] == "http://web.shop.svc.cluster.local:8000"
     assert env["PROMETHEUS_URL"] == "http://prometheus.monitoring.svc.cluster.local:9090"
     assert container["imagePullPolicy"] == "Never"
+    assert env["ETERNALAI_APPROVAL_TTL_S"] == "900"
     default_env = {item["name"]: item.get("value") for item in next(
         item for item in render() if item["kind"] == "Deployment")["spec"]["template"]["spec"]["containers"][0]["env"]}
     assert default_env["KUBERNETES_METRICS"] == "cluster" and "KUBERNETES_FRONTEND_URL" not in default_env
+    assert "ETERNALAI_APPROVAL_TTL_S" not in default_env

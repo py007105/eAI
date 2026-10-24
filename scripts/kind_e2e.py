@@ -284,6 +284,41 @@ def actions_since(audit: list[dict], service: str, since: float) -> list[dict]:
             and float(item.get("t", 0)) >= since]
 
 
+TOKEN_FILE = ROOT / "runtime/kind_e2e_approval.token"    # git-ignored; deleted when the run ends
+APPROVAL_WAIT_S = 840                                    # below the brain's 900 s approval TTL (values-shop.yaml)
+
+
+def approval_instructions(incident_id: str, token_file: Path = TOKEN_FILE) -> str:
+    """PowerShell for a human approval. The token is read from the git-ignored file and never printed."""
+    return "\n".join([
+        "",
+        f"=== HUMAN APPROVAL NEEDED: rollback_release of {BAD_SERVICE} (incident {incident_id}) ===",
+        "Check it first:  Invoke-RestMethod http://127.0.0.1:18080/approvals",
+        "Approve it (replace YOUR-NAME), in a new PowerShell window:",
+        f"  $t = (Get-Content '{token_file}' -Raw).Trim()",
+        f"  Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:18080/approvals/{incident_id}/approve' "
+        "-Headers @{'X-Approval-Token'=$t} -ContentType 'application/json' -Body '{\"approver\":\"YOUR-NAME\"}'",
+        f"Waiting up to {APPROVAL_WAIT_S // 60} minutes. The script will not approve it.",
+        ""])
+
+
+def human_approval(incident: dict, audit: list[dict], service: str, runbook: str) -> dict | None:
+    """Approver and wait for the approved action of an incident: wait = execution (audit, actor human:<name>) minus
+    the time the brain proposed it. None until the approved action has executed."""
+    action = next((a for a in incident.get("actions", []) if a.get("service") == service
+                   and a.get("runbook_id") == runbook and a.get("approved_by")), None)
+    if action is None:
+        return None
+    approver = action["approved_by"]
+    executed = next((item for item in audit if item.get("service") == service and item.get("runbook") == runbook
+                     and item.get("actor") == f"human:{approver}" and float(item.get("t", 0)) >= float(action["t"])),
+                    None)
+    if executed is None:
+        return None
+    return {"approver": approver, "wait_s": float(executed["t"]) - float(action["t"]), "proposed_t": action["t"],
+            "executed_t": executed["t"], "ok": bool(executed.get("ok"))}
+
+
 def deployment_image(body: dict, container: str) -> str | None:
     for item in body["spec"]["template"]["spec"]["containers"]:
         if item["name"] == container:
@@ -364,7 +399,8 @@ def shop_configuration():
             "prometheus_image": PROMETHEUS_IMAGE,
             "frozen_service": FROZEN_SERVICE, "bad_release_service": BAD_SERVICE, "scale_service": SCALE_SERVICE,
             "namespaces": ["shop", "loadgen", "monitoring", "eternalai"],
-            "mode_initial": "watch", "mode_final": "autopilot", "ports": [18080, 18081, 18082]}
+            "mode_initial": "watch", "mode_final": "autopilot", "ports": [18080, 18081, 18082],
+            "approval_wait_limit_s": APPROVAL_WAIT_S}
 
 
 # ------------------------------------------------------------------ shared start and teardown
@@ -398,7 +434,7 @@ def create_secret(namespace, name, value):
 
 
 # ------------------------------------------------------------------ our shop
-def run_shop(head, state):
+def run_shop(head, state, approval="manual"):
     available = preflight(state["origin"])
     state["held"] = True
     preflight_state(available)
@@ -444,6 +480,10 @@ def run_shop(head, state):
     cmd([KUBECTL, "create", "namespace", "eternalai"])
     token = secrets.token_urlsafe(32)
     create_secret("eternalai", "eai-e2e-approval", token)
+    if approval == "manual":                  # for the human approver only; git-ignored, deleted at the end
+        TOKEN_FILE.parent.mkdir(exist_ok=True)
+        TOKEN_FILE.write_text(token, encoding="utf-8")
+        state["token_file"] = TOKEN_FILE
     cmd([HELM, "install", "eternalai", "deploy/helm/eternalai", "-n", "eternalai", "-f", str(SHOP_VALUES),
          "--set", "approvalToken.existingSecret=eai-e2e-approval"], timeout=300)
     cmd([KUBECTL, "-n", "eternalai", "rollout", "status", "deployment/eternalai", "--timeout=300s"])
@@ -521,7 +561,21 @@ def run_shop(head, state):
                                               f"{len(acted)} {BAD_SERVICE} action(s) before approval")
     if not no_action:
         raise RuntimeError(f"{BAD_SERVICE} changed before approval")
-    api("POST", f"/approvals/{pending['incident_id']}/approve", token, json={"approver": "kind-e2e"})
+    iid = pending["incident_id"]
+    if approval == "auto":
+        api("POST", f"/approvals/{iid}/approve", token, json={"approver": "kind-e2e-auto"})
+    else:
+        print(approval_instructions(iid), flush=True)
+    human = wait_until(lambda: human_approval(next(i for i in api("GET", "/incidents") if i["id"] == iid),
+                                              api("GET", "/audit"), BAD_SERVICE, "rollback_release"),
+                       APPROVAL_WAIT_S if approval == "manual" else 120, 2)
+    by_human = bool(human) and (approval == "auto" or not human["approver"].startswith("kind-e2e"))
+    check("approval", by_human,
+          (f"approved by {human['approver']} ({'script, auto' if approval == 'auto' else 'human, manual'}); "
+           f"waited {human['wait_s']:.0f} s from proposal to approved execution" if human
+           else f"no approval within {APPROVAL_WAIT_S if approval == 'manual' else 120} s"))
+    if not human:
+        raise RuntimeError("the rollback was not approved")
     rolled = wait_until(lambda: (lambda body: body if deployment_image(body, BAD_SERVICE) == good
                                  and deployment_ready(body) else None)(
         json.loads(cmd([KUBECTL, "-n", "shop", "get", "deployment", BAD_SERVICE, "-o", "json"]))), 300, 5)
@@ -697,6 +751,9 @@ def parse_args(argv=None):
     ap = argparse.ArgumentParser(description="Package A kind end-to-end check")
     ap.add_argument("--target", choices=("shop", "boutique"), default="shop",
                     help="shop: our 4-service shop (default); boutique: Online Boutique (roadmap)")
+    ap.add_argument("--approval", choices=("manual", "auto"), default="manual",
+                    help="shop rollback approval: manual (default; a human approves with the token file) or auto "
+                         "(the script approves; not a verified human-approval run)")
     return ap.parse_args(argv)
 
 
@@ -706,12 +763,18 @@ def main(argv=()):
     branch = cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
     run_id = datetime.now(IST).strftime("%Y%m%dT%H%M%S") + "-" + secrets.token_hex(4)
     started_at = now_ist()
-    state = {"origin": f"{branch}@{head[:7]}", "held": False, "cluster": False, "forwards": [], "image_id": None}
+    state = {"origin": f"{branch}@{head[:7]}", "held": False, "cluster": False, "forwards": [], "image_id": None,
+             "token_file": None}
     try:
-        (run_shop if args.target == "shop" else run_boutique)(head, state)
+        if args.target == "shop":
+            run_shop(head, state, args.approval)
+        else:
+            run_boutique(head, state)
     except Exception as exc:
         check("aborted", False, f"{type(exc).__name__}: {exc}")
     finally:
+        if state["token_file"]:
+            Path(state["token_file"]).unlink(missing_ok=True)
         if args.target == "shop" and state["cluster"]:
             check("shop_state_at_end", True, pod_status("shop"))
         for forward in state["forwards"]:
@@ -736,7 +799,7 @@ def main(argv=()):
                 check("lock_release", True, "atomic owner file released")
             except (Exception, SystemExit) as exc:
                 check("lock_release", False, type(exc).__name__)
-        configuration = shop_configuration() if args.target == "shop" else None
+        configuration = ({**shop_configuration(), "approval": args.approval} if args.target == "shop" else None)
         write_results(head, run_id, started_at, state["image_id"], args.target, configuration, branch)
     return 0 if CHECKS and all(item["result"] == "PASS" for item in CHECKS) else 1
 

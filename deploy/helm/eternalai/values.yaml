@@ -13,6 +13,8 @@ prometheus:
 metricsProfile: cluster
 # URL the brain probes for user-facing health and recovery verification; empty: http://frontend.<namespace>.svc.cluster.local
 frontendUrl: ""
+# Seconds a proposed action waits for a human before it is escalated (ETERNALAI_APPROVAL_TTL_S); empty: the brain's 120
+approvalTtlS: ""
 approvalToken:
   existingSecret: ""
 resources:

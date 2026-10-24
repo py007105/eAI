@@ -154,3 +154,42 @@ def test_preflight_refuses_without_tools(monkeypatch, tmp_path):
     monkeypatch.setattr(k, "HELM", tmp_path / "helm.exe")
     with pytest.raises(RuntimeError, match="kind.exe and helm.exe"):
         k.preflight("team/k8s-rajat@abc")
+
+
+def test_manual_approval_is_the_default():
+    assert k.parse_args([]).approval == "manual"
+    assert k.parse_args(["--approval", "auto"]).approval == "auto"
+
+
+def test_approval_instructions_never_contain_the_token(tmp_path):
+    token_file = tmp_path / "kind_e2e_approval.token"
+    secret_value = "s3cr3t-value-that-must-not-print"
+    token_file.write_text(secret_value, encoding="utf-8")
+    text = k.approval_instructions("inc-42", token_file)
+    assert secret_value not in text
+    assert str(token_file) in text and "/approvals/inc-42/approve" in text
+    assert "X-Approval-Token" in text and "YOUR-NAME" in text
+
+
+def test_token_file_is_git_ignored():
+    import subprocess
+    rel = k.TOKEN_FILE.relative_to(k.ROOT).as_posix()
+    result = subprocess.run(["git", "check-ignore", rel], cwd=k.ROOT, capture_output=True, text=True)
+    assert result.returncode == 0 and result.stdout.strip() == rel
+
+
+def test_human_approval_records_approver_and_wait():
+    incident = {"id": "inc-1", "actions": [
+        {"t": 100.0, "service": "payments", "runbook_id": "rollback_release", "approved_by": "rajat"}]}
+    audit = [{"t": 90.0, "service": "payments", "runbook": "rollback_release", "actor": "human:rajat", "ok": True},
+             {"t": 163.5, "service": "payments", "runbook": "rollback_release", "actor": "human:rajat", "ok": True}]
+    got = k.human_approval(incident, audit, "payments", "rollback_release")
+    assert got["approver"] == "rajat" and got["wait_s"] == 63.5 and got["ok"]
+    assert k.human_approval({"actions": [{"t": 1, "service": "payments", "runbook_id": "rollback_release"}]},
+                            audit, "payments", "rollback_release") is None          # not approved yet
+    assert k.human_approval(incident, audit[:1], "payments", "rollback_release") is None   # approved, not executed
+
+
+def test_brain_waits_longer_for_a_human_than_the_script_does():
+    values = yaml.safe_load(k.SHOP_VALUES.read_text(encoding="utf-8"))
+    assert int(values["approvalTtlS"]) > k.APPROVAL_WAIT_S

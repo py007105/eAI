@@ -9,3 +9,5 @@ prometheus:
   url: http://prometheus.monitoring.svc.cluster.local:9090
 metricsProfile: app
 frontendUrl: http://web.shop.svc.cluster.local:8000
+# A human approves the rollback by hand in the verified run (scripts/kind_e2e.py --approval manual waits up to 840 s).
+approvalTtlS: "900"

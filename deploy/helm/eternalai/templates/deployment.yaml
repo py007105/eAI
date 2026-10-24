@@ -43,6 +43,10 @@ spec:
             - name: KUBERNETES_FRONTEND_URL
               value: {{ .Values.frontendUrl | quote }}
             {{- end }}
+            {{- if .Values.approvalTtlS }}
+            - name: ETERNALAI_APPROVAL_TTL_S
+              value: {{ .Values.approvalTtlS | quote }}
+            {{- end }}
             {{- if .Values.prometheus.existingSecret }}
             - name: PROMETHEUS_TOKEN
               valueFrom:
