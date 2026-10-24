@@ -24,3 +24,9 @@ the end of the warm-up the crash had recovered, so D2 compared an empty explanat
 the wiring, not the wording of a live fault sentence. A first attempt at 12:37-12:40 IST failed before any check (page
 load over the 30 s limit); the limit was raised in `e1e8d3e`. Visible flaw: right-axis tick labels overlap the dashed
 "normal" line.
+
+**Scope of this result (added 2026-10-24 13:21 IST).** This run validated the combined revision's dashboard **code**
+(run from source) against the **older candidate backend images** built from `71eb2f5`. It is not a validation of the
+intended combined deployment (all images built from the combined revision, the dashboard served by its container), and
+its D2 compared empty with empty. The combined deployment is checked separately, with a populated explanation (D6), in
+`docs/results/dashboard_charts_combined.md`.
