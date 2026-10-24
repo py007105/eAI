@@ -37,7 +37,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Telegram tap: DONE** (dry run 1, `demo-stable-1`, bot from `team/ui-telegram-sanskar` `4bdb017`, unchanged).
   - Bad deploy on payments → rollback approved by the owner's Telegram tap; executed 7:37:41 PM IST with audit actor `human:telegram:7769231832`; verified recovered 7:38:04 PM.
   - Not a benchmark number. Source: `docs/results/dry_run_1_20261024-1948.md`.
-- **Kubernetes:** not done tonight (Rajat's run did not happen); it stays on his branch as "ready, not yet run live".
+- **Kubernetes:** validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster. Not merged; it stays on `team/k8s-rajat` (`7f53164`). Source: `docs/results/k8s_offline_validation.md`.
 
 ## 2. Autopilot alone under the current policy (v3, no human present)
 
@@ -96,7 +96,8 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Public-dataset classifier (dataset A, offline, one run): NOT the model the demo uses.**
   - **Model:** a gradient-boosting classifier trained by `models/train_dataset_a.py` on the owner's workbook, real rows only.
   - **Test set:** Train Ticket, a system never seen in training; 53 test incidents under the plan's truth definition.
-  - **Result:** macro-F1 0.385 (plan feature list, variant P) and 0.449 (live-computable features, variant L). The majority-class baseline scores 0.132. The unknown-fault threshold does **not** separate unknown faults.
+  - **Result:** macro-F1 0.385 (plan feature list, variant P) and 0.449 (live-computable features, variant L), averaged over the test's truth classes only (real rows only). The majority-class baseline scores 0.132 with the same averaging. A strict value (predictions outside the truth classes counted) was not computed for this model.
+  - **Not comparable** with Mihir's separate experiment (`docs/results/dataset_a_model.md`: 369 synthetic training rows; 0.564 truth-classes average, 0.376 strict). No claim that synthetic rows improved accuracy. The unknown-fault threshold does **not** separate unknown faults.
   - **The demo** uses the live classifier, trained on our shop's own runs (10 s live windows). On these 53 Train Ticket incidents it abstains on all 53. That's not a fair comparison: most of its inputs are missing there.
   - Source: `docs/results/dataset_a_classifier.md`.
 - **The plan's figures, 58% (v1) and 54-65% over 6 seeds (v2) on Train Ticket**, are a different measurement and are not changed here. They come from the owner's plan (`docs/ETERNALAI_PLAN.md`), trained on the plan's balanced v2 files, which include synthetic rows. Those files are not on this machine, so those figures were not reproduced; 0.385 / 0.449 is real rows only.
@@ -115,5 +116,5 @@ Every number below comes from a committed results file or raw rows. The pooled v
 ## Roadmap (not run)
 - A scripted-approver arm for v3 (the existing `eternalai_ask_first` arm with `--approve-after`). Roadmap only, not tonight.
 - Retry with the second fix: implemented, **tests only**.
-- Kubernetes: no live pass yet (14:14 kind run failed during monitoring setup).
+- Kubernetes: validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster (the 2:14 PM kind run failed during monitoring setup; no later live run). Source: `docs/results/k8s_offline_validation.md`.
 - Telegram: the REST-only bot (`team/ui-telegram-sanskar` `4bdb017`, PR #4, not merged) was verified live against `demo-stable-1` in dry run 1 (a real tap approved a rollback). Its merge into `plan-complete` is still pending.
