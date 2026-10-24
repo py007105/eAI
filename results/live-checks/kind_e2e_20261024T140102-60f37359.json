@@ -1,0 +1,60 @@
+{
+  "execution_id": "20261024T140102-60f37359",
+  "started_at_ist": "2026-10-24 14:01:02 IST",
+  "finished_at_ist": "2026-10-24 14:14:11 IST",
+  "branch": "friend/phase2-k8s",
+  "commit": "68c6d1d8f6c758a5231b48878ec93cd986c3a6c9",
+  "image": {
+    "tag": "eai/eternalai:k8s-dev",
+    "id": null,
+    "built_from": null
+  },
+  "configuration": {
+    "kind_config_sha256": "c58394ae6396760665f651b02d102ca0f8522f743531a2b03c52db0d26a20568",
+    "helm_values_sha256": "39b301feba8f1cb98b732077c6f5ffdc92b284d5c94ff622f0a5e5a932f6af4e",
+    "rulebook_source": "deploy/helm/eternalai/values.yaml#rulebook",
+    "online_boutique_manifest_sha256": "ae3c20181c051048e6a5cae51fa530681affa4043ba60ae95d4f39e1262f2744",
+    "prometheus_chart_version": "29.18.0",
+    "prometheus_chart_archive_sha256": "24f5f056dd5cb00e98ffb905c9c2779e810153f1b5a6306bf2cc2c5a4f02a0b9",
+    "namespace": "shop",
+    "mode_initial": "watch",
+    "mode_final": "ask",
+    "ports": [
+      18080,
+      18081,
+      18082
+    ]
+  },
+  "checks": [
+    {
+      "check": "preflight",
+      "result": "PASS",
+      "detail": "Compose stopped, no kind cluster, 6.30 GiB free",
+      "t": "2026-10-24 14:01:04 IST"
+    },
+    {
+      "check": "cluster",
+      "result": "PASS",
+      "detail": "pinned single-node kind cluster created",
+      "t": "2026-10-24 14:09:05 IST"
+    },
+    {
+      "check": "aborted",
+      "result": "FAIL",
+      "detail": "RuntimeError",
+      "t": "2026-10-24 14:14:07 IST"
+    },
+    {
+      "check": "teardown",
+      "result": "PASS",
+      "detail": "only the eai kind cluster removed",
+      "t": "2026-10-24 14:14:11 IST"
+    },
+    {
+      "check": "lock_release",
+      "result": "PASS",
+      "detail": "atomic owner file released",
+      "t": "2026-10-24 14:14:11 IST"
+    }
+  ]
+}
