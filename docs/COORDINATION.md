@@ -141,3 +141,13 @@ Docker/WSL limit was changed by the main session.
 - `scripts/resume_eval_v3.py --original 20261024T001813-4cedc8bf`: exactly the 24 missing evaluation cases. Estimate:
   85-100 min at 3.3-4 min per run, longer if the memory guard waits.
 - Planned for main's slot Sat 24, 21:00 - Sun 25, 05:00, from the pinned checkout `D:\eAI\eAI-eval-71eb2f5`.
+
+### Overnight runner launched 24 Oct 13:25:37 IST (main session)
+- One detached runner: `scripts/run_overnight.py` from `D:\eAI\eAI-combined-519a5f6`, **PID 16564** (launcher 29288), log
+  folder `D:\eAI\overnight-20261024` (`runner.log`, `status.json`, one `*.out.log` per step). Before 21:00 it only sleeps:
+  no Docker, no lock.
+- Window: 21:00 Sat - 05:00 Sun IST (main's slot). It takes the lock only when it reads FREE and >= 3 GB RAM is free; it
+  holds it across: gate (`D:\eAI\eAI-eval-71eb2f5`, G2-G7 in one execution, latest start 23:30), evaluation resume (24
+  missing cases, latest start 01:30), combined deployment (`519a5f6` images, latest start 04:15). Expected without memory
+  waits: gate 62-75 min, resume 85-100 min, combined about 20-25 min, so about 21:00-00:30.
+- It never pushes, tags or promotes. Codex's window 3 (Sun 07:00) is not touched.
