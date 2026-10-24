@@ -37,7 +37,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Telegram tap: DONE** (dry run 1, `demo-stable-1`, bot from `team/ui-telegram-sanskar` `4bdb017`, unchanged).
   - Bad deploy on payments → rollback approved by the owner's Telegram tap; executed 7:37:41 PM IST with audit actor `human:telegram:7769231832`; verified recovered 7:38:04 PM.
   - Not a benchmark number. Source: `docs/results/dry_run_1_20261024-1948.md`.
-- **Kubernetes:** validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster. Not merged; it stays on `team/k8s-rajat` (`7f53164`).
+- **Kubernetes:** validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster. Not merged; it stays on `team/k8s-rajat` (`7f53164`). Source: `docs/results/k8s_offline_validation.md`.
 
 ## 2. Autopilot alone under the current policy (v3, no human present)
 
@@ -116,5 +116,5 @@ Every number below comes from a committed results file or raw rows. The pooled v
 ## Roadmap (not run)
 - A scripted-approver arm for v3 (the existing `eternalai_ask_first` arm with `--approve-after`). Roadmap only, not tonight.
 - Retry with the second fix: implemented, **tests only**.
-- Kubernetes: validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster (the 2:14 PM kind run failed during monitoring setup; no later live run).
+- Kubernetes: validated offline (Helm lint+render, 26/26 resources schema-valid, 57 tests incl. restart/rollback/scale); not run on a live cluster (the 2:14 PM kind run failed during monitoring setup; no later live run). Source: `docs/results/k8s_offline_validation.md`.
 - Telegram: the REST-only bot (`team/ui-telegram-sanskar` `4bdb017`, PR #4, not merged) was verified live against `demo-stable-1` in dry run 1 (a real tap approved a rollback). Its merge into `plan-complete` is still pending.

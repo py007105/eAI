@@ -15,7 +15,7 @@ All numbers are produced by committed scripts from raw benchmark and test record
 | **Healthy-Run False Incidents** | **1 incident in 24 healthy runs** (v2) vs **6 / 24** for the `threshold_restart` baseline; **0 in 10** (v3) | <= 2 / 24 | v2 autopilot arm, 24 healthy runs (old policy); v3 unattended autopilot arm, 10 healthy runs (current policy) | `docs/results/benchmark_v2.md`, `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md` | Verified live |
 | **Harmful Actions on Healthy Runs** | **0 / 24** (0%) | 0 / 24 | 0 actions executed in 24 autopilot and 8 ask-first healthy runs | `docs/results/benchmark_v2.md` | Verified live |
 | **Supported Fault Recovery (Ask-First)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy, approvals by a simulated operator after 5 s (no person reviewed); 3 runs each across 6 faults; verified by internal checkout. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
-| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy (autopilot also ran rollbacks and recreates without asking), approvals by a simulated operator; mean failed req 11.15%. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
+| **Supported Fault Recovery (Autopilot)** | **18 / 18** [82%, 100%] | >= 15 / 18 | v2 benchmark, old policy: no approvals, autopilot ran every action itself, including rollbacks and recreates; mean failed req 11.15%. Current unattended v3: 10/30 recovered alone | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
 | **Detection (v3, current policy)** | **30 / 30** supported faults detected, **12.57 s** mean | - | v3 unattended autopilot arm, 6 fault types × 5 seeds (600-649), candidate `71eb2f5`, `default.yaml` | `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md`, `docs/CURRENT_NUMBERS.md` | Verified live |
 | **Wrong-service actions (v3)** | **0** | 0 | executed actions on a non-target service, 45 v3 autopilot runs | `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md` | Verified live |
 | **Memory leak recovery (v3)** | failed requests **higher with EternalAI** (up to 5.0 %) than without (at most 0.3 %) | - | same 5 seeds, paired, v3 unattended autopilot vs no brain; so memory leak is not used as a live demo | `docs/results/benchmark_v3_resume/20261024T150914-22eb30c0_combined.md` | Verified live (honest failure) |
@@ -63,7 +63,7 @@ flowchart TD
         Dashboard["Dash UI Dashboard (:8050)"]
         Evaluator["Independent Evaluator (:8200) <br/> [Private Fault Truth & Loadgen]"]
         Telegram["Telegram bot (separate process) <br/> [REST API only; verified live in a dry run]"]
-        K8s["Kubernetes driver + Helm chart <br/> [validated offline: Helm lint+render, 26/26 resources, 57 tests; not run on a live cluster]"]
+        K8s["Kubernetes driver + Helm chart <br/> [validated offline: Helm lint+render, 26/26 resources, 57 tests; not run on a live cluster; docs/results/k8s_offline_validation.md]"]
     end
 
     Prom --> Engine
@@ -149,7 +149,7 @@ v1 results above are kept unchanged. v2 is **not** presented as "the model is be
 | v2 (seeds 200-318 and the replacement block 400-429) | observed | certainty |
 |---|---|---|
 | supported faults, autopilot: detected / recovered (own verification; v2 benchmark, old policy; current unattended v3: 10/30 recovered alone) | 18/18 [82%, 100%] / 18/18 [82%, 100%] | 18 runs, 3 per fault type; Wilson 95% interval lower bound about 82% |
-| supported faults, ask-first (approvals by a simulated operator after 5 s; v2 benchmark, old policy): detected / recovered | 18/18 [82%, 100%] / 18/18 [82%, 100%] | same sample sizes |
+| supported faults, ask-first (approvals by a simulated operator after 5 s (no person reviewed); v2 benchmark, old policy): detected / recovered | 18/18 [82%, 100%] / 18/18 [82%, 100%] | same sample sizes |
 | healthy runs, autopilot: incidents opened / actions executed | 1/24 / 0/24 | upper bound of the interval for 1 in 24 is about 20% |
 | healthy runs, threshold_restart on the same seeds: incidents opened | 6/24 | |
 | unseen fault cpu_burn, autopilot: abstained | 2/3 (v1: 4/5, other seeds, not pooled) | seed 426 restarted the wrong service (post-mortem in `docs/postmortems/cpu_burn_seed426.md`) |

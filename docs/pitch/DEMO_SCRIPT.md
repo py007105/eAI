@@ -69,7 +69,7 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
 
 ### 4. Honest Numbers & Evidence Review (3:45 – 4:30)
 - **What to show**: Navigate to or display the Headline Numbers table from `docs/pitch/PITCH.md`:
-  - **18/18** supported recoveries in benchmark v2 autopilot [82%, 100% Wilson CI]: v2 benchmark, old policy, approvals by a simulated operator; current unattended v3: 10/30 recovered alone.
+  - **18/18** supported recoveries in benchmark v2 autopilot [82%, 100% Wilson CI]: v2 benchmark, old policy, where autopilot ran every action without approval; current unattended v3: 10/30 recovered alone.
   - **1/24** false incidents opened on healthy runs (vs **6/24** for threshold restart baseline).
   - **0/24** harmful actions on healthy runs.
   - **Disk fill forecast**: 86.4 s median lead time (PASSED >= 30 s target).

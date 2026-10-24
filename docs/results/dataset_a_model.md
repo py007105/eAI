@@ -60,7 +60,7 @@ The table below places the offline Dataset-A model numbers beside the current pu
 | Offline Dataset-A | HistGradientBoosting (threshold=0.9840) | Unknown fault abstention (`logic_bug`, 18 cases) | Flagged unknown: **50.0%** | `docs/results/dataset_a_model.md` | Offline report only (NOT live) |
 | Live Application | Calibrated Gradient Boosting + IsolationForest | Live stack runs grouped CV (105 runs, 33,576 windows) | Macro-F1 **0.991**, ECE **0.003**, False alarm 1.1/100 service-min | `docs/results/models_cv_v2.md` | Offline CV of the model the demo uses (in-distribution, optimistic) |
 | Public RCAEval Transfer | Gradient Boosting (leave-one-system-out) | RCAEval RE1 (3 systems, 300 incidents, 900 rows) | Mean Macro-F1 **0.616** [0.586, 0.644] (TT 0.682, SS 0.590, OB 0.575) | `docs/results/transfer_re1.md` | Offline public benchmark |
-| Live Benchmark v2 | Autopilot (policy + runbooks) | Held-out seeds (18 supported runs, 24 healthy runs) | Recovered **18/18 [82%, 100%]** (v2 benchmark, old policy, approvals by a simulated operator; current unattended v3: 10/30 recovered alone), Healthy actions **0/24**, Failed req **11.15%** | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live (old policy) |
+| Live Benchmark v2 | Autopilot (policy + runbooks) | Held-out seeds (18 supported runs, 24 healthy runs) | Recovered **18/18 [82%, 100%]** (v2 benchmark, old policy: autopilot ran every action without approval; current unattended v3: 10/30 recovered alone), Healthy actions **0/24**, Failed req **11.15%** | `docs/results/benchmark_v2.md`, `docs/CURRENT_NUMBERS.md` | Verified live (old policy) |
 
 ## 5. Limitations and Discussion
 
