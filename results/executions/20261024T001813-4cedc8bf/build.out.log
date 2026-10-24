@@ -1,0 +1,533 @@
+ Image eai/inventory:v2-good Building 
+ Image eai/inventory:v3-bad Building 
+ Image eai/orders:v2-good Building 
+ Image eai/web:v2-good Building 
+ Image eai/orders:v1 Building 
+ Image eai/eternalai:v2 Building 
+ Image eai/web:v3-bad Building 
+ Image eai/payments:v1 Building 
+ Image eai/web:v1 Building 
+ Image eai/inventory:v1 Building 
+ Image eai/evaluator:v1 Building 
+ Image eai/loadgen:v1 Building 
+ Image eai/payments:v2-good Building 
+ Image eai/payments:v3-bad Building 
+ Image eai/orders:v3-bad Building 
+ Image eai/dashboard:v1 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 8.44kB done
+#1 DONE 0.0s
+
+#2 [loadgen internal] load build definition from Dockerfile
+#2 transferring dockerfile: 203B 0.0s done
+#2 DONE 0.0s
+
+#3 [evaluator internal] load build definition from Dockerfile
+#3 transferring dockerfile: 304B 0.0s done
+#3 DONE 0.0s
+
+#4 [eternalai internal] load build definition from Dockerfile
+#4 transferring dockerfile: 862B done
+#4 DONE 0.1s
+
+#5 [dashboard internal] load build definition from Dockerfile
+#5 transferring dockerfile: 366B 0.0s done
+#5 DONE 0.1s
+
+#6 [inventory internal] load build definition from Dockerfile
+#6 transferring dockerfile: 560B done
+#6 DONE 0.1s
+
+#7 [inventory-v3 internal] load metadata for docker.io/library/python:3.12-slim
+#7 DONE 0.1s
+
+#8 [inventory-v3 internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#9 [loadgen internal] load .dockerignore
+#9 transferring context: 2B done
+#9 DONE 0.0s
+
+#10 [evaluator internal] load .dockerignore
+#10 transferring context: 2B done
+#10 DONE 0.0s
+
+#11 [loadgen internal] load build context
+#11 DONE 0.0s
+
+#12 [inventory internal] load build context
+#12 transferring context: 31.16kB 0.1s done
+#12 DONE 0.1s
+
+#13 [dashboard internal] load .dockerignore
+#13 transferring context: 206B 0.0s done
+#13 DONE 0.1s
+
+#11 [loadgen internal] load build context
+#11 transferring context: 2.45kB 0.0s done
+#11 DONE 0.0s
+
+#14 [dashboard 1/6] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#14 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 0.1s done
+#14 DONE 0.1s
+
+#15 [loadgen 2/6] WORKDIR /srv
+#15 CACHED
+
+#16 [loadgen 3/4] RUN pip install --no-cache-dir httpx==0.28.1 prometheus-client==0.21.1
+#16 CACHED
+
+#17 [loadgen 4/4] COPY loadgen.py .
+#17 CACHED
+
+#18 [payments-v2 internal] load build context
+#18 transferring context: 30.73kB 0.1s done
+#18 DONE 0.1s
+
+#19 [evaluator internal] load build context
+#19 transferring context: 23.39kB 0.0s done
+#19 DONE 0.1s
+
+#20 [orders-v2 internal] load build context
+#20 transferring context: 31.96kB 0.1s done
+#20 DONE 0.1s
+
+#21 [web internal] load build context
+#21 transferring context: 30.91kB 0.1s done
+#21 DONE 0.1s
+
+#22 [loadgen] exporting to image
+#22 exporting layers done
+#22 exporting manifest sha256:a4ab612a06d296f097ee14002a7955bf264e4faf8ba932922e107f59d90b160b done
+#22 exporting config sha256:e37d07be2d4909d90e3aa3ff737b0a28e331c80ad1f9436e2664510ed9ba22a4 done
+#22 ...
+
+#23 [payments-v2 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#23 CACHED
+
+#24 [payments-v3 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#24 CACHED
+
+#25 [payments 3/6] COPY requirements.txt .
+#25 CACHED
+
+#26 [payments 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#26 CACHED
+
+#27 [evaluator 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#27 CACHED
+
+#28 [evaluator 3/5] COPY requirements.txt .
+#28 CACHED
+
+#29 [evaluator 5/5] COPY scenarios.py scoring.py timing.py main.py ./
+#29 CACHED
+
+#30 [web-v3 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#30 CACHED
+
+#31 [orders-v2 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#31 CACHED
+
+#32 [orders-v3 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#32 CACHED
+
+#33 [inventory-v3 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#33 CACHED
+
+#34 [inventory 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#34 CACHED
+
+#35 [inventory-v2 3/6] COPY requirements.txt .
+#35 CACHED
+
+#36 [web 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#36 CACHED
+
+#37 [inventory-v2 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#37 CACHED
+
+#38 [orders 3/6] COPY requirements.txt .
+#38 CACHED
+
+#39 [orders 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#39 CACHED
+
+#40 [web 3/6] COPY requirements.txt .
+#40 CACHED
+
+#41 [web-v2 4/6] RUN pip install --no-cache-dir -r requirements.txt
+#41 CACHED
+
+#42 [dashboard internal] load build context
+#42 transferring context: 71.07kB 0.1s done
+#42 DONE 0.1s
+
+#15 [dashboard 2/6] WORKDIR /srv
+#15 CACHED
+
+#43 [dashboard 3/5] COPY dashboard/requirements.txt ./requirements.txt
+#43 CACHED
+
+#44 [dashboard 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#44 CACHED
+
+#22 [loadgen] exporting to image
+#22 exporting attestation manifest sha256:6c69b9b0c9ddbcf7e46a6ee7ec5522232a7384bfeeaf7e3dd43f9208c102bc31 0.1s done
+#22 exporting manifest list sha256:de50673e64084378520610bb956e50343432612fa35d21e3f5cacd1d6f818eb0
+#22 exporting manifest list sha256:de50673e64084378520610bb956e50343432612fa35d21e3f5cacd1d6f818eb0 0.1s done
+#22 naming to docker.io/eai/loadgen:v1
+#22 naming to docker.io/eai/loadgen:v1 0.0s done
+#22 unpacking to docker.io/eai/loadgen:v1 0.1s done
+#22 ...
+
+#45 [web-v3 5/6] COPY common ./common
+#45 DONE 0.3s
+
+#46 [payments-v3 5/6] COPY common ./common
+#46 DONE 0.3s
+
+#47 [payments-v2 5/6] COPY common ./common
+#47 DONE 0.3s
+
+#48 [payments 5/6] COPY common ./common
+#48 DONE 0.3s
+
+#49 [web 5/6] COPY common ./common
+#49 DONE 0.3s
+
+#50 [inventory-v3 5/6] COPY common ./common
+#50 DONE 0.4s
+
+#22 [loadgen] exporting to image
+#22 DONE 0.5s
+
+#51 [orders 5/6] COPY common ./common
+#51 DONE 0.4s
+
+#52 [orders-v2 5/6] COPY common ./common
+#52 DONE 0.4s
+
+#53 [inventory-v2 5/6] COPY common ./common
+#53 DONE 0.4s
+
+#54 [orders-v3 5/6] COPY common ./common
+#54 DONE 0.4s
+
+#55 [evaluator] exporting to image
+#55 exporting layers 0.0s done
+#55 exporting manifest sha256:7a22b0f45a99effcd25f738c86315c05179f3141e1e2e6f5ead4b7ec8adcbc78 done
+#55 exporting config sha256:f7da6401e7d8b3b5b364cd6c2472becb63f35f3838afa26ef32b295d395f2215 0.0s done
+#55 exporting attestation manifest sha256:58e18629da7abdfc636179cba276bb9ced4a13acfcf939c4e6e9167c62dd4902 0.1s done
+#55 exporting manifest list sha256:435368583ad485fd0726b37d1feaf8600e91cdf0e463cf4e6441df1a8edc971e 0.0s done
+#55 naming to docker.io/eai/evaluator:v1 done
+#55 unpacking to docker.io/eai/evaluator:v1 0.1s done
+#55 DONE 0.5s
+
+#56 [eternalai internal] load build context
+#56 ...
+
+#57 [inventory 5/6] COPY common ./common
+#57 DONE 0.6s
+
+#56 [eternalai internal] load build context
+#56 ...
+
+#58 [web-v2 5/6] COPY common ./common
+#58 DONE 0.7s
+
+#59 [dashboard 5/5] COPY dashboard ./dashboard
+#59 DONE 0.6s
+
+#56 [eternalai internal] load build context
+#56 ...
+
+#60 [web-v3 6/6] COPY web ./service
+#60 DONE 0.6s
+
+#61 [payments-v3 6/6] COPY payments ./service
+#61 DONE 0.6s
+
+#62 [payments-v2 6/6] COPY payments ./service
+#62 DONE 0.6s
+
+#63 [payments 6/6] COPY payments ./service
+#63 DONE 0.6s
+
+#64 [web 6/6] COPY web ./service
+#64 DONE 0.6s
+
+#65 [inventory-v3 6/6] COPY inventory ./service
+#65 DONE 0.6s
+
+#66 [orders 6/6] COPY orders ./service
+#66 DONE 0.6s
+
+#56 [eternalai internal] load build context
+#56 transferring context: 9.52MB 1.0s done
+#56 ...
+
+#67 [orders-v2 6/6] COPY orders ./service
+#67 DONE 0.6s
+
+#68 [inventory-v2 6/6] COPY inventory ./service
+#68 DONE 0.6s
+
+#69 [orders-v3 6/6] COPY orders ./service
+#69 DONE 0.8s
+
+#70 [inventory-v2] exporting to image
+#70 ...
+
+#71 [inventory 6/6] COPY inventory ./service
+#71 DONE 0.7s
+
+#72 [web-v2 6/6] COPY web ./service
+#72 DONE 0.6s
+
+#56 [eternalai internal] load build context
+#56 DONE 1.4s
+
+#73 [web-v2] exporting to image
+#73 ...
+
+#15 [eternalai 2/6] WORKDIR /srv
+#15 CACHED
+
+#74 [eternalai 3/7] COPY eternalai/requirements.txt ./requirements.txt
+#74 CACHED
+
+#75 [eternalai 4/7] RUN pip install --no-cache-dir -r requirements.txt
+#75 CACHED
+
+#73 [web-v2] exporting to image
+#73 exporting layers 0.8s done
+#73 exporting manifest sha256:890c64fd71edd81ec1123442586e633fff2716b943bdad7e30f49baaaafec191 0.2s done
+#73 exporting config sha256:08b439c61de75da096f2091952ca452ba48098f242a42ea27af9338102dd82b1
+#73 ...
+
+#76 [eternalai 5/7] COPY eternalai ./eternalai
+#76 DONE 0.4s
+
+#73 [web-v2] exporting to image
+#73 exporting config sha256:08b439c61de75da096f2091952ca452ba48098f242a42ea27af9338102dd82b1 0.2s done
+#73 exporting attestation manifest sha256:06205b202fc660c8434b0673cb2627e6afdea58f1e5f545e4a50fa909cd11533
+#73 exporting attestation manifest sha256:06205b202fc660c8434b0673cb2627e6afdea58f1e5f545e4a50fa909cd11533 0.3s done
+#73 exporting manifest list sha256:fc1c3dc9cb1e72bacc6c43c3185db0bcacef063ade6540b1680c649c9031e9c1
+#73 ...
+
+#77 [eternalai 6/7] COPY models/artifacts ./models/artifacts
+#77 DONE 0.7s
+
+#73 [web-v2] exporting to image
+#73 exporting manifest list sha256:fc1c3dc9cb1e72bacc6c43c3185db0bcacef063ade6540b1680c649c9031e9c1 0.1s done
+#73 naming to docker.io/eai/web:v2-good 0.0s done
+#73 unpacking to docker.io/eai/web:v2-good
+#73 ...
+
+#78 [dashboard] exporting to image
+#78 exporting layers 0.2s done
+#78 exporting manifest sha256:f8ece55fdd2bac7b6ad989ee5cc11fee6a8004835a478c57ddef1f12947ce75b 0.1s done
+#78 exporting config sha256:63e158a08533c60efecf9d81664fc10c28860ee166250312ad78abeb0f6a0571 0.2s done
+#78 exporting attestation manifest sha256:8c1f72503ae3ea0d680752c2a1af951d51d4d45700447c1f98369923e2922184 0.3s done
+#78 exporting manifest list sha256:b1025d55328fb7ff61f7437234694bf89ed1f78df288932306d51f47b03a6221 0.2s done
+#78 naming to docker.io/eai/dashboard:v1 0.1s done
+#78 unpacking to docker.io/eai/dashboard:v1 0.2s done
+#78 DONE 2.8s
+
+#79 [eternalai 7/7] COPY data/kb ./data/kb
+#79 DONE 0.4s
+
+#70 [inventory-v2] exporting to image
+#70 exporting layers 0.9s done
+#70 exporting manifest sha256:70dc3fa83c91a73fa71c63ec740295d15185a4c14fac59feace5fbdb604e3aed 0.2s done
+#70 exporting config sha256:bcd034f14c9647df507a607bce9803eabad221e2920b0299202ee9d08096ca0e 0.2s done
+#70 exporting attestation manifest sha256:2eb8f350b7a8f5854f62735a0be8dc06f10970d18e8e9f8d7ae7cf31a5cfe65a 0.3s done
+#70 exporting manifest list sha256:72bb4f54957ea69f1ebcd6f19cbe544fd622798e4cc43e2f2ecd6e8384f6e9f7 0.2s done
+#70 naming to docker.io/eai/inventory:v2-good 0.1s done
+#70 unpacking to docker.io/eai/inventory:v2-good
+#70 ...
+
+#80 [payments-v2] exporting to image
+#80 exporting layers 0.9s done
+#80 exporting manifest sha256:93324c206f63f012b5230be113c96ae363159e0fce5590aeead3a3d82c6d3421 0.1s done
+#80 exporting config sha256:f67d32a2aeab5c720499a731c5246824adbae0febdde4c8e7601a4b1d1ddb867 0.2s done
+#80 exporting attestation manifest sha256:39108b44d0fd7aba3220f29a2b25dd57ff748ab1334e76a00200052ad2d56952 0.3s done
+#80 exporting manifest list sha256:d205b0688478304fe6e6cf82c7d1a658ad37bff8d785e3edd8cd589620a47571 0.2s done
+#80 naming to docker.io/eai/payments:v2-good 0.1s done
+#80 unpacking to docker.io/eai/payments:v2-good 0.5s done
+#80 DONE 2.7s
+
+#70 [inventory-v2] exporting to image
+#70 unpacking to docker.io/eai/inventory:v2-good 0.6s done
+#70 DONE 2.7s
+
+#81 [web] exporting to image
+#81 exporting layers 0.9s done
+#81 exporting manifest sha256:e40267ee360dc48acae5398ea6a5f4b8f10ed120db062f859664254c5e6871ae 0.1s done
+#81 exporting config sha256:2d6e504eac95cfa8010b42c141fe3018b268ee573e1809c9ac3a140b59721ef8 0.2s done
+#81 exporting attestation manifest sha256:b3dbcaed9aee9a3e9b344be686f1492db5f7230cbb56449474776297acc1a516 0.3s done
+#81 exporting manifest list sha256:f25d665f5ec815bc9b9283a9a3928d198f586084f9b3a910bc24faea30de6d15 0.2s done
+#81 naming to docker.io/eai/web:v1 0.1s done
+#81 unpacking to docker.io/eai/web:v1 0.5s done
+#81 DONE 2.7s
+
+#82 [orders-v2] exporting to image
+#82 exporting layers 1.0s done
+#82 exporting manifest sha256:9e95dfecfb72d159fc65c9c8d413a4bcc6aaba1de71d6ad996ccfa1f2184f89e 0.1s done
+#82 exporting config sha256:4d042888194e52df75a5c89ed67fe0aa82e123adcb53fa68f6f10d173be23530 0.2s done
+#82 exporting attestation manifest sha256:1f64ac3b2aeac208ab62eb04235c91c41baf7965c85afd7e8d195a8d14419225 0.3s done
+#82 exporting manifest list sha256:af2d43de310f2813045dce9ab3e55f21c3e27b569034d04a6e61dc5fb0b5899d 0.2s done
+#82 naming to docker.io/eai/orders:v2-good 0.1s done
+#82 unpacking to docker.io/eai/orders:v2-good 0.4s done
+#82 DONE 2.7s
+
+#73 [web-v2] exporting to image
+#73 unpacking to docker.io/eai/web:v2-good 0.6s done
+#73 DONE 2.4s
+
+#83 [web-v3] exporting to image
+#83 exporting layers 0.7s done
+#83 exporting manifest sha256:c54491ffbc4c86e575419828618c3c7369c9396a14227e91193bdf7723f21087 0.1s done
+#83 exporting config sha256:2143ccfa58a9b5faa8e94d92006ee9c0368bb9b7ac1c10897a09f8ca2a9fe58b 0.2s done
+#83 exporting attestation manifest sha256:a9554c0f58ec8287ab49df35c3a8eac581a5ead4d6c518234c7a5f6ad9220242 0.3s done
+#83 exporting manifest list sha256:eb069dfff32f425c778353b1e32144c3210290291d0cd48c2326258c372437b4 0.2s done
+#83 naming to docker.io/eai/web:v3-bad 0.1s done
+#83 unpacking to docker.io/eai/web:v3-bad 0.5s done
+#83 DONE 2.9s
+
+#84 [payments] exporting to image
+#84 exporting layers 0.9s done
+#84 exporting manifest sha256:5ee161ae94a93d55605ae503006c6970da04a9a340337cf949fc34f6151223ef 0.1s done
+#84 exporting config sha256:afa390e7c5702b47add3c48e23276b8ff0fba363c78096a1180dad7c62b1ff95 0.2s done
+#84 exporting attestation manifest sha256:aa1cf51da3ac5de6f886248721d6e0ac4b8cbb099463bc1b486c5931c9d69bea 0.3s done
+#84 exporting manifest list sha256:3c51be6657b6b04f1a740302dfe0f3e834b67ea71a6bc581de56134d45782162 0.2s done
+#84 naming to docker.io/eai/payments:v1 0.1s done
+#84 unpacking to docker.io/eai/payments:v1 0.5s done
+#84 DONE 2.8s
+
+#85 [payments-v3] exporting to image
+#85 exporting layers 0.9s done
+#85 exporting manifest sha256:df662b3ded8aaa4ee45c8f946d67242d37944871342a9c7777abe18a5fa75d65 0.2s done
+#85 exporting config sha256:dd0776b15f92852f21b2330fb539089b183101ff5b4c8a2af5f80c66e3a27f70 0.3s done
+#85 exporting attestation manifest sha256:fd4a4c754a73d9a1d882ab048c4a60dff7a65bb35942b73ff25803a5a9d27450 0.3s done
+#85 exporting manifest list sha256:fe23aeb034055cb9fb7854b8f8b9e20531db8a9adfe6f7c20b77d9ccfdca7dc3 0.2s done
+#85 naming to docker.io/eai/payments:v3-bad 0.1s done
+#85 unpacking to docker.io/eai/payments:v3-bad 0.5s done
+#85 DONE 2.8s
+
+#86 [orders] exporting to image
+#86 exporting layers 0.9s done
+#86 exporting manifest sha256:8fc0faa9d9cbc629958974b093d1ba7d8469110779c842b4ac5c198a55693b52 0.1s done
+#86 exporting config sha256:86d7daa31612fe3bebe733f98299f1fdfa81bfafda7f15a4b5e00e339581a1e9 0.2s done
+#86 exporting attestation manifest sha256:d03371998e2685396bc660373b86da354190c58c21f19c15f801681549e94a3d 0.3s done
+#86 exporting manifest list sha256:70f1d313fc0037209af45054f42ef4e9c52bae67fd59b08b234c1ed2b29610ee 0.2s done
+#86 naming to docker.io/eai/orders:v1 0.1s done
+#86 unpacking to docker.io/eai/orders:v1 0.5s done
+#86 DONE 2.7s
+
+#87 [inventory-v3] exporting to image
+#87 exporting layers 1.0s done
+#87 exporting manifest sha256:dcaba49aaeee4ef2034e9dfb486bb046e6a8986b2a5717901d47909b0ef9368e 0.2s done
+#87 exporting config sha256:712b15f5709b561748789c500b41b34113e219494589fc9df36672fdb945b5fc 0.2s done
+#87 exporting attestation manifest sha256:c7bcae34ab58c8d5c841f7c84d8d4ae24f7c1ef3a8621fda18fd1046a38185b5 0.3s done
+#87 exporting manifest list sha256:b1dbf6661337563c70a20e4655c0f80c884423008116e6f8317fd96c9135137c 0.2s done
+#87 naming to docker.io/eai/inventory:v3-bad 0.1s done
+#87 unpacking to docker.io/eai/inventory:v3-bad 0.6s done
+#87 DONE 2.8s
+
+#88 [orders-v3] exporting to image
+#88 exporting layers 0.8s done
+#88 exporting manifest sha256:092039a0a575f8894962edba7e435b2a4a3c172e2a5c6b7ff33b806fdb0dc450 0.2s done
+#88 exporting config sha256:c55049863f239564871be6672c6aa7c100de35a0fecf0fae03cb6a6d264cf8ac 0.2s done
+#88 exporting attestation manifest sha256:d2aec7f72469ea10297a5ede3370b92c3d4bdbc35c2266523c11019541c7a485 0.3s done
+#88 exporting manifest list sha256:336f2783035979bf68a1cbc594fc4e13d0ef70cbd0297a4f37c2c36502f41aae 0.2s done
+#88 naming to docker.io/eai/orders:v3-bad 0.0s done
+#88 unpacking to docker.io/eai/orders:v3-bad 0.6s done
+#88 DONE 2.6s
+
+#89 [inventory] exporting to image
+#89 exporting layers 0.7s done
+#89 exporting manifest sha256:d4c18c4fe924612f99018d82cc140ae0296b0a702c066dcdd87e988ac2d1fc18 0.2s done
+#89 exporting config sha256:87b41b94ea04038199aa3ce866b08b780c5c185f56237de355bbecab15ddea55 0.2s done
+#89 exporting attestation manifest sha256:6b6ec9a068691a50b9b0041965b9a7b619a6fe347abfbe7caf9a5a16db33dc37 0.3s done
+#89 exporting manifest list sha256:08d93df5370352a6d271e14cb816bc9de487ac60321267e1547fc17fc4698c86 0.2s done
+#89 naming to docker.io/eai/inventory:v1 0.0s done
+#89 unpacking to docker.io/eai/inventory:v1 0.6s done
+#89 DONE 2.5s
+
+#90 [eternalai] exporting to image
+#90 exporting layers 0.8s done
+#90 exporting manifest sha256:1b9fce7b7f37f7a25ea3bbf3f0c191992a36dc5978ac2f058dbd433449f5fee6 0.0s done
+#90 exporting config sha256:9423c10c2db073d3025122469f7a82459e8b65192087b59c6acef93464774215 0.0s done
+#90 exporting attestation manifest sha256:32afcbce98925bd8be4494c243a061351053f6fa4f7f0b6c27c10c997cbefc07 0.0s done
+#90 exporting manifest list sha256:9396ae7bd98fcee6dbe74368eb90411e6a97bf3d299bad2d2ec39a5773069b52 0.0s done
+#90 naming to docker.io/eai/eternalai:v2 done
+#90 unpacking to docker.io/eai/eternalai:v2
+#90 unpacking to docker.io/eai/eternalai:v2 0.2s done
+#90 DONE 1.2s
+
+#91 [orders-v2] resolving provenance for metadata file
+#91 DONE 0.6s
+
+#92 [inventory] resolving provenance for metadata file
+#92 DONE 0.7s
+
+#93 [evaluator] resolving provenance for metadata file
+#93 DONE 1.3s
+
+#94 [payments] resolving provenance for metadata file
+#94 DONE 0.1s
+
+#95 [loadgen] resolving provenance for metadata file
+#95 DONE 1.3s
+
+#96 [dashboard] resolving provenance for metadata file
+#96 DONE 1.0s
+
+#97 [payments-v2] resolving provenance for metadata file
+#97 DONE 0.9s
+
+#98 [orders-v3] resolving provenance for metadata file
+#98 DONE 0.8s
+
+#99 [web-v2] resolving provenance for metadata file
+#99 DONE 0.9s
+
+#100 [inventory-v2] resolving provenance for metadata file
+#100 DONE 0.5s
+
+#101 [web] resolving provenance for metadata file
+#101 DONE 0.5s
+
+#102 [inventory-v3] resolving provenance for metadata file
+#102 DONE 0.3s
+
+#103 [orders] resolving provenance for metadata file
+#103 DONE 0.2s
+
+#104 [web-v3] resolving provenance for metadata file
+#104 DONE 0.2s
+
+#105 [payments-v3] resolving provenance for metadata file
+#105 DONE 0.4s
+
+#106 [eternalai] resolving provenance for metadata file
+#106 DONE 0.0s
+ Image eai/web:v1 Built 
+ Image eai/eternalai:v2 Built 
+ Image eai/inventory:v1 Built 
+ Image eai/orders:v2-good Built 
+ Image eai/dashboard:v1 Built 
+ Image eai/payments:v2-good Built 
+ Image eai/orders:v3-bad Built 
+ Image eai/payments:v3-bad Built 
+ Image eai/inventory:v2-good Built 
+ Image eai/inventory:v3-bad Built 
+ Image eai/loadgen:v1 Built 
+ Image eai/web:v2-good Built 
+ Image eai/evaluator:v1 Built 
+ Image eai/payments:v1 Built 
+ Image eai/orders:v1 Built 
+ Image eai/web:v3-bad Built 

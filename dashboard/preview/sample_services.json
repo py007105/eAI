@@ -1,0 +1,3636 @@
+{
+  "label": "SYNTHETIC SAMPLE DATA - hand-made, not telemetry",
+  "interval_s": 2,
+  "ticks": [
+    {
+      "t": 0,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 2,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 4,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 6,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 8,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 10,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 12,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 14,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 16,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 18,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 20,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4
+        }
+      }
+    },
+    {
+      "t": 22,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4
+        }
+      }
+    },
+    {
+      "t": 24,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4
+        }
+      }
+    },
+    {
+      "t": 26,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 28,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 30,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 32,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 34,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 36,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 38,
+      "services": {
+        "inventory": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 40,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 42,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.2625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 44,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.275,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 46,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.2875,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 48,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.3,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 50,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.3125,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 52,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.325,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 54,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.3375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 56,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.35,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 58,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.3625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 60,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 62,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.3875,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 64,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.4,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 66,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.4125,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 68,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.425,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 70,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.4375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 72,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.45,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 74,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.4625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 76,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.475,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 78,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.4875,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 80,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.5,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 82,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.5125,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 84,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.525,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 86,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.5375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 88,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.55,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 90,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.5625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 92,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.575,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 94,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.5875,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 96,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.6,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 98,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.6125,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 100,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 1,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 102,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.6375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 1,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 104,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.65,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 1,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 106,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.6625,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 108,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.675,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 110,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.6875,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 112,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.7,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 114,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.7125,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 116,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.725,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    },
+    {
+      "t": 118,
+      "services": {
+        "inventory": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.7375,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.375,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "orders": {
+          "anomalous": true,
+          "score": 0.75,
+          "features": {
+            "lat_ratio": 2.5,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "web": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.05,
+            "mem_share": 0.24,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        },
+        "payments": {
+          "anomalous": false,
+          "score": 0.4,
+          "features": {
+            "lat_ratio": 1.0,
+            "error_ratio": 0.0,
+            "mem_share": 0.25,
+            "rps_ratio": 1.0,
+            "up_frac": 1.0,
+            "mem_slope_share_per_min": 0.0,
+            "restarts_in_window": 0,
+            "deploys_3m": 0
+          }
+        }
+      }
+    }
+  ]
+}

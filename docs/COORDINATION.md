@@ -21,6 +21,7 @@ document (`docs/HANDOFF_FRIEND.md`, `docs/CONTINUE_ON_NEW_PC.md`, `docs/DOCKER_S
 | **Codex** (`D:\eAI\eAI-codex`) | `friend/phase2-k8s` (to be created from `plan-complete`) | `eternalai/drivers/`, `eternalai/sources/`, `eternalai/verify_k8s.py`, `deploy/helm/`, `deploy/kind/`, `deploy/online-boutique/`, `scripts/kind_e2e.py`, `docs/KUBERNETES.md` | **Kubernetes first.** Contract: `docs/HANDOFF_FRIEND.md` sections 1, 5, 6 |
 | **Codex** (reserved) | `friend/phase6-telegram` at `925d8f2` | `eternalai/notify/`, `tests/test_notify_*.py`, `tests/test_telegram.py`, `docs/TELEGRAM_CONTINUE_ON_NEW_PC.md`, `docs/NOTIFICATIONS.md` | preserved, paused; not merged; not wired into the brain |
 | **Rajat** | `team/rajat-zscore-nab` | `eternalai/zscore_detector.py` (new), `data/download_nab.py`, `models/eval_nab.py`, `tests/test_zscore_detector.py`, `tests/test_eval_nab.py`, `docs/NAB_EVAL.md`, `docs/results/nab_detector_eval.md`, `docs/handback/rajat.md` | offline public-data evaluation; no live claim |
+| **Rajat** (next task, proposed 2026-10-24) | `team/rajat-smd-eval` from `a748eb1` (merges after `team/rajat-zscore-nab`, PR #2); push not yet authorised | `docs/SMD_EVAL.md`, `data/download_smd.py`, `models/eval_smd.py`, `tests/test_eval_smd.py`, `docs/results/smd_detector_eval.md`, `docs/handback/rajat-smd.md` | SMD half of gap row D6; offline public data; task file on Prem's Desktop `RAJAT_NEXT_TASK.md` |
 | **Mihir** | `team/mihir-dashboard-charts` | `dashboard/charts.py`, `dashboard/explain_words.py`, `dashboard/charts_labels.py`, `dashboard/preview/`, `tests/test_dashboard_charts.py`, `tests/test_dashboard_explain.py`, `docs/DASHBOARD_CHARTS.md`, `docs/screenshots/charts_*.png`, `docs/handback/mihir.md` | synthetic data only; Claude integrates |
 | **Sanskar** | `team/sanskar-docs-runbooks-qa` | `docs/team-qa/` | documentation and manual QA only |
 
@@ -119,4 +120,34 @@ To bring the main session's work into a `friend/...` branch: `git merge plan-com
 |---|---|---|---|---|
 | 23 Oct 21:11 | `D:\eAI\eAI-eval-3208bf0` | `3208bf0` | (no ID) | stopped at 21:22 while still waiting for the lock: it did not hold the lock across steps. Ran nothing |
 | 23 Oct 21:26 | `D:\eAI\eAI-eval-7961c1c` | `7961c1c` | (no ID) | stopped at 22:19 while still waiting for the lock: controlled-check claims and stale-result protection were insufficient. Ran nothing |
-| 23 Oct 22:25 | `D:\eAI\eAI-eval-67211f8` | `67211f8` (image build inputs identical to `7961c1c`) | `20261023T222518-d60e18cd` | waiting for the forecast check to release the lock; this is the current candidate run |
+| 23 Oct 22:25 | `D:\eAI\eAI-eval-67211f8` | `67211f8` (image build inputs identical to `7961c1c`) | `20261023T222518-d60e18cd` | stopped at 22:27 while still waiting: lock acquisition was not atomic and there was no execution manifest. Ran nothing |
+| 24 Oct 00:18 | `D:\eAI\eAI-eval-71eb2f5` | `71eb2f5` (image build inputs identical to `7961c1c`) | `20261024T001813-4cedc8bf` | lock taken atomically at 00:18; running; manifest `results/executions/<ID>/manifest.json` |
+| 24 Oct 04:26 | `D:\eAI\eAI-eval-71eb2f5` | `71eb2f5` | `20261024T001813-4cedc8bf` | finished; **lock released 04:26** (`sequence.log`; actual handoff time). Phase 1 17/17, Phase 4a 10/10; evaluation INCOMPLETE 26/50 (memory-guard timeouts 02:58 and 03:58); controlled 6/7, G5 INCOMPLETE. No promotion. Record: `docs/results/v3_execution_20261024T001813-4cedc8bf.md` |
+| 24 Oct 12:37-12:40, 12:53-12:57 | `D:\eAI\eAI-eval-71eb2f5` (stack) + integration worktree (dashboard source) | candidate images `71eb2f5`; dashboard `e1e8d3e` | (not a gate execution) | real-dashboard live check, main's own lock in main's 12:00-14:00 slot: first attempt failed before any check (page-load limit), second 5/5 (`docs/results/dashboard_charts_live.md`). Lock released 12:57:48 |
+
+### Memory observed on 24 Oct (read-only; the overnight cause was not recorded and is not assumed)
+| time (IST) | free RAM | containers | largest consumers (working set) |
+|---|---|---|---|
+| 08:11 | 1.07 of 15.69 GB | none | OneDrive 2.5 GB, Brave 2.0 GB, ChatGPT 1.3 GB, vmmemWSL 0.9 GB, Codex 0.5 GB |
+| 12:14 | 1.92 GB | none | Brave 4.1 GB, ChatGPT 1.4 GB, vmmemWSL 0.9 GB, Codex 0.5 GB |
+| 12:36 | 3.30 GB | none | Brave 2.8 GB, ChatGPT 1.1 GB, VS Code 1.0 GB, vmmemWSL 0.9 GB |
+
+The live checks and the evaluation keep their memory guards (1.5 GB for evaluation runs). No application was closed and no
+Docker/WSL limit was changed by the main session.
+
+### Main session's next Docker work (needs about 3 GB free; Codex's windows are not used)
+- `scripts/run_gate_sequence.py --reference 20261024T001813-4cedc8bf`: G2-G7 again in one execution, with the new G5
+  stimulus (`scripts/live_check_g5.py`). Estimate from measured durations: 62-75 min.
+- `scripts/resume_eval_v3.py --original 20261024T001813-4cedc8bf`: exactly the 24 missing evaluation cases. Estimate:
+  85-100 min at 3.3-4 min per run, longer if the memory guard waits.
+- Planned for main's slot Sat 24, 21:00 - Sun 25, 05:00, from the pinned checkout `D:\eAI\eAI-eval-71eb2f5`.
+
+### Overnight runner launched 24 Oct 13:25:37 IST (main session)
+- One detached runner: `scripts/run_overnight.py` from `D:\eAI\eAI-combined-519a5f6`, **PID 16564** (launcher 29288), log
+  folder `D:\eAI\overnight-20261024` (`runner.log`, `status.json`, one `*.out.log` per step). Before 21:00 it only sleeps:
+  no Docker, no lock.
+- Window: 21:00 Sat - 05:00 Sun IST (main's slot). It takes the lock only when it reads FREE and >= 3 GB RAM is free; it
+  holds it across: gate (`D:\eAI\eAI-eval-71eb2f5`, G2-G7 in one execution, latest start 23:30), evaluation resume (24
+  missing cases, latest start 01:30), combined deployment (`519a5f6` images, latest start 04:15). Expected without memory
+  waits: gate 62-75 min, resume 85-100 min, combined about 20-25 min, so about 21:00-00:30.
+- It never pushes, tags or promotes. Codex's window 3 (Sun 07:00) is not touched.
