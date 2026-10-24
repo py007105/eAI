@@ -17,7 +17,7 @@ The demo runs tag `demo-stable-1` (`49155ea`). Every number here is taken from `
 ## 2. The Solution (in 5 lines)
 
 1. **Observe & Detect**: Scrapes 8 health telemetry signals per service every 2 s, detecting anomalies against learned per-service healthy boundaries and IsolationForest boundaries.
-2. **Predict & Trace Root Cause**: Forecasts resource saturation trends (Theil-Sen) ahead of exhaustion limits and ranks the root-cause service across the call dependency graph.
+2. **Forecast & Trace Root Cause**: Forecasts memory and disk growth (Theil-Sen trends): a gradual disk fill was warned a median 86.4 s before the limit; a memory leak only 18.3 s before it, missing the 30 s target. Ranks the root-cause service across the call dependency graph.
 3. **Identify & Select Fix**: Classifies fault types using calibrated gradient boosting with an explicit novelty gate that abstains on unfamiliar faults, mapping to an outcome-ranked knowledge base.
 4. **Enforce Policy & Act**: Executes only through deterministic policy modes (watch-only, ask-first, autopilot) constrained to four audited Docker runbooks.
 5. **Verify & Escalate**: Validates end-to-end recovery using synthetic four-service checkouts over an observation window, escalating cleanly with preserved evidence if recovery fails.

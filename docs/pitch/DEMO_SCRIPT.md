@@ -25,7 +25,7 @@ This script guides the presenter through an exact, timed 5-minute live demonstra
 ### 1. Context & Architecture (0:00 – 0:45)
 - **What to show**: Dashboard home page showing four healthy green services (`web`, `orders`, `payments`, `inventory`), zero open incidents, and the mode set to **Ask first**.
 - **What to say**:
-  > *"When microservices fail, engineers face alert storms, delayed diagnosis, and stressful late-night manual fixes. EternalAI is a policy-governed operations assistant (low-risk fixes automatic, high-risk fixes need human approval) that closes the loop: observe, detect, predict, diagnose root cause, select safe runbooks, and verify recovery. It runs inside the cluster, observes live Prometheus telemetry every 2 seconds, and acts deterministically under strict policy."*
+  > *"When microservices fail, engineers face alert storms, delayed diagnosis, and stressful late-night manual fixes. EternalAI is a policy-governed operations assistant (low-risk fixes automatic, high-risk fixes need human approval) that closes the loop: observe, detect, forecast gradual resource exhaustion, diagnose root cause, select safe runbooks, and verify recovery. It runs next to a Docker Compose stack on one machine, reads live Prometheus telemetry every 2 seconds, and acts deterministically under its rulebook."*
 - **What the judge sees**: Clean topology map, real-time telemetry metrics, and the safety policy configuration.
 
 ---
