@@ -87,7 +87,7 @@ def test_real_kb_keeps_the_top_runbook_for_every_live_label():
     """With the committed knowledge base the proposed (first) runbook equals the old fixed table for every label: each top
     choice is backed by runs measured on this stack. A change here is a behaviour change and must be reported."""
     kb = load_kb(REAL)
-    assert kb.summary()["faults"] == 17 and kb.summary()["unreviewed_rows"] == 17
+    assert kb.summary()["faults"] == 17 and kb.summary()["unreviewed_rows"] == 0
     for label, rbs in CAUSE_RUNBOOKS.items():
         fixes = ranked_fixes(kb, label)
         assert ranked_runbooks(kb, label)[0] == rbs[0], label
@@ -118,7 +118,7 @@ def test_engine_records_the_ranking_and_api_serves_the_kb(monkeypatch):
     monkeypatch.setattr(api, "engine", e)
     c = TestClient(api.app)
     r = c.get("/kb/memory_leak").json()
-    assert r["entry"]["reviewed"] is False and r["ranked_fixes"][0]["key"] == "recreate_container"
+    assert r["entry"]["reviewed"] is True and r["ranked_fixes"][0]["key"] == "recreate_container"
     assert c.get("/api/kb/disk_filling").json()["live_label"] == "disk_fill"
     assert c.get("/kb/no_such_fault").status_code == 404
     e.kb = None
