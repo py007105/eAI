@@ -1,0 +1,18 @@
+[PASS] startup.compose_requires_chaos_token: docker compose refuses to start without CHAOS_TOKEN - error while interpolating services.evaluator.environment.CHAOS_TOKEN: required variable CHAOS_TOKEN is missing a value: set CHAOS_TOKEN to a real secret in .env
+[PASS] startup.web_refuses_default_token: eai/web:v1 refuses the old default chaos token - exit 1
+[PASS] startup.evaluator_refuses_default_token: eai/evaluator:v1 refuses the old default chaos token - exit 1
+[PASS] startup.brain_up: brain answers /status 
+[PASS] startup.stock: inventory restocked and verified (scripts/stock_gate.py) -  {"sku-lamp": 99999, "sku-mug": 100000, "sku-bag": 100000, "sku-book": 100000}, "brain_incidents_in_restock_window": []}
+[PASS] net.ports_localhost: every published port is bound to 127.0.0.1 - ['eai-dashboard-1 8050/tcp -> 127.0.0.1', 'eai-eternalai-1 8000/tcp -> 127.0.0.1', 'eai-evaluator-1 8200/tcp -> 127.0.0.1', 'eai-prometheus-1 9090/tcp -> 127.0.0.1', 'eai-web-1 8000/tcp -> 127.0.0.1']
+[PASS] policy.default_rulebook: brain runs the plan rulebook (default.yaml: auto low only, payments protected, 10/h, 40 s) - {'file': 'default.yaml', 'mode': 'autopilot'}
+[PASS] net.fault_start_needs_token: starting a fault without or with a wrong token is refused (403) - {'brain /challenge/start, no token': 403, 'evaluator /runs, no token': 403, 'evaluator /runs, wrong token': 403}
+[PASS] policy.killswitch_roundtrip: kill switch on -> watch-only; leaving watch-only refused (409); off; autopilot again - {'on': {'kill_switch': True, 'mode': 'watch-only'}, 'leave_http': 409, 'off': {'kill_switch': False, 'mode': 'watch-only'}, 'back_http': 200}
+[PASS] live.autopilot_low_executes: crash on web: low-risk restart executed by autopilot and verified - {'incidents': [('recovered', 'restart_service', 'execute')]}
+[PASS] live.protected_waits: crash on payments (protected): low risk but waits for approval; rejected; nothing executed - {'proposal': {'runbook_id': 'restart_service', 'risk': 'low', 'reason': 'payments is a protected service: every action needs approval'}, 'reject_http': 200, 'executed_on_payments': 0}
+[PASS] live.killswitch_blocks: kill switch on, crash on inventory: proposal blocked, nothing executed; back to autopilot after - {'incidents': [('escalated', 'blocked', 'kill switch is on: nothing is executed')], 'executed': 0, 'mode_restored_http': 200}
+[PASS] live.high_risk_needs_approval: bad_deploy on orders in autopilot: rollback (high) waits; runs only after approval - {'proposal': {'service': 'orders', 'runbook_id': 'rollback_release', 'risk': 'high', 'reason': 'autopilot: high-risk action always requires approval'}, 'executed_before_approval': 0, 'approve_http': 200, 'verification': ['recovered']}
+[PASS] lock.approvals_fast_live: GET /approvals during the four runs: p95 under 0.2 s, no errors - {'n': 2090, 'p50_s': 0.0048, 'p95_s': 0.0823, 'max_s': 2.0427, 'errors': 0}
+[PASS] audit.reason_and_verification: audit records carry the policy reason; verification results are audited - {'actions': [('restart_service', 'web', 'autopilot', 'autopilot: low-risk runbook allowed by the rulebook'), ('rollback_release', 'orders', 'human:live-check', 'autopilot: high-risk action always requires approval')], 'verifications': [('web', 'recovered'), ('orders', 'recovered')]}
+[PASS] telemetry.prometheus_outage: Prometheus stopped: brain keeps answering, reports the failed queries, opens no incident - {'failed_services': ['inventory', 'orders', 'payments', 'web'], 'new_incidents': [], 'last_error': None}
+[PASS] telemetry.recovers: after Prometheus is back the failed-query list empties 
+17/17 passed; wrote docs\results\live_check_phase1.md
