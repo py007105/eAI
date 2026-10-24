@@ -497,7 +497,7 @@ function useEndpoint(
   const item = data[key];
   return {
     item,
-    current: isFresh(item.updatedAt, Date.now()),
+    current: !item.error && isFresh(item.updatedAt, Date.now()),
     value: item.value,
   };
 }
@@ -849,7 +849,10 @@ function Incidents({
   const [filter, setFilter] = useState("");
   const [query, setQuery] = useState("");
   const { data } = useTelemetry();
-  const canConfidence = supportsConfidence(data.status.value);
+  const canConfidence =
+    !data.status.error &&
+    isFresh(data.status.updatedAt, Date.now()) &&
+    supportsConfidence(data.status.value);
   const selected = incidentId
     ? rows?.find((i) => parseIncidentId(i) === incidentId)
     : undefined;

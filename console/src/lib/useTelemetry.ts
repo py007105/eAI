@@ -58,7 +58,7 @@ export function deriveConnection(data: Telemetry, now: number) {
     ? settled
       ? "disconnected"
       : "connecting"
-    : age! >= 6
+    : age! >= 6 || (settled && successes === 0)
       ? "disconnected"
       : successes === required.length
         ? "live"
@@ -79,13 +79,16 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let timer: number | undefined;
     let active = true;
+    let inFlight: AbortController | undefined;
     const poll = async () => {
       if (!active || document.hidden || busy.current) return;
       busy.current = true;
       const controller = new AbortController();
+      inFlight = controller;
       const timeout = window.setTimeout(() => controller.abort(), 5000);
       try {
         const result = await fetchTelemetry(controller.signal);
+        if (!active) return;
         const stamp = Date.now();
         const servicePayload = result.services;
         setSamples((previous) => {
@@ -161,6 +164,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     const clock = window.setInterval(() => setNow(Date.now()), 1000);
     return () => {
       active = false;
+      inFlight?.abort();
       if (timer) window.clearTimeout(timer);
       window.clearInterval(clock);
       document.removeEventListener("visibilitychange", visible);

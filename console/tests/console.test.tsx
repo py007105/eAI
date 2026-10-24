@@ -50,6 +50,24 @@ function reportIncident() {
   history.replaceState({}, "", "/console/incidents/inc-1");
 }
 describe("read-only console screens", () => {
+  it("suppresses recently retained values on failed polling and recovers", async () => {
+    history.replaceState({}, "", "/console");
+    render(<App />);
+    await screen.findByText("Score 0");
+    server.use(
+      http.get(
+        "http://localhost/api/services",
+        () => new HttpResponse(null, { status: 503 }),
+      ),
+    );
+    await waitFor(
+      () => expect(screen.queryByText("Score 0")).not.toBeInTheDocument(),
+      { timeout: 4000 },
+    );
+    expect(screen.getByText("Partial data")).toBeInTheDocument();
+    server.resetHandlers();
+    await screen.findByText("Score 0", {}, { timeout: 4000 });
+  });
   it("serves API fixtures from the test-only MSW server", async () => {
     const response = await fetch("/api/status");
     expect(response.ok).toBe(true);

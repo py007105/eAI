@@ -102,6 +102,13 @@ describe("API contract adapters", () => {
       ]),
     ) as Telemetry;
     expect(deriveConnection(live, 2000).connection).toBe("live");
+    const lost = Object.fromEntries(
+      Object.entries(live).map(([key, value]) => [
+        key,
+        { ...value, error: "HTTP 503" },
+      ]),
+    ) as Telemetry;
+    expect(deriveConnection(lost, 2000).connection).toBe("disconnected");
     expect(
       deriveConnection(
         { ...live, approvals: { error: "down", loading: false } },
