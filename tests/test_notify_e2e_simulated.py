@@ -12,6 +12,9 @@ from pathlib import Path
 
 import httpx
 import pytest
+
+pytest.importorskip("playwright")   # playwright is not in requirements: skip this module where it is not installed
+
 import uvicorn
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
