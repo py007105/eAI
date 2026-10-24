@@ -1,6 +1,6 @@
 # Kubernetes Package A: transfer status (24 October 2026 IST)
 
-Branch: `friend/phase2-k8s`. Integration remains Claude's responsibility on `plan-complete`. This branch has not been merged into `plan-complete`. Telegram work is separate and untouched. Follow [`COORDINATION.md`](COORDINATION.md) and [`HANDOFF_FRIEND.md`](HANDOFF_FRIEND.md) sections 5–6 before changing shared files or using a shared Docker daemon.
+Branch: `team/k8s-rajat` on origin (pushed from the local `friend/phase2-k8s` on 24 Oct; owner's decision: Kubernetes continues on Rajat's laptop, and the owner's laptop no longer runs kind). Integration remains the integrator's responsibility on `plan-complete`. This branch has not been merged into `plan-complete`. Telegram work is separate and untouched. Follow [`COORDINATION.md`](COORDINATION.md) and [`HANDOFF_FRIEND.md`](HANDOFF_FRIEND.md) sections 5–6 before changing shared files or using a shared Docker daemon.
 
 ## What is implemented and what is verified
 
@@ -20,6 +20,14 @@ Branch: `friend/phase2-k8s`. Integration remains Claude's responsibility on `pla
 
 The 14:01 IST execution at `68c6d1d` is recorded in [`kind_e2e_20261024T140102-60f37359.md`](results/kind_e2e_20261024T140102-60f37359.md) and its [JSON record](../results/live-checks/kind_e2e_20261024T140102-60f37359.json). It passed preflight with 6.30 GiB free and created the pinned kind cluster, then recorded `RuntimeError` before Prometheus readiness. The brain image was **not built**. The script removed only cluster `eai` and released its atomic lock. The record does not establish why monitoring failed; a five-minute kubectl wait was observed, but no pod diagnosis was captured. `19c3407` adds pod phase, readiness and reason diagnostics without collecting Pod messages or secrets, and fixes Windows CLI output decoding. Neither fix has live evidence yet.
 
+**Exact error as recorded:** `aborted | FAIL | RuntimeError` at 14:14:07 IST. At `68c6d1d` the script stores only `type(exc).__name__`, so the message was not kept.
+- The run log (`runtime/k8s_window_20261024_1400.log`, ignored by git) adds one more traceback before "cluster PASS": `UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 81` in a subprocess reader thread (Windows decoded CLI output as cp1252).
+- **Inference, not verified:** the abort came 5 min 2 s after cluster creation (14:09:05). At `68c6d1d` the steps in that gap were:
+  - `helm install prometheus` (timeout 1200 s);
+  - then `kubectl -n monitoring rollout status deployment/prometheus-server --timeout=300s`.
+
+  `cmd()` raises `RuntimeError("<tool> <arg> exited <code>")` on a non-zero exit. The most likely cause is therefore that prometheus-server did not become Ready within 300 s.
+
 The second scheduled attempt waited below 6 GiB, acquired no lock, launched no Docker/kind command and was stopped at handover. The Compose regression script exists but was not run: the Kubernetes worktree had no owner-provided `.env`. The needed variable names are `CHAOS_TOKEN` and `ETERNALAI_APPROVAL_TOKEN`; values must be non-default and supplied by the owner. Do not read, copy, print or commit the file. The Compose preflight's historical benchmark-tag identity check may fail because this branch changes `eternalai/`; record that outcome without weakening the check.
 
 The latest completed full suite before this handover document was on WIP commit `dc67df0`: **540 passed, 2 deselected, 1 warning** (the warning is Starlette's `httpx` deprecation). This handover commit also requires a full-suite run. Helm lint and rendering passed on this machine. No Package A feature is yet live verified end to end.
@@ -31,7 +39,7 @@ Use a separate checkout for this branch. The commands below assume the same `D:\
 ```powershell
 git clone https://github.com/py007105/eAI D:\eAI\eAI-k8s
 Set-Location D:\eAI\eAI-k8s
-git switch --track origin/friend/phase2-k8s
+git switch --track origin/team/k8s-rajat
 py -3.14 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
@@ -50,4 +58,9 @@ After the owner has established the lock and slot, run one script at a time:
 .\.venv\Scripts\python.exe scripts\compose_regression_k8s.py
 ```
 
-Next, inspect the new execution-specific kind result. If monitoring rollout fails again, use its safe pod-condition reasons to diagnose the real cause; keep the failed result, fix only the cause, rerun the full suite and the affected live check. Complete the scripted RBAC, topology, metrics, action, approval and rollback checks before claiming kind acceptance. Run Compose with the owner-provided configuration, preserve its per-execution result, and report every failure. Commit result files by name after a secret scan. Do not merge this branch into `plan-complete`: hand the passing commit and evidence to Claude for integration review. Package A is not ready for that merge today.
+Next, inspect the new execution-specific kind result. If monitoring rollout fails again, use its safe pod-condition reasons to diagnose the real cause; keep the failed result, fix only the cause, rerun the full suite and the affected live check. Complete the scripted RBAC, topology, metrics, action, approval and rollback checks before claiming kind acceptance. Run Compose with the owner-provided configuration, preserve its per-execution result, and report every failure. Commit result files by name after a secret scan. **Before the PR (owner's decision, 24 Oct):**
+1. Rajat runs `git merge origin/plan-complete` into `team/k8s-rajat` and resolves the `eternalai/engine.py`, `api.py` and `config.py` conflicts on his side.
+2. He runs the full suite.
+3. He opens a PR into `plan-complete` by 20:00 IST. Only the integrator merges.
+
+The integrator merges it only if every test and the Phase 1 live check pass after the merge. Otherwise Kubernetes is demoed from Rajat's laptop on this branch and stays unmerged. See `docs/TEAM_SPLIT.md` on `plan-complete`.
