@@ -51,5 +51,19 @@ Start the stack as usual (Compose passes `AGENT37_API_KEY`, `AGENT37_INSTANCE_ID
 5. Approve in the existing Approvals panel (or Telegram); EternalAI executes and verifies with checkout probes.
 6. The knowledge graph shows the incident, suspected causes (classifier and Agent37), executed action and verified outcome.
 
-Status of verification: unit and API contract tests use a mocked HTTP transport (`tests/test_agent37.py`). A live
-Agent37 run has not been recorded yet.
+## Verification status (25 Oct 2026)
+Live runs on one existing instance (`ao7buwhar5`, Hermes agent, monthly cap $2), brain started from this branch:
+
+| item | status |
+|---|---|
+| Agent37 chat API call and JSON tool protocol (4 agent turns, 3 read-only tools run on the EternalAI host) | VERIFIED LIVE |
+| Agent's final answer: grounded in the incident's evidence, cited real evidence ids, listed missing evidence, suggested no runbook for an already recovered incident | VERIFIED LIVE (read from the saved turn; not yet stored as a finding) |
+| Run 1 ended with `network: ConnectError` on turn 3; run 2's final answer was rejected by the first schema (`fault` over 60 characters) | observed live; both fixed (connect-only retry, trimmed free text) |
+| Fixes, storing a validated finding, policy verdict on a suggestion, budget and fallback paths | VERIFIED IN TESTS ONLY (mocked transport, replay of the real final answer) |
+| A completed finding stored and shown in the dashboard from a live run | NOT VERIFIED LIVE |
+| Agent37 spend | the instance and workspace usage endpoints reported 0 LLM calls and $0.00 after the runs (wallet unchanged at $10); whether the instance's model calls bypass the managed meter or the meter lags is UNCONFIRMED |
+| Dashboard panel, twin and graph with real incident data | VERIFIED LIVE (browser check, no Agent37 call made by it) |
+| EternalAI recovery of the crash (autopilot `restart_service`, 19 checkout probes) | VERIFIED LIVE, independent of the agent |
+
+Also found by the live check: `main` could not load its frozen model files after the `eternalai` -> `engine` rename.
+Fixed in `engine/artifacts.py` (legacy module names aliased); `tests/test_artifacts_load.py` loads every real artifact.
