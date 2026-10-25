@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Activity, BookOpen, Box, CheckCircle2, FileText, GitCommit, Gavel, Network, Play, Scale, TrendingUp, UserCheck } from "lucide-react";
 import type { UnknownRecord } from "../lib/api";
 import { buildTrace, type TraceStep } from "../lib/trace";
@@ -35,11 +36,18 @@ const title: Record<TraceStep["kind"], string> = {
   action: "Action",
   verification: "Verification",
 };
+const EVIDENCE_SHOWN = 4;
 const clock = (t?: number) =>
   t === undefined ? "time not reported" : new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
 
 export default function InvestigationTrace({ incident }: { incident: UnknownRecord }) {
   const steps = buildTrace(incident);
+  const [expanded, setExpanded] = useState(false);
+  // Collapsed view hides only evidence beyond the first EVIDENCE_SHOWN; causes, policy, approval, action and
+  // verification always stay visible so the outcome is never folded away.
+  const evidenceCount = steps.filter((s) => s.kind === "evidence").length;
+  let seen = 0;
+  const visible = expanded ? steps : steps.filter((s) => s.kind !== "evidence" || ++seen <= EVIDENCE_SHOWN);
   return (
     <div className="panel-subsection">
       <div className="panel-title">
@@ -47,7 +55,7 @@ export default function InvestigationTrace({ incident }: { incident: UnknownReco
         <small>Built only from this incident's evidence items, ranking, actions, verification and timeline</small>
       </div>
       <ol className="trace">
-        {steps.map((s, i) => (
+        {visible.map((s, i) => (
           <li key={i} className={`trace-step trace-${s.kind}`}>
             <span className="trace-icon" aria-hidden="true">{icon(s)}</span>
             <div className="trace-body">
@@ -62,6 +70,11 @@ export default function InvestigationTrace({ incident }: { incident: UnknownReco
           </li>
         ))}
       </ol>
+      {evidenceCount > EVIDENCE_SHOWN && (
+        <button type="button" className="btn" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Show fewer evidence items" : `Show all ${evidenceCount} evidence items`}
+        </button>
+      )}
     </div>
   );
 }

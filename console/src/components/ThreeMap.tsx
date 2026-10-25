@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Line, Html } from "@react-three/drei";
+import { Html, OrbitControls, Line } from "@react-three/drei";
 import type { UnknownRecord, ServiceState } from "../lib/api";
 
 const COLOR: Record<ServiceState, { color: string; emissive: string }> = {
@@ -74,16 +74,21 @@ function Graph({ names, links, states, root, animate, selected, onSelect }: {
                 <meshBasicMaterial color={c.color} transparent opacity={0.16} />
               </mesh>
             )}
-            <Html position={[0, -0.42, 0]} center style={{ pointerEvents: "none" }}><span className="three-label">{name}</span></Html>
+            {/* DOM labels: page font, no runtime font download */}
+            <Html position={[0, -0.42, 0]} center zIndexRange={[10, 0]}>
+              <span className="three-label">{name}</span>
+            </Html>
             {isRoot && (
-              <Html position={[0, 0.46, 0]} center style={{ pointerEvents: "none" }}><span className="three-label root">leading candidate</span></Html>
+              <Html position={[0, 0.5, 0]} center zIndexRange={[10, 0]}>
+                <span className="three-label three-label-root">likely root cause</span>
+              </Html>
             )}
           </group>
         );
       })}
       <ambientLight intensity={1.0} />
       <pointLight position={[0, 0, 4]} intensity={18} />
-      <OrbitControls enablePan={false} enableZoom={true} enableRotate={true} minDistance={4} maxDistance={9} />
+      <OrbitControls enablePan={false} enableZoom={false} enableRotate />
     </>
   );
 }
@@ -96,7 +101,7 @@ export default function ThreeMap({ names, topology, states = {}, root, incidentO
     if (Array.isArray(raw)) raw.forEach((b) => { if (typeof b === "string") links.push([a, b]); });
   });
   return (
-    <div className="three-wrap" aria-label="Three dimensional view of returned services, coloured by live health">
+    <div className="three-wrap" aria-label="Three dimensional view of returned services, coloured by live health; drag to rotate">
       <Canvas dpr={[1, 1.4]} camera={{ position: [0, 0, 6], fov: 42 }}>
         <Graph selected={selected} onSelect={onSelect} names={names} links={links} states={states} root={root} animate={incidentOpen && !reduced()} />
       </Canvas>
