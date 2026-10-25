@@ -196,3 +196,48 @@ def test_api_routes_contract(tmp_path, monkeypatch):
     assert api.agent37_investigations()[0]["fault"] == "bad_deploy"
     assert "services" in api.agent37_twin() and "edges" in api.agent37_graph()
     assert "k-test" not in json.dumps([view, api.agent37_status()])            # the key never leaves the server
+
+REAL_FINAL = r'''{"type":"final","root_cause_service":"web","fault":"web container exited; underlying termination cause undetermined","explanation":"The web container exited with code 137 and had no uptime during the incident window (ev1, ev2). Telemetry did not mark it OOM-killed; it also shows no error log lines, recent deploy, or failing dependency calls (ev2, ev3, ev4, ev5). Memory was at 24% of its limit, with exhaustion forecast much later, so the evidence does not establish memory exhaustion as the cause (ev6). The incident record reports recovery after restart_service, and the latest health check shows web running and non-anomalous. The evidence supports an abrupt container exit, but does not explain what caused it.","evidence_ids":["ev1","ev2","ev3","ev4","ev5","ev6"],"missing_evidence":["Container runtime or host diagnostics explaining exit code 137","Independent post-recovery verification details beyond the incident record"],"confidence":"medium","suggested_runbook":"none","expected_impact":"No additional user-facing change is expected; the latest health check shows web running, so another recovery action is not recommended."}'''   # the agent's actual final answer from the live run on incident 422113cf (10:57 AM IST, 25 Oct 2026)
+
+
+def test_real_agent_final_answer_validates_and_is_kept(tmp_path):
+    inv = make(tmp_path, [])
+    inc = {"id": "x", "evidence": [{"id": f"ev{i}", "tool": "t", "service": "web", "summary": "s"} for i in range(1, 8)]}
+    raw = json.loads(REAL_FINAL)
+    assert len(raw["fault"]) > 60                                   # what the old schema rejected
+    f, notes = inv.validate(raw, inc)
+    assert f["root_cause_service"] == "web" and f["suggested_runbook"] == "none"
+    assert f["evidence_ids"] == ["ev1", "ev2", "ev3", "ev4", "ev5", "ev6"] and notes["unknown_evidence_ids"] == []
+    assert inv.policy_check(f, inc)["verdict"] == "no_action_suggested"
+
+
+def test_overlong_free_text_is_trimmed_not_fatal(tmp_path):
+    inv = make(tmp_path, [])
+    f, _ = inv.validate(dict(FINAL, fault="x" * 500, explanation="y" * 9000), {"id": "i", "evidence": []})
+    assert len(f["fault"]) == 200 and len(f["explanation"]) == 2500
+
+
+def test_connect_errors_are_retried_but_read_timeouts_are_not(monkeypatch):
+    monkeypatch.setattr(client_mod.time, "sleep", lambda s: None)
+    calls = {"n": 0}
+
+    def flaky(req):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise httpx.ConnectError("boom", request=req)
+        return httpx.Response(200, json={"id": "r", "status": "completed", "output_text": "ok"})
+    c = Agent37Client(api_key="k", instance_id="x", transport=httpx.MockTransport(flaky))
+    assert c.respond("hi")["output_text"] == "ok" and calls["n"] == 3
+    always = Agent37Client(api_key="k", instance_id="x", transport=httpx.MockTransport(
+        lambda r: (_ for _ in ()).throw(httpx.ConnectError("down", request=r))))
+    with pytest.raises(Agent37Error) as e:
+        always.respond("hi")
+    assert e.value.code == "network"
+    reads = {"n": 0}
+
+    def slow(req):
+        reads["n"] += 1
+        raise httpx.ReadTimeout("slow", request=req)
+    with pytest.raises(Agent37Error) as e:
+        Agent37Client(api_key="k", instance_id="x", transport=httpx.MockTransport(slow)).respond("hi")
+    assert e.value.code == "timeout" and reads["n"] == 1             # never re-sent: the turn may already be running

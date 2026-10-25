@@ -15,6 +15,7 @@ The key is read from the environment only and never logged or returned.
 from __future__ import annotations
 
 import os
+import time
 
 import httpx
 
@@ -71,14 +72,23 @@ class Agent37Client:
             body["model"] = self.model
         if metadata:
             body["metadata"] = {k: str(v)[:200] for k, v in list(metadata.items())[:16]}
-        try:
-            with self._http(self.timeout_s) as c:
-                r = c.post(f"{self.instance_url}/v1/responses", json=body,
-                           headers={"X-Agent37-Key": self._key, "Content-Type": "application/json"})
-        except httpx.TimeoutException:
-            raise Agent37Error("timeout", f"no answer within {self.timeout_s:.0f} s")
-        except httpx.HTTPError as e:
-            raise Agent37Error("network", type(e).__name__)
+        r = None
+        for attempt in range(3):
+            try:
+                with self._http(self.timeout_s) as c:
+                    r = c.post(f"{self.instance_url}/v1/responses", json=body,
+                               headers={"X-Agent37-Key": self._key, "Content-Type": "application/json"})
+                break
+            except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+                # The request never reached Agent37 (first live run: one ConnectError on turn 3), so retrying cannot run or
+                # bill the turn twice. Read timeouts and other errors are NOT retried: the turn may already be running.
+                if attempt == 2:
+                    raise Agent37Error("network", type(e).__name__)
+                time.sleep(1.5 * (attempt + 1))
+            except httpx.TimeoutException:
+                raise Agent37Error("timeout", f"no answer within {self.timeout_s:.0f} s")
+            except httpx.HTTPError as e:
+                raise Agent37Error("network", type(e).__name__)
         if r.status_code == 402:
             d = _detail(r)
             raise Agent37Error("budget_exhausted" if "budget" in d else "insufficient_credit", d)

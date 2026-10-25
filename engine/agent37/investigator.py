@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from .. import config
 from ..policy import RUNBOOKS
@@ -31,13 +31,21 @@ TOOL_CAP = 4_000
 
 class Finding(BaseModel):
     root_cause_service: str = Field(max_length=40)
-    fault: str = Field(max_length=60)
+    fault: str = Field(max_length=200)
     explanation: str = Field(max_length=2500)
     evidence_ids: list[str] = Field(default_factory=list, max_length=30)
     missing_evidence: list[str] = Field(default_factory=list, max_length=10)
     confidence: Literal["low", "medium", "high"]
     suggested_runbook: str = Field(max_length=40)
     expected_impact: str = Field(default="", max_length=600)
+
+    @field_validator("fault", "explanation", "expected_impact", mode="before")
+    @classmethod
+    def _trim_free_text(cls, v, info):
+        """Descriptive text is cut to its cap instead of failing the whole finding (the first live run returned a
+        sentence in `fault`); service, runbook and confidence stay strictly validated."""
+        cap = {"fault": 200, "explanation": 2500, "expected_impact": 600}[info.field_name]
+        return v[:cap] if isinstance(v, str) else v
 
 
 def _clip(obj, cap: int) -> str:
