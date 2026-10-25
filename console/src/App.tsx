@@ -43,7 +43,7 @@ const Integrations = lazy(() => import("./pages/Integrations"));
 const Charts = lazy(() => import("./components/ChartsSection"));
 import PolicyRows from "./components/PolicyRows";
 import { HowItWorks, LandingKpis } from "./components/LandingKpis";
-import ReportProvider from "./components/ReportProvider";
+import ReportProvider, { maskReportVendor } from "./components/ReportProvider";
 import NumberTicker from "./components/NumberTicker";
 import InvestigationTrace from "./components/InvestigationTrace";
 import { newestActive } from "./lib/pipeline";
@@ -366,7 +366,7 @@ function Landing() {
             <span>Prometheus</span>
             <span>Docker Compose</span>
             <span>Telegram</span>
-            <span>Gemini</span>
+            <span>LLM reports</span>
             <span>Kubernetes · validated offline</span>
           </span>
         </div>
@@ -1197,7 +1197,7 @@ function IncidentNarrative({
           <div className="timeline">
             {timeline.map((t, i) => (
               <div className="timeline-item" key={i}>
-                <h3>{textValue(t.msg) ?? "Event detail not reported"}</h3>
+                <h3>{maskReportVendor(textValue(t.msg) ?? "Event detail not reported")}</h3>
                 {typeof t.t === "number" && <p>{formatTime(t.t)}</p>}
               </div>
             ))}

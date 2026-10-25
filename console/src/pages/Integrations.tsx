@@ -106,8 +106,8 @@ export default function Integrations() {
           <h2>LLM reports</h2>
         </div>
         <p>
-          LLM reports: Gemini, evidence ids validated by the backend; deterministic template fallback; the LLM never acts.
-          Each incident shows its report provider exactly as the API reports it.
+          LLM reports: evidence ids validated by the backend; deterministic template fallback; the LLM never acts.
+          Each incident shows whether its report was written by the LLM or by the template, as the API reports it.
         </p>
         <Source path="eternalai/llm.py (validate(): evidence ids must exist; template_report fallback)" />
       </section>
