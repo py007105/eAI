@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("c", Path(__file__).resolve().parents[1] / "scripts" / "evaluate_v2_criteria.py")
+spec = importlib.util.spec_from_file_location("c", Path(__file__).resolve().parents[1] / "tools" / "evaluate_v2_criteria.py")
 c = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(c)
 

@@ -1,0 +1,329 @@
+{
+ "workbook_sha256": "fafdb1f8c408bf7f54137315edb87bb09adc6eb88182749857d0c8abf5a13549",
+ "results": [
+  {
+   "variant": "P",
+   "truth": "all (plan definition)",
+   "n_train": 179,
+   "n_val": 45,
+   "n_test": 53,
+   "n_unknown_test": 18,
+   "train_classes": [
+    "app_error",
+    "bad_deploy",
+    "cpu_runaway",
+    "crash",
+    "db_slowdown",
+    "disk_filling",
+    "memory_leak",
+    "network_delay",
+    "normal",
+    "overload",
+    "slow_service"
+   ],
+   "test_classes": [
+    "app_error",
+    "cpu_runaway",
+    "network_delay",
+    "normal"
+   ],
+   "n_features": 31,
+   "macro_f1": 0.385,
+   "majority_class": "normal",
+   "majority_macro_f1": 0.132,
+   "threshold": 0.9978,
+   "known_flagged_unknown": 0.642,
+   "logic_bug_flagged_unknown": 0.556,
+   "category_macro_f1": 0.431,
+   "confusion": {
+    "labels": [
+     "app_error",
+     "cpu_runaway",
+     "network_delay",
+     "normal"
+    ],
+    "matrix": [
+     [
+      2,
+      0,
+      11,
+      0
+     ],
+     [
+      0,
+      7,
+      0,
+      0
+     ],
+     [
+      0,
+      2,
+      11,
+      1
+     ],
+     [
+      0,
+      0,
+      19,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "variant": "L",
+   "truth": "all (plan definition)",
+   "n_train": 179,
+   "n_val": 45,
+   "n_test": 53,
+   "n_unknown_test": 18,
+   "train_classes": [
+    "app_error",
+    "bad_deploy",
+    "cpu_runaway",
+    "crash",
+    "db_slowdown",
+    "disk_filling",
+    "memory_leak",
+    "network_delay",
+    "normal",
+    "overload",
+    "slow_service"
+   ],
+   "test_classes": [
+    "app_error",
+    "cpu_runaway",
+    "network_delay",
+    "normal"
+   ],
+   "n_features": 28,
+   "macro_f1": 0.449,
+   "majority_class": "normal",
+   "majority_macro_f1": 0.132,
+   "threshold": 0.9969,
+   "known_flagged_unknown": 0.66,
+   "logic_bug_flagged_unknown": 0.556,
+   "category_macro_f1": 0.44,
+   "confusion": {
+    "labels": [
+     "app_error",
+     "cpu_runaway",
+     "network_delay",
+     "normal",
+     "slow_service"
+    ],
+    "matrix": [
+     [
+      3,
+      0,
+      10,
+      0,
+      0
+     ],
+     [
+      0,
+      7,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      12,
+      1,
+      1
+     ],
+     [
+      3,
+      0,
+      14,
+      0,
+      2
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "variant": "P",
+   "truth": "exact/close only",
+   "n_train": 160,
+   "n_val": 40,
+   "n_test": 34,
+   "n_unknown_test": 18,
+   "train_classes": [
+    "app_error",
+    "bad_deploy",
+    "cpu_runaway",
+    "crash",
+    "db_slowdown",
+    "disk_filling",
+    "memory_leak",
+    "network_delay",
+    "normal",
+    "overload",
+    "slow_service"
+   ],
+   "test_classes": [
+    "app_error",
+    "cpu_runaway",
+    "network_delay"
+   ],
+   "n_features": 31,
+   "macro_f1": 0.667,
+   "majority_class": "app_error",
+   "majority_macro_f1": 0.184,
+   "threshold": 0.9942,
+   "known_flagged_unknown": 0.324,
+   "logic_bug_flagged_unknown": 0.389,
+   "category_macro_f1": 0.708,
+   "confusion": {
+    "labels": [
+     "app_error",
+     "cpu_runaway",
+     "network_delay"
+    ],
+    "matrix": [
+     [
+      5,
+      0,
+      8
+     ],
+     [
+      0,
+      7,
+      0
+     ],
+     [
+      2,
+      2,
+      10
+     ]
+    ]
+   }
+  },
+  {
+   "variant": "L",
+   "truth": "exact/close only",
+   "n_train": 160,
+   "n_val": 40,
+   "n_test": 34,
+   "n_unknown_test": 18,
+   "train_classes": [
+    "app_error",
+    "bad_deploy",
+    "cpu_runaway",
+    "crash",
+    "db_slowdown",
+    "disk_filling",
+    "memory_leak",
+    "network_delay",
+    "normal",
+    "overload",
+    "slow_service"
+   ],
+   "test_classes": [
+    "app_error",
+    "cpu_runaway",
+    "network_delay"
+   ],
+   "n_features": 28,
+   "macro_f1": 0.67,
+   "majority_class": "app_error",
+   "majority_macro_f1": 0.184,
+   "threshold": 0.9872,
+   "known_flagged_unknown": 0.353,
+   "logic_bug_flagged_unknown": 0.444,
+   "category_macro_f1": 0.681,
+   "confusion": {
+    "labels": [
+     "app_error",
+     "cpu_runaway",
+     "network_delay",
+     "overload",
+     "slow_service"
+    ],
+    "matrix": [
+     [
+      4,
+      0,
+      8,
+      0,
+      1
+     ],
+     [
+      0,
+      6,
+      0,
+      1,
+      0
+     ],
+     [
+      2,
+      0,
+      11,
+      0,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  }
+ ],
+ "live_classifier": {
+  "n_test": 53,
+  "passed_features": [
+   "cpu_ratio",
+   "cpu_z",
+   "error_ratio",
+   "error_ratio_delta",
+   "lat_ratio",
+   "lat_z",
+   "mem_slope_share_per_min",
+   "rps_ratio",
+   "rps_z",
+   "up_frac"
+  ],
+  "unobserved_live_features": [
+   "cpu_per_req_ratio",
+   "cpu_per_req_z",
+   "dep_fail_rate",
+   "deploys_3m",
+   "error_log_rate",
+   "error_ratio_z",
+   "mem_rel_growth",
+   "restarts_in_window",
+   "scratch_mb",
+   "scratch_slope_mb_per_min"
+  ],
+  "macro_f1": 0.0,
+  "abstained": 53,
+  "predicted_labels": {
+   "unknown": 53
+  },
+  "classes_it_cannot_name": [
+   "cpu_runaway",
+   "network_delay"
+  ]
+ }
+}

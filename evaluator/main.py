@@ -6,6 +6,7 @@ the caller (and EternalAI) only get a run id.
 """
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import random
@@ -15,7 +16,7 @@ import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 from scenarios import HEALTHY_SCENARIOS, SCENARIOS, SERVICES, Injector
@@ -28,8 +29,28 @@ TRUTH = Path(os.getenv("TRUTH_DIR", "/truth"))  # a volume only this container m
 TRUTH.mkdir(parents=True, exist_ok=True)
 RESULTS = TRUTH / "results.jsonl"
 
+DEFAULT_CHAOS_TOKEN = "evaluator-only"   # the old published default: anyone who read the repository knew it
+
+
+def chaos_token() -> str:
+    """The token the evaluator sends to the services' /_chaos endpoint. Refuse to start without a real one."""
+    tok = os.getenv("CHAOS_TOKEN", "")
+    if not tok or tok == DEFAULT_CHAOS_TOKEN:
+        raise RuntimeError("CHAOS_TOKEN is unset or the published default 'evaluator-only'; set a real secret in .env. Refusing to start.")
+    return tok
+
+
+def _auth(token: str | None):
+    """Starting a run injects a real fault, so it needs the same approval token as the brain's write endpoints."""
+    good = os.getenv("ETERNALAI_APPROVAL_TOKEN", "")
+    if not good or good == "change-me":
+        raise HTTPException(503, "starting runs is disabled: set ETERNALAI_APPROVAL_TOKEN to a real secret")
+    if not token or not hmac.compare_digest(token, good):
+        raise HTTPException(403, "invalid approval token")
+
+
 app = FastAPI(title="eai-evaluator")
-inj = Injector(os.getenv("CHAOS_TOKEN", "evaluator-only"))
+inj = Injector(chaos_token())
 runs: dict[str, dict] = {}
 _state = {"after_deploy": False}  # the previous run left a release change behind
 _lock = threading.Lock()
@@ -41,6 +62,9 @@ class RunRequest(BaseModel):
     seed: int | None = None
     timeout_s: int = 150
     healthy_s: int = 60           # observation time for healthy-negative scenarios
+    # Opt-in, for the forecast check only (benchmarks leave both unset, so their runs behave exactly as before):
+    variant: str | None = None    # "gradual" for disk_fill: a slow steady fill instead of the 30 s burst
+    observe_full: bool = False    # observe until timeout_s even after the brain closed its incidents (no early end)
 
 
 def _eai_incidents():
@@ -90,14 +114,14 @@ def _execute(run_id: str, req: RunRequest):
         # "recent deploy" signal expire so one run cannot leak into the next
         time.sleep(settle_seconds(changed, _state["after_deploy"]))
         t_inject = time.time()
-        params = inj.inject(scen, target, rng)
+        params = inj.inject(scen, target, rng, req.variant) if req.variant else inj.inject(scen, target, rng)
         truth = {"run_id": run_id, "scenario": scen, "target": target, "expected_label": expected,
                  "supported": supported, "t_inject": t_inject, "params": params, "seed": st["seed"]}
         (TRUTH / f"{run_id}.json").write_text(json.dumps(truth))
         deadline = t_inject + (req.healthy_s if scen in HEALTHY_SCENARIOS else req.timeout_s)
         while time.time() < deadline:
             time.sleep(2)
-            if scen not in HEALTHY_SCENARIOS:
+            if scen not in HEALTHY_SCENARIOS and not req.observe_full:
                 inc = [i for i in (_eai_incidents() or []) if i["opened_t"] >= t_inject - 1]
                 if inc and all(i["status"] in ("recovered", "partially_recovered", "unresolved", "escalated")
                                for i in inc) and time.time() - max(i["closed_t"] or 0 for i in inc) > 8:
@@ -131,13 +155,16 @@ def health():
 
 
 @app.post("/runs")
-def start(req: RunRequest):
+def start(req: RunRequest, x_approval_token: str | None = Header(None)):
+    _auth(x_approval_token)
     if any(r["state"] == "running" for r in runs.values()):
         raise HTTPException(409, "a run is already in progress")
     rng = random.Random(req.seed)
     scen = req.scenario or rng.choice(list(SCENARIOS))
     if scen not in SCENARIOS:
         raise HTTPException(400, f"unknown scenario {scen}")
+    if req.variant is not None and (req.variant, scen) != ("gradual", "disk_fill"):
+        raise HTTPException(400, "the only variant is 'gradual', for disk_fill")
     target = req.target or rng.choice(SCENARIOS[scen][2])
     if target not in SERVICES:
         raise HTTPException(400, f"unknown target {target}")

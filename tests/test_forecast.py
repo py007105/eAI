@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from eternalai.forecast import forecast_exhaustion
+from engine.forecast import forecast_exhaustion
 
 LIMIT = 256e6
 

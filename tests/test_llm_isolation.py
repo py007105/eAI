@@ -11,8 +11,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-import eternalai.llm as llm
-from eternalai.engine import Engine, Incident
+import engine.llm as llm
+from engine.engine import Engine, Incident
 
 PKG = Path(llm.__file__).resolve().parent
 CTX = {"cause": "memory_leak", "confidence": 0.9, "candidates": ["recreate_container"], "alternatives": ["latency_spike"],
@@ -33,7 +33,7 @@ def test_llm_upgrade_returns_immediately_and_never_holds_the_engine_lock_while_w
     def slow(ctx, client=None):
         release.wait(10)
         return llm.template_report(ctx), {"provider": "gemini", "llm_disagreed": False}
-    monkeypatch.setattr("eternalai.engine.make_report", slow)
+    monkeypatch.setattr("engine.engine.make_report", slow)
     e, inc = bare_engine(), Incident("i1", 100.0)
     t0 = time.time()
     e._llm_upgrade_async(inc, CTX)
@@ -49,7 +49,7 @@ def test_llm_upgrade_returns_immediately_and_never_holds_the_engine_lock_while_w
 def test_report_text_is_replaced_but_the_executed_runbook_is_kept(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "x")
     rep = llm.IncidentReport(summary="s", evidence_ids=["e1"], likely_cause="memory_leak", runbook_id="recreate_container")
-    monkeypatch.setattr("eternalai.engine.make_report", lambda ctx, client=None: (rep, {"provider": "gemini", "llm_disagreed": False}))
+    monkeypatch.setattr("engine.engine.make_report", lambda ctx, client=None: (rep, {"provider": "gemini", "llm_disagreed": False}))
     e, inc = bare_engine(), Incident("i2", 100.0)
     inc.actions = [{"runbook_id": "restart_service"}]                # what the deterministic policy actually proposed
     inc.log = lambda m: None
@@ -108,6 +108,8 @@ def test_policy_executor_verify_and_dedupe_do_not_reference_the_llm_layer():
 
 def test_engine_decision_does_not_read_the_llm_report_before_proposing():
     src = (PKG / "engine.py").read_text(encoding="utf-8")
-    body = src[src.index("rep = template_report(ctx)"):src.index("def _llm_upgrade_async")]
-    assert body.index("self._propose(") < body.index("self._llm_upgrade_async(")      # propose first, LLM afterwards
-    assert "make_report" not in body                                                    # and not inline
+    # _diagnose applies the result (propose, then start the LLM thread); _diagnose_compute builds the template report.
+    body = src[src.index("    def _diagnose(self"):src.index("def _llm_upgrade_async")]
+    apply = body[:body.index("def _diagnose_compute")]
+    assert apply.index("self._propose(") < apply.index("self._llm_upgrade_async(")    # propose first, LLM afterwards
+    assert "template_report(ctx)" in body and "make_report" not in body                 # deterministic report; LLM not inline

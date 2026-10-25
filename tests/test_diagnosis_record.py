@@ -1,8 +1,8 @@
 """v2 item B: the diagnosis details v1 discarded are recorded on the incident and reach its public form."""
 from types import SimpleNamespace
 
-from eternalai.classify import ABSTAIN, Prediction
-from eternalai.engine import Engine, Incident
+from engine.classify import ABSTAIN, Prediction
+from engine.engine import Engine, Incident
 
 
 def engine(det=None, gate_threshold=1.0):

@@ -1,0 +1,190 @@
+{
+ "execution_id": "20261024T162717-159af59f",
+ "kind": "release-gate live items G2-G7 (re-run in one execution)",
+ "commit": "71eb2f5",
+ "reference_execution": "20261024T001813-4cedc8bf",
+ "checkout": "D:\\eAI\\eAI-eval-71eb2f5",
+ "restored_tracked_outputs": [
+  "docs/results/live_check_phase1.md",
+  "docs/results/live_check_phase4a.md",
+  "results/live-checks/phase1.json",
+  "results/live-checks/phase4a.json"
+ ],
+ "harness_sha256": {
+  "scripts/run_gate_sequence.py": "156e64c063d323843e8310f0b6c240de8f87b99c8f212e6ba1bcfe8777490354",
+  "scripts/live_check_g5.py": "a0c2adf3dc2efeef0f00ad45029f4aa97afce90977b5c77c7fd03b9550e2aadb",
+  "scripts/resume_eval_v3.py": "171957c60d657dc358ce2680d96d16cca050e695d80ba0ea1cd14c4c1b1cd337",
+  "scripts/eval_v3_cases.py": "84ac03185766fce61835c4790b0adfff2bc62521f840ac35fd2d822a15cae13a"
+ },
+ "images": {
+  "eai/dashboard:v1": "sha256:b1025d55328fb7ff61f7437234694bf89ed1f78df288932306d51f47b03a6221",
+  "eai/eternalai:v2": "sha256:9396ae7bd98fcee6dbe74368eb90411e6a97bf3d299bad2d2ec39a5773069b52",
+  "eai/evaluator:v1": "sha256:435368583ad485fd0726b37d1feaf8600e91cdf0e463cf4e6441df1a8edc971e",
+  "eai/inventory:v1": "sha256:08d93df5370352a6d271e14cb816bc9de487ac60321267e1547fc17fc4698c86",
+  "eai/inventory:v2-good": "sha256:72bb4f54957ea69f1ebcd6f19cbe544fd622798e4cc43e2f2ecd6e8384f6e9f7",
+  "eai/inventory:v3-bad": "sha256:b1dbf6661337563c70a20e4655c0f80c884423008116e6f8317fd96c9135137c",
+  "eai/loadgen:v1": "sha256:de50673e64084378520610bb956e50343432612fa35d21e3f5cacd1d6f818eb0",
+  "eai/orders:v1": "sha256:70f1d313fc0037209af45054f42ef4e9c52bae67fd59b08b234c1ed2b29610ee",
+  "eai/orders:v2-good": "sha256:af2d43de310f2813045dce9ab3e55f21c3e27b569034d04a6e61dc5fb0b5899d",
+  "eai/orders:v3-bad": "sha256:336f2783035979bf68a1cbc594fc4e13d0ef70cbd0297a4f37c2c36502f41aae",
+  "eai/payments:v1": "sha256:3c51be6657b6b04f1a740302dfe0f3e834b67ea71a6bc581de56134d45782162",
+  "eai/payments:v2-good": "sha256:d205b0688478304fe6e6cf82c7d1a658ad37bff8d785e3edd8cd589620a47571",
+  "eai/payments:v3-bad": "sha256:fe23aeb034055cb9fb7854b8f8b9e20531db8a9adfe6f7c20b77d9ccfdca7dc3",
+  "eai/web:v1": "sha256:f25d665f5ec815bc9b9283a9a3928d198f586084f9b3a910bc24faea30de6d15",
+  "eai/web:v2-good": "sha256:fc1c3dc9cb1e72bacc6c43c3185db0bcacef063ade6540b1680c649c9031e9c1",
+  "eai/web:v3-bad": "sha256:eb069dfff32f425c778353b1e32144c3210290291d0cd48c2326258c372437b4",
+  "jaegertracing/all-in-one:1.64.0": "sha256:7e9591218e7ddd51e568ef892e3ea190ae420ecf97c4d718910a3f57e076c216",
+  "prom/prometheus:v2.55.1": "sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3"
+ },
+ "configuration": {
+  "eternalai/rulebooks/default.yaml": "e370c7e722af6c9387e4ac064ad8022a178a9bc513bba09fd48c9f05b41d85cf",
+  "models/artifacts/root_margin.json": "0e14e2db2d37b084334b4e2e66998c9a5937793a004bf24b16cc7a72ad124bbe",
+  "models/artifacts/detectors.joblib": "907f9047c5cf4a61331fe5e16a2724dc8616551a5ed5204f4e6aa50087ead08b",
+  "models/artifacts/classifier.joblib": "0c0810e394500f34761fb2ab01717fe56ebdef719b63525b89348bfcf82c9604",
+  "models/artifacts/ranker.joblib": "3589034ac53f46c8ee294c31e9e47affa3706a43b3ce66bda7601aa7f889f18d",
+  "data/kb/MANIFEST.json": "6fdfb2f9d6280b5a04212da1e14f6aff6f9a521f33f8868eda74e3b674aa3457",
+  "data/kb/outcomes_measured.csv": "5fe6c396d7ac2c37ed4edcdfc29b41da5faaac64ed6303656bf024ad26bde96e",
+  "docker-compose.yml": "9c81354e6b2ff77a122c323c5eafd11cf2d7d2dfd941ae9a23bd1c5670b8424e"
+ },
+ "steps": [
+  {
+   "name": "phase1",
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/live_check_phase1.py",
+   "start": "2026-10-24 16:27 IST",
+   "start_epoch": 1792839443.9645302,
+   "exit": 0,
+   "end": "2026-10-24 16:39 IST",
+   "end_epoch": 1792840158.6857536,
+   "outputs": [
+    {
+     "path": "docs/results/live_check_phase1.md",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "a5591075de3a3f9069677c762644b4c1bf33a49dec4fc0f90b2046686556b1e8"
+    },
+    {
+     "path": "results/live-checks/phase1.json",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "6e145849789566b1dce0568784f7c0f4d390c0519e6927e71b2782c6e15d7e1c"
+    }
+   ],
+   "verdict": {
+    "status": "PASS",
+    "passed": "17/17",
+    "incomplete": 0
+   }
+  },
+  {
+   "name": "phase4a",
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/live_check_phase4a.py --no-build",
+   "start": "2026-10-24 16:39 IST",
+   "start_epoch": 1792840158.6951663,
+   "exit": 0,
+   "end": "2026-10-24 16:46 IST",
+   "end_epoch": 1792840586.5985854,
+   "outputs": [
+    {
+     "path": "docs/results/live_check_phase4a.md",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "1daf8598bcd0c65435ebe8fdc819af6a9577e0dcaff8e574cd05b38006b00e93"
+    },
+    {
+     "path": "results/live-checks/phase4a.json",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "98a3a367bab57dc62f08a3ea4d945dc48aeb7ff9b0ae58d93ed980eb068ab5ed"
+    }
+   ],
+   "verdict": {
+    "status": "PASS",
+    "passed": "10/10",
+    "incomplete": 0
+   }
+  },
+  {
+   "name": "controlled",
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/live_check_controlled.py",
+   "start": "2026-10-24 16:46 IST",
+   "start_epoch": 1792840586.6120682,
+   "exit": 0,
+   "end": "2026-10-24 17:07 IST",
+   "end_epoch": 1792841851.8609054,
+   "outputs": [
+    {
+     "path": "docs/results/live_check_controlled.md",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "bbc008e640bf925bdb7c9995274f26b2b6e4493fc20a471ec3ab87854a069e6e"
+    },
+    {
+     "path": "results/live-checks/controlled.json",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "26afe1a980044fd709cbfa21f233fb7082dc75719224e987ad53ab33f5a1c168"
+    }
+   ],
+   "verdict": {
+    "status": "FAIL",
+    "passed": "4/7",
+    "incomplete": 1
+   }
+  },
+  {
+   "name": "g5",
+   "command": "D:\\eAI\\eAI-workspace\\eAI\\.venv\\Scripts\\python.exe -u scripts/live_check_g5.py",
+   "start": "2026-10-24 17:07 IST",
+   "start_epoch": 1792841851.8684266,
+   "exit": 0,
+   "end": "2026-10-24 17:20 IST",
+   "end_epoch": 1792842649.5302212,
+   "outputs": [
+    {
+     "path": "docs/results/live_check_g5.md",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "642b67c264f2945757100ecdac72b355a1748dbf1f7f6658dde3c2ee191eba1a"
+    },
+    {
+     "path": "results/live-checks/g5.json",
+     "exists": true,
+     "written_during_step": true,
+     "sha256": "7a0b964a5d8ae36bb6a998361c7536e9bcf680052bc7c8b77f4e16788de2f29e"
+    }
+   ],
+   "verdict": {
+    "status": "PASS",
+    "passed": "5/5",
+    "incomplete": 0
+   }
+  }
+ ],
+ "completion": "complete",
+ "started": "2026-10-24 16:27 IST",
+ "lock_taken": "2026-10-24 16:27 IST",
+ "images_after": {
+  "eai/dashboard:v1": "sha256:b1025d55328fb7ff61f7437234694bf89ed1f78df288932306d51f47b03a6221",
+  "eai/eternalai:v2": "sha256:9396ae7bd98fcee6dbe74368eb90411e6a97bf3d299bad2d2ec39a5773069b52",
+  "eai/evaluator:v1": "sha256:435368583ad485fd0726b37d1feaf8600e91cdf0e463cf4e6441df1a8edc971e",
+  "eai/inventory:v1": "sha256:08d93df5370352a6d271e14cb816bc9de487ac60321267e1547fc17fc4698c86",
+  "eai/inventory:v2-good": "sha256:72bb4f54957ea69f1ebcd6f19cbe544fd622798e4cc43e2f2ecd6e8384f6e9f7",
+  "eai/inventory:v3-bad": "sha256:b1dbf6661337563c70a20e4655c0f80c884423008116e6f8317fd96c9135137c",
+  "eai/loadgen:v1": "sha256:de50673e64084378520610bb956e50343432612fa35d21e3f5cacd1d6f818eb0",
+  "eai/orders:v1": "sha256:70f1d313fc0037209af45054f42ef4e9c52bae67fd59b08b234c1ed2b29610ee",
+  "eai/orders:v2-good": "sha256:af2d43de310f2813045dce9ab3e55f21c3e27b569034d04a6e61dc5fb0b5899d",
+  "eai/orders:v3-bad": "sha256:336f2783035979bf68a1cbc594fc4e13d0ef70cbd0297a4f37c2c36502f41aae",
+  "eai/payments:v1": "sha256:3c51be6657b6b04f1a740302dfe0f3e834b67ea71a6bc581de56134d45782162",
+  "eai/payments:v2-good": "sha256:d205b0688478304fe6e6cf82c7d1a658ad37bff8d785e3edd8cd589620a47571",
+  "eai/payments:v3-bad": "sha256:fe23aeb034055cb9fb7854b8f8b9e20531db8a9adfe6f7c20b77d9ccfdca7dc3",
+  "eai/web:v1": "sha256:f25d665f5ec815bc9b9283a9a3928d198f586084f9b3a910bc24faea30de6d15",
+  "eai/web:v2-good": "sha256:fc1c3dc9cb1e72bacc6c43c3185db0bcacef063ade6540b1680c649c9031e9c1",
+  "eai/web:v3-bad": "sha256:eb069dfff32f425c778353b1e32144c3210290291d0cd48c2326258c372437b4",
+  "jaegertracing/all-in-one:1.64.0": "sha256:7e9591218e7ddd51e568ef892e3ea190ae420ecf97c4d718910a3f57e076c216",
+  "prom/prometheus:v2.55.1": "sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3"
+ },
+ "images_unchanged": true,
+ "gate_live_items_all_passed": false,
+ "finished": "2026-10-24 17:20 IST",
+ "lock_released": "2026-10-24 17:20 IST"
+}

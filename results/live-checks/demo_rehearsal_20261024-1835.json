@@ -1,0 +1,181 @@
+{
+ "kind": "demo rehearsal (not a gate, not a benchmark)",
+ "checkout": "D:\\eAI\\eAI-demo-stable-1",
+ "commit": "49155ea",
+ "tag": "demo-stable-1",
+ "started": "2026-10-24 18:35:59 IST",
+ "steps": {
+  "2_disk_autopilot": {
+   "run_id": "eb867319c5",
+   "t_inject": "2026-10-24 18:38:11 IST",
+   "detected": true,
+   "time_to_detect_s": 7.3,
+   "recovered": true,
+   "time_to_verified_recovery_s": 38.5,
+   "failed_request_pct": 0.0,
+   "incidents": [
+    {
+     "id": "2b99b132",
+     "status": "recovered",
+     "cause": "disk_fill",
+     "services": [
+      "web"
+     ],
+     "verification": "recovered",
+     "actions": [
+      {
+       "runbook_id": "clear_temp_path",
+       "service": "web",
+       "verdict": "execute",
+       "risk": "low",
+       "reason": "autopilot: low-risk runbook allowed by the rulebook",
+       "executed": true,
+       "approved_by": null,
+       "t": 1792847306.8200417,
+       "executed_t": 1792847307.120247
+      }
+     ]
+    },
+    {
+     "id": "0f639699",
+     "status": "recovered",
+     "cause": "disk_fill",
+     "services": [
+      "web"
+     ],
+     "verification": "recovered",
+     "actions": [
+      {
+       "runbook_id": "clear_temp_path",
+       "service": "web",
+       "verdict": "execute",
+       "risk": "low",
+       "reason": "autopilot: low-risk runbook allowed by the rulebook",
+       "executed": true,
+       "approved_by": null,
+       "t": 1792847346.6209497,
+       "executed_t": 1792847346.8895302
+      }
+     ]
+    },
+    {
+     "id": "e0cb885f",
+     "status": "escalated",
+     "cause": "insufficient_evidence",
+     "services": [
+      "web"
+     ],
+     "verification": null,
+     "actions": []
+    }
+   ],
+   "audit": [
+    {
+     "t": 1792847307.1176653,
+     "runbook": "clear_temp_path",
+     "service": "web",
+     "actor": "autopilot",
+     "ok": true
+    },
+    {
+     "t": 1792847330.247071,
+     "runbook": "clear_temp_path",
+     "service": "web",
+     "actor": null,
+     "ok": null
+    },
+    {
+     "t": 1792847346.8893874,
+     "runbook": "clear_temp_path",
+     "service": "web",
+     "actor": "autopilot",
+     "ok": true
+    },
+    {
+     "t": 1792847370.8733635,
+     "runbook": "clear_temp_path",
+     "service": "web",
+     "actor": null,
+     "ok": null
+    }
+   ],
+   "other_actions_without_approval": [],
+   "result": "PASS"
+  },
+  "3_bad_deploy_ask_first": {
+   "run_id": "8c684fe407",
+   "t_inject": "2026-10-24 18:41:19 IST",
+   "detected": true,
+   "time_to_detect_s": 25.7,
+   "recovered": false,
+   "time_to_verified_recovery_s": null,
+   "failed_request_pct": 20.0,
+   "incidents": [
+    {
+     "id": "377af64c",
+     "status": "escalated",
+     "cause": "bad_deploy",
+     "services": [
+      "orders",
+      "payments"
+     ],
+     "verification": null,
+     "actions": [
+      {
+       "runbook_id": "rollback_release",
+       "service": "payments",
+       "verdict": "expired_unapproved",
+       "risk": "high",
+       "reason": "payments is a protected service: every action needs approval",
+       "executed": false,
+       "approved_by": null,
+       "t": 1792847515.1449533,
+       "executed_t": null
+      }
+     ]
+    }
+   ],
+   "audit": [],
+   "pending": {
+    "t": "2026-10-24 18:41:55 IST",
+    "incident_id": "377af64c",
+    "runbook": "rollback_release"
+   },
+   "approver_recorded": null,
+   "wait_proposal_to_execution_s": null,
+   "executed_without_approval": [],
+   "result": "NOT APPROVED"
+  }
+ },
+ "free_gb_at_start": 3.07,
+ "approval_ttl_s": "brain default (ETERNALAI_APPROVAL_TTL_S is not passed by this commit's compose file)",
+ "build_exit": 0,
+ "up_exit": 0,
+ "status": {
+  "mode": "autopilot",
+  "policy_file": "default.yaml",
+  "auto_allowed_risks": [
+   "low"
+  ],
+  "protected": [
+   "payments"
+  ]
+ },
+ "restock_exit": 0,
+ "steps_requested": [
+  "2",
+  "3"
+ ],
+ "state_before_step": {
+  "2": {
+   "mode": "autopilot",
+   "kill_switch": false
+  },
+  "3": {
+   "mode": "ask-first",
+   "kill_switch": false
+  }
+ },
+ "mode_switch_http": 200,
+ "finished": "2026-10-24 18:44:28 IST"
+}

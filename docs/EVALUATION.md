@@ -1,7 +1,7 @@
 # Evaluation
 
 Status: **benchmark v1 and the reduced v2 evaluation are finished; this file holds methods, the canonical v2 methodology and limitations, and a short v1 results summary.** Every result comes from a script that renders tables from raw result
-files (`scripts/render_results.py` for the benchmark, the training and evaluation scripts for the rest). This file links to those generated files and never retypes
+files (`tools/render_results.py` for the benchmark, the training and evaluation scripts for the rest). This file links to those generated files and never retypes
 their numbers. Rules for the held-out benchmark are fixed in `docs/EVALUATION_PLAN.md`, which predates the results.
 
 > **Three findings first (benchmark v1, `docs/results/benchmark.md`; not buried, not softened):**
@@ -9,12 +9,12 @@ their numbers. Rules for the held-out benchmark are fixed in `docs/EVALUATION_PL
 > 2. **False alarms on healthy runs.** The autopilot opened an incident in 8 of 10 healthy runs and recreated a container in 4 of 5 traffic surges (it called a surge a memory leak). threshold_restart had 5 of 10 false alerts and prototype_rules 8 of 10 (`docs/postmortems/autopilot-healthy-runs-v1.md`).
 > 3. **Recovery is self-reported.** It comes from the system's own checkout; the independent measure is the load generator's failed-request %. No independent probe logs exist.
 >
-> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), forecasting is implemented and unit-tested but its live lead time was not demonstrated (an attempted live check was stopped by low memory, and two smoke runs ended before the resource limit), and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
+> Also true: the benchmark brains were configured without LLM keys (the report provider is not recorded per run), the pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs, and 27 of 30 autopilot runs reporting recovery is one application, five runs per cell, scripted faults. This box describes benchmark v1, which is kept unchanged; the v2 evaluation that followed is described below and in the canonical section of `docs/EVALUATION.md`.
 
 <!-- gen:eval_v2 -->
 ## Canonical methodology, results and limitations: benchmark v2 (final)
 
-This section is the single place where the v2 caveats are written out in full. The README, the demo script and the judge Q&A refer here instead of repeating them. Every number below is filled in by `scripts/build_docs.py` from the exported rows (`results/benchmark-v2/rerun/`); the full tables are in `docs/results/benchmark_v2.md` (rendered by `scripts/render_v2_report.py`) and `docs/results/benchmark_v1_v2.md` (side by side). Nothing here is typed by hand.
+This section is the single place where the v2 caveats are written out in full. The README, the demo script and the judge Q&A refer here instead of repeating them. Every number below is filled in by `tools/build_docs.py` from the exported rows (`results/benchmark-v2/rerun/`); the full tables are in `docs/results/benchmark_v2.md` (rendered by `tools/render_v2_report.py`) and `docs/results/benchmark_v1_v2.md` (side by side). Nothing here is typed by hand.
 
 ### What v2 is, and the wording rule (Amendment 6)
 
@@ -67,18 +67,18 @@ The retrained models were trained on **two telemetry conditions**: the 72 origin
 
 ### Health-log coverage
 
-An external container health log (`scripts/health_watch.py`, once a minute, read-only) exists only from 2026-10-19 00:29:31 IST. Original valid rows that ran before then, including the P1 runs and the first ask-first fault runs, are **not covered** by it, so a container fault outside the brain's own record could not be excluded for those runs. All 37 replacement runs are covered. A once-a-minute sampler can miss a short restart; seven replacement rows show a single-sample "exited" state explained by the injected crash or the brain's start.
+An external container health log (`tools/health_watch.py`, once a minute, read-only) exists only from 2026-10-19 00:29:31 IST. Original valid rows that ran before then, including the P1 runs and the first ask-first fault runs, are **not covered** by it, so a container fault outside the brain's own record could not be excluded for those runs. All 37 replacement runs are covered. A once-a-minute sampler can miss a short restart; seven replacement rows show a single-sample "exited" state explained by the injected crash or the brain's start.
 
 ### What remains undemonstrated
 
-- **Forecast lead time**: forecasting is implemented and unit-tested, but its live lead time was not demonstrated.
+- **Forecast lead time**: The pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs.
 - **Groq** was never tested (no key was available).
 - **Gemini**: see the LLM paragraph in section 5 (Limitations) for the tests actually performed; the benchmark brains ran without LLM keys, so the LLM did not contribute to any benchmark number.
 - **Other applications**: nothing was tested on another application.
 
 ### Deviations, exclusions and amendments, in order
 
-Amendment 4 (reduced v2 plan, pass criteria, demo rule P, triage classes) · Amendment 5 (Stage 1 record, longer gap between runs) · Amendment 6 (this wording rule) · Amendment 7 (external health log, 2026-10-19 00:29 IST) · Amendment 8 (stock-out, exclusion rule, direct-SQL restock as a harness action, replacement plan). All are in `docs/EVALUATION_PLAN.md`. The criteria were not changed after any result was read. Original files are kept, replacements are in their own files, and the evaluated set is a derived file (`scripts/v2_combine.py`) that can be rebuilt; checksums: `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun`.
+Amendment 4 (reduced v2 plan, pass criteria, demo rule P, triage classes) · Amendment 5 (Stage 1 record, longer gap between runs) · Amendment 6 (this wording rule) · Amendment 7 (external health log, 2026-10-19 00:29 IST) · Amendment 8 (stock-out, exclusion rule, direct-SQL restock as a harness action, replacement plan). All are in `docs/EVALUATION_PLAN.md`. The criteria were not changed after any result was read. Original files are kept, replacements are in their own files, and the evaluated set is a derived file (`tools/v2_combine.py`) that can be rebuilt; checksums: `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun`.
 <!-- /gen:eval_v2 -->
 
 ## Results summary (benchmark v1)
@@ -93,7 +93,7 @@ Amendment 4 (reduced v2 plan, pass criteria, demo rule P, triage classes) · Ame
 
 Source: `docs/results/benchmark.md`, sections 1b and 4 (rendered from `results/benchmark-v1/benchmark_raw.jsonl`). Where the autopilot does **not** beat the baselines: threshold_restart recovered `crash` in 4 of 5 runs against the autopilot's 2 of 5 (both orders crashes abstained); on `latency` the autopilot's failed-request % (8.1) is higher than threshold_restart's (4.0), and on `memory_leak` it is higher than no_action's (11.2 against 0.4) because its own container recreation fails requests; its false-alert count on healthy runs is worse than threshold_restart's and equal to prototype_rules'; and the pooled failed-request % and detection-time differences against threshold_restart and prototype_rules have intervals that include zero, so they are not distinguishable at n = 5 per cell.
 
-Offline root-cause baselines on the 72 training runs (labelled offline, not a live arm): `docs/results/offline_rca_baseline.md`. Post-mortems and the triage of all 72 non-recoveries: `docs/postmortems/`. Forecast check: attempted, stopped by low memory, not completed; two smoke runs could not measure lead time because runs ended before the limit, so forecasting is stated everywhere as "implemented and unit-tested; live lead time not demonstrated".
+Offline root-cause baselines on the 72 training runs (labelled offline, not a live arm): `docs/results/offline_rca_baseline.md`. Post-mortems and the triage of all 72 non-recoveries: `docs/postmortems/`. Forecast check: the first attempt was stopped by low memory; the v3 re-run completed on 2026-10-23: memory lead FAILED (median 18.3 s vs 30 s), gradual disk fill PASSED (median 86.4 s) (`docs/results/forecast_check.md`, `docs/FORECAST_CHECK.md`).
 
 ## 1. What is evaluated, and on what
 
@@ -113,14 +113,14 @@ Results are kept in separate tables for public-dataset, own-application and cros
 **Data.** Three sources, never merged row-wise: the workbook (label quality findings, runbook text, label mapping), RCAEval RE1 (public lab telemetry for cross-system evidence), and
 live runs generated by the independent evaluator on this repository's four-service application (training seeds 1000-1707). See `docs/DATA.md`, including the development log of what went wrong and why.
 
-**Features.** One rolling-window code path (`eternalai/features/window.py`) is used for training and for live inference. Missing data stays missing (explicit observed-masks, NaN-aware models). The window length (10 s)
+**Features.** One rolling-window code path (`engine/features/window.py`) is used for training and for live inference. Missing data stays missing (explicit observed-masks, NaN-aware models). The window length (10 s)
 was chosen by cross-validation (`docs/results/window_sweep.md`).
 
 **Models** (frozen as git tag `models-v1`, see `docs/MODEL_CARD.md`): learned healthy-range limits plus an IsolationForest per service (detector); gradient boosting with temperature scaling and a novelty gate
 (classifier, with abstention); gradient boosting over topology and timing evidence (root-cause ranking); a Theil-Sen trend forecaster for gradual memory and disk growth.
 
 **Splits and leakage controls.** All splits are by whole run (or whole incident, or whole system); preprocessing, calibration, thresholds and feature selection are fitted on training folds only; the abstain threshold is chosen by
-an inner cross-validation inside each training fold; label-bearing columns are excluded from model inputs; a data check (`models/check_runs.py`) tests for leakage and for run-order effects before any training;
+an inner cross-validation inside each training fold; label-bearing columns are excluded from model inputs; a data check (`ml/models/check_runs.py`) tests for leakage and for run-order effects before any training;
 cpu_burn is never used in training and serves as the unseen fault.
 
 **Benchmark.** Five arms share the same executor, policy engine, verification and incident de-duplication and differ only in the brain: no action; fixed thresholds then restart; the earlier prototype's rules ported onto this
@@ -131,23 +131,23 @@ failure triage rule and the rules for harness failures are in `docs/EVALUATION_P
 This is a stated limitation of v1, with a consistency check described in the plan.
 
 **LLM layer.** The model returns JSON validated against a strict schema; evidence ids must exist, the runbook must be one the deterministic table allows for the diagnosed cause, and the engine's own diagnosis stays
-authoritative. Actions never depend on the LLM. The benchmark brains were started with both LLM key variables empty (by construction), so reports are expected to be template reports; the report provider is not recorded in the result rows (design limitation, class c), and `scripts/render_results.py` counts timelines containing a `report by <provider>` line as a consistency check.
+authoritative. Actions never depend on the LLM. The benchmark brains were started with both LLM key variables empty (by construction), so reports are expected to be template reports; the report provider is not recorded in the result rows (design limitation, class c), and `tools/render_results.py` counts timelines containing a `report by <provider>` line as a consistency check.
 
 ## 3. Reproduce
 
 ```
-python data/clean_workbook.py --workbook <workbook.xlsx>          # data-quality report and cleaned tables
-python data/download_rcaeval.py --systems OB SS TT                # RCAEval RE1 (about 370 MB)
-python data/build_rcaeval_features.py && python models/eval_rcaeval.py && python models/eval_transfer.py --boot 500
+python ml/data/clean_workbook.py --workbook <workbook.xlsx>          # data-quality report and cleaned tables
+python ml/data/download_rcaeval.py --systems OB SS TT                # RCAEval RE1 (about 370 MB)
+python ml/data/build_rcaeval_features.py && python ml/models/eval_rcaeval.py && python ml/models/eval_transfer.py --boot 500
 docker compose --profile releases build && docker compose up -d   # the stack
-python models/collect_runs.py --reps 8                            # training runs through the evaluator
-python models/check_runs.py                                       # data sanity check before any training
-python models/train_models.py --window 10                         # train, cross-validate, save artifacts (also --sweep, --detector-sweep)
-python scripts/model_card.py
-powershell -File scripts\run_all_arms.ps1                         # the held-out benchmark (about 12 hours)
-python scripts/benchmark_status.py                                # read-only progress
-python scripts/render_results.py                                  # every benchmark table, from the raw rows
-python scripts/llm_smoke.py                                       # needs GEMINI_API_KEY and/or GROQ_API_KEY in .env
+python ml/models/collect_runs.py --reps 8                            # training runs through the evaluator
+python ml/models/check_runs.py                                       # data sanity check before any training
+python ml/models/train_models.py --window 10                         # train, cross-validate, save artifacts (also --sweep, --detector-sweep)
+python tools/model_card.py
+powershell -File tools\run_all_arms.ps1                         # the held-out benchmark (about 12 hours)
+python tools/benchmark_status.py                                # read-only progress
+python tools/render_results.py                                  # every benchmark table, from the raw rows
+python tools/llm_smoke.py                                       # needs GEMINI_API_KEY and/or GROQ_API_KEY in .env
 python -m pytest                                                  # unit and regression tests (live LLM tests: pytest -m live)
 ```
 
@@ -159,14 +159,14 @@ Rendered by scripts, not typed: v1 `docs/results/benchmark.md`; v2 `docs/results
 
 ## 5. Limitations
 
-- **v2: No per-run container-state record in v2. An external health log exists from 2026-10-19 00:29:31 IST onward (`results/benchmark-v2/health_log.tsv`, written by `scripts/health_watch.py`, once a minute, read-only). Runs before that are not covered, including the P1 runs and the first ask-first fault runs. Triage checks each later run's time window against this log and marks any run during which a required container was unhealthy or restarted unexpectedly.**
+- **v2: No per-run container-state record in v2. An external health log exists from 2026-10-19 00:29:31 IST onward (`results/benchmark-v2/health_log.tsv`, written by `tools/health_watch.py`, once a minute, read-only). Runs before that are not covered, including the P1 runs and the first ask-first fault runs. Triage checks each later run's time window against this log and marks any run during which a required container was unhealthy or restarted unexpectedly.**
 - **v2: Inventory stock-out (Amendment 8).** The inventory service only subtracts stock, and the stock ran out during Stage 3; 37 v2 rows ending after the last confirmed in-stock checkout were marked invalid and re-run behind a stock gate (a direct SQL restock by the harness, because the service has no add-stock endpoint). **Only one SKU (`sku-mug`, the verification probe's SKU) has a log-proven stock timeline; the other three are indirect** (similar consumption and the same random SKU choice by the load generator; no inventory logs survive). The 72 original training runs, the 34 fresh runs and the v1 benchmark were checked for a stock-out signature (persistent checkout failures, HTTP 409 probes, healthy-run failed-request %) **without finding one** (`docs/results/stock_validity.md`); that is absence of evidence from the records that exist, not a proof for the three indirect SKUs. The stock gate and the per-run stock record exist only for the re-runs.
 
-- **v2 summary of limits (numbers and intervals are in the canonical section at the top):** n = 3 per fault type, so no per-fault claim; v1 and v2 are unpaired and on different seeds; four changes went in together, so no improvement is attributable to any one of them; no paired v2 baseline for supported faults and no no_action arm (so the failed-request % has no same-seed reference); recovery is verified internally and the failed-request % is an impact metric, not independent proof; replacement runs were designed after the stock-out was seen; training mixes two telemetry conditions; health-log coverage starts at 2026-10-19 00:29:31 IST; forecast lead time is undemonstrated; Groq is untested; one application.
+- **v2 summary of limits (numbers and intervals are in the canonical section at the top):** n = 3 per fault type, so no per-fault claim; v1 and v2 are unpaired and on different seeds; four changes went in together, so no improvement is attributable to any one of them; no paired v2 baseline for supported faults and no no_action arm (so the failed-request % has no same-seed reference); recovery is verified internally and the failed-request % is an impact metric, not independent proof; replacement runs were designed after the stock-out was seen; training mixes two telemetry conditions; health-log coverage starts at 2026-10-19 00:29:31 IST; forecast memory lead FAILED (median 18.3 s vs 30 s; disk passed); Groq is untested; one application.
 <!-- gen:limits_v2 -->
 - **v2: cpu_burn.** The autopilot abstained in 2/3 v2 runs and 4/5 v1 runs of this one unseen fault (different versions and seeds; not pooled into one rate). In v2 seed 426 it restarted `inventory` while `orders` was the target, ranked the target number 3, and the failed-request % was 27.71 with 0/4 checkout probes passing. "Harmful" in the scorer means only an executed action on a service other than the injected target; the added damage, if any, is unknown. Classified as a model generalisation limitation; **decision: not fixed before the freeze** (a fix would be v3 on fresh seeds). We make no claim that the system abstains on unseen faults or knows when to stop (`docs/postmortems/cpu_burn_seed426.md`).
 - **LLM report layer, what was actually tested (2026-10-19, `docs/results/llm_live.md`, `tests/test_llm_isolation.py`).** The report text is produced off the recovery path: the deterministic template report and the runbook are fixed and proposed before the LLM thread starts, the thread holds no engine lock while it waits, nothing on the decision or action path (policy, executor, verification, ranking, classification) references the LLM module, the LLM output must validate against a strict schema and an allowed-candidate runbook, and a disagreeing answer is recorded and overridden by the engine; 12 isolation tests pass against the system code. The per-request timeout is 20 s per provider (a per-phase httpx timeout, not a total wall-clock bound; it is harmless to recovery because the call is in a background thread, but it is not a strict ceiling on report latency). **Live Gemini, five incidents with the pinned default model (`gemini-3.8-flash`): 0/5 answered with a schema-valid report; 4 timed out at 20 s and 1 failed with an HTTP error, so the template report was used each time and recovery was unaffected** (a direct probe showed that model answering in 8 to 77 s or not at all within 100 s, because it spends its time on internal reasoning). **Five more incidents with the faster `gemini-3.5-flash-lite`, set through the existing `GEMINI_MODEL` variable (a config override, no code change): 4/5 answered with a schema-valid report in 1.2-1.6 s; the other fell back to the template after a connection error.** In both sets all incidents recovered (5/5 and 5/5), with the same runbooks as the evaluated runs and times to verified recovery of 41.3-59.8 s (set A) and 39.6-61.6 s (set B), within the range of the evaluated rows for the same scenarios. In set B the model's runbook suggestion equalled the deterministic runbook in every answered case; five samples are not proof of decision independence, which rests on the code-path analysis and the tests. These ten incidents are outside the frozen v2 evaluation. **Groq is untested** (no key).
-- **v2: a second incident and a second action for one fault.** 2 of the 36 evaluated fault runs opened more than one incident and 2 executed more than one action for the same injected fault (disk_fill seed 414 (ask_first), disk_fill seed 414 (autopilot); script: `scripts/multi_incident_check.py`, table `docs/results/multi_incident.md`). The runs still recovered with the same runbook (`clear_temp_path`). The same pattern appeared once in a headless demo rehearsal (disk_fill, two incidents, two `clear_temp_path` runs; `docs/results/demo_rehearsals.md`). This is a **known limitation, not investigated and not fixed** (any fix would be v3): a repeated action is a repeated intervention on a service, which the circuit breaker only stops after two.
+- **v2: a second incident and a second action for one fault.** 2 of the 36 evaluated fault runs opened more than one incident and 2 executed more than one action for the same injected fault (disk_fill seed 414 (ask_first), disk_fill seed 414 (autopilot); script: `tools/multi_incident_check.py`, table `docs/results/multi_incident.md`). The runs still recovered with the same runbook (`clear_temp_path`). The same pattern appeared once in a headless demo rehearsal (disk_fill, two incidents, two `clear_temp_path` runs; `docs/results/demo_rehearsals.md`). This is a **known limitation, not investigated and not fixed** (any fix would be v3): a repeated action is a repeated intervention on a service, which the circuit breaker only stops after two.
 <!-- /gen:limits_v2 -->
 - **Small training set.** 72 live runs were collected (71 used after one was excluded as corrupted): 8 per scenario for a handful of fault types.
 - **One application, controlled faults.** Four Python services, one machine, one workload generator, faults injected by a script. Nothing here was tested on a different application.

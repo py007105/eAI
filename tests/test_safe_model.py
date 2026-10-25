@@ -3,7 +3,7 @@ import pytest
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from eternalai.safe_model import SafeHGB
+from engine.safe_model import SafeHGB
 
 
 def data(n=120, seed=0):

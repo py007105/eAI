@@ -1,0 +1,29 @@
+# Code owners by technical area. GitHub asks the owner of each changed path to review the pull request.
+# Areas: core, ml, ui-integrations, platform. Replace @py007105 on an area with that area owner's GitHub handle.
+# Later lines win over earlier ones.
+
+# Default: core
+*                       @py007105
+
+# core: engine, services, evaluator, tools, compose
+/engine/                @py007105
+/services/              @py007105
+/evaluator/             @py007105
+/tools/                 @py007105
+/docker-compose*.yml    @py007105
+
+# ml: models, data, knowledge base
+/ml/                    @py007105
+/engine/kb/             @py007105
+
+# ui-integrations: dashboard, console, notifications
+/dashboard/             @py007105
+/console/               @py007105
+/engine/notify/         @py007105
+
+# platform: deployment and telemetry
+/deploy/                @py007105
+
+# Repository rules and ownership changes need the repository owner
+/.github/               @py007105
+/CONTRIBUTING.md        @py007105

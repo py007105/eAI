@@ -9,8 +9,8 @@ import os
 import httpx
 import pytest
 
-from eternalai import config  # noqa: F401  (loads .env)
-from eternalai import llm
+from engine import config  # noqa: F401  (loads .env)
+from engine import llm
 
 CTX = {"cause": "memory_leak", "confidence": 0.93, "candidates": ["recreate_container", "restart_service"],
        "alternatives": ["bad_deploy"], "ranking": [{"service": "inventory", "score": 0.74}],

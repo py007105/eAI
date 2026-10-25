@@ -2,8 +2,8 @@ import numpy as np
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold
 
-from eternalai.calibrate import TemperatureCalibrated
-from eternalai.safe_model import SafeHGB
+from engine.calibrate import TemperatureCalibrated
+from engine.safe_model import SafeHGB
 
 
 def rare_class_data(seed=0):

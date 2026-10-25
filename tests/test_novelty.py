@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.model_selection import KFold
 
-from eternalai.novelty import NOVELTY_FEATURES, NoveltyGate
+from engine.novelty import NOVELTY_FEATURES, NoveltyGate
 
 
 def windows(n, rng, kind):

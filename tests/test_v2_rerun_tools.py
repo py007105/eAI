@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+SCRIPTS = Path(__file__).resolve().parents[1] / "tools"
 sys.path.insert(0, str(SCRIPTS))
 
 
@@ -75,10 +75,10 @@ def test_fresh_seeds_are_unique_and_below_1000():
 
 def test_seed_value_matches_the_source_and_gate_logic(tmp_path, monkeypatch):
     repo = Path(__file__).resolve().parents[1]
-    src = repo / "app/inventory/main.py"
-    if src.exists():                                                      # the docs worktree has no app/; the system tree does
+    src = repo / "services/shop/inventory/main.py"
+    if src.exists():                                                      # the docs worktree has no services/shop/; the system tree does
         assert sg.seed_value_in_source(repo) == [sg.SEED_STOCK]
-    d = tmp_path / "app/inventory"
+    d = tmp_path / "services/shop/inventory"
     d.mkdir(parents=True)
     (d / "main.py").write_text('("sku-lamp", "Desk lamp", 24.0, 100000), ("sku-mug", "Ceramic mug", 9.5, 100000)')
     assert sg.seed_value_in_source(tmp_path) == [100000]

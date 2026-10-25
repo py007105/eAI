@@ -3,17 +3,20 @@ import threading
 
 import pytest
 
-from eternalai.dedupe import Suppressor
-from eternalai.detect import Persistence
-from eternalai.engine import Engine, Incident
-from eternalai.policy import PolicyEngine
+from engine.dedupe import Suppressor
+from engine.detect import Persistence
+from engine.engine import Engine, Incident
+from engine import config, rulebook
+from engine.policy import PolicyEngine
+
+V2 = rulebook.load(rulebook.RULEBOOK_DIR / "benchmark-v2.yaml", config.SERVICES)   # cooldown 90 s, as in v1/v2
 
 
 def engine():
     e = Engine.__new__(Engine)
     e.lock, e.last_error, e.preserved = threading.RLock(), None, []
     e._preserve = lambda inc: e.preserved.append(inc.id)
-    e.policy, e.suppress, e.persist = PolicyEngine("autopilot"), Suppressor(), Persistence(3)
+    e.policy, e.suppress, e.persist = PolicyEngine("autopilot", rulebook=V2, kill_switch=False, protected=set()), Suppressor(), Persistence(3)
     e.incidents, e.first_anom, e.last_closed = [], {"web": 1.0}, {"t": 5.0}
     return e
 
@@ -34,6 +37,13 @@ def test_reset_clears_breakers_suppression_and_persistence():
     e.persist.runs["orders"] = 2
     e.reset_run_state()
     assert e.policy.breaker_open == set() and e.suppress.suppressed == set() and e.persist.runs == {}
+
+
+def test_reset_clears_the_hourly_action_count():
+    e = engine()
+    e.policy.record_execution("web", now=1.0)
+    assert e.policy.executed
+    assert e.reset_run_state()["cleared"]["actions_this_hour"] == 1 and e.policy.executed == []
 
 
 def test_reset_closes_open_and_pending_incidents_but_keeps_history():

@@ -1,4 +1,4 @@
-"""Tests for scripts/render_results.py on SYNTHETIC rows only. Nothing here describes the system; the numbers are made up so that the
+"""Tests for tools/render_results.py on SYNTHETIC rows only. Nothing here describes the system; the numbers are made up so that the
 expected outputs can be computed by hand."""
 import json
 import subprocess
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "tools"))
 import render_results as rr  # noqa: E402
 
 SC_INDEX = {s: i for i, s in enumerate(["crash", "latency", "error_spike", "memory_leak", "disk_fill", "bad_deploy", "cpu_burn", "traffic_surge", "good_deploy"])}
@@ -47,7 +47,7 @@ def fixture_file(tmp_path):
 
 def render(path, tmp_path, extra=()):
     out = tmp_path / "out.md"
-    subprocess.run([sys.executable, str(ROOT / "scripts" / "render_results.py"), "--raw", str(path), "--out", str(out), "--fixture",
+    subprocess.run([sys.executable, str(ROOT / "tools" / "render_results.py"), "--raw", str(path), "--out", str(out), "--fixture",
                     "--triage", str(tmp_path / "none.json"), "--harness-failures", str(tmp_path / "none2.json"), *extra], check=True)
     return out.read_text(encoding="utf-8")
 
@@ -58,7 +58,7 @@ def test_output_is_clearly_marked_fixture(fixture_file, tmp_path):
 
 
 def test_refuses_to_write_fixture_output_to_the_real_results_path(fixture_file):
-    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "render_results.py"), "--raw", str(fixture_file), "--fixture"],
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "render_results.py"), "--raw", str(fixture_file), "--fixture"],
                        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode != 0 and "refusing" in (r.stderr + r.stdout)
 
@@ -112,7 +112,7 @@ def test_triage_entry_is_picked_up(fixture_file, tmp_path):
     tri = tmp_path / "triage.json"
     tri.write_text(json.dumps([{"arm": "eternalai_autopilot", "scenario": "crash", "seed": 100, "class": "c", "evidence": "docs/postmortems/x.md"}]))
     out = tmp_path / "o.md"
-    subprocess.run([sys.executable, str(ROOT / "scripts" / "render_results.py"), "--raw", str(fixture_file), "--out", str(out), "--fixture",
+    subprocess.run([sys.executable, str(ROOT / "tools" / "render_results.py"), "--raw", str(fixture_file), "--out", str(out), "--fixture",
                     "--triage", str(tri), "--harness-failures", str(tmp_path / "n.json")], check=True)
     assert "| eternalai_autopilot | crash | 100 | escalated | c | docs/postmortems/x.md |" in out.read_text(encoding="utf-8")
 

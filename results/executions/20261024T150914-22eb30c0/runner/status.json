@@ -1,0 +1,32 @@
+{
+ "pid": 32628,
+ "launched": "2026-10-24T15:09:14+05:30",
+ "window": [
+  "2026-10-24T15:09:00+05:30",
+  "2026-10-24T23:00:00+05:30"
+ ],
+ "latest_start": {
+  "gate": "2026-10-24T23:30:00+05:30",
+  "resume": "2026-10-24T16:30:00+05:30",
+  "combined": "2026-10-24T04:15:00+05:30"
+ },
+ "min_free_gb": 3.0,
+ "steps": [
+  {
+   "name": "resume",
+   "cwd": "D:\\eAI\\eAI-eval-71eb2f5",
+   "command": "-u scripts/resume_eval_v3.py --original 20261024T001813-4cedc8bf",
+   "start": "2026-10-24T15:09:14+05:30",
+   "free_gb_at_start": 3.89,
+   "exit": 0,
+   "end": "2026-10-24T16:26:50+05:30",
+   "new_execution_folders": [
+    "20261024T150914-22eb30c0"
+   ]
+  }
+ ],
+ "state": "finished",
+ "lock_taken": "2026-10-24T15:09:14+05:30",
+ "lock_released": "2026-10-24T16:26:50+05:30",
+ "finished": "2026-10-24T16:26:50+05:30"
+}

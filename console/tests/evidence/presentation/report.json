@@ -1,0 +1,96 @@
+{
+  "kind": "synthetic test fixtures, not live integration",
+  "failures": [],
+  "views": [
+    {
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "route": "/console",
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "route": "/console/live",
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "route": "/console/topology",
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "route": "/console/integrations",
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "width": 1280,
+      "height": 720,
+      "overflow": false
+    },
+    {
+      "route": "/console",
+      "width": 1280,
+      "height": 720,
+      "overflow": false
+    },
+    {
+      "route": "/console/live",
+      "width": 1280,
+      "height": 720,
+      "overflow": false
+    },
+    {
+      "route": "/console/topology",
+      "width": 1280,
+      "height": 720,
+      "overflow": false
+    },
+    {
+      "route": "/console/integrations",
+      "width": 1280,
+      "height": 720,
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "route": "/console",
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "route": "/console/live",
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "route": "/console/topology",
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "route": "/console/integrations",
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 # Tooling override (not part of the evaluated system): forwards GEMINI_MODEL to the brain, which the main compose file does not pass.
-# eternalai/llm.py already reads GEMINI_MODEL ("override with GEMINI_MODEL"); no system file is changed.
+# engine/llm.py already reads GEMINI_MODEL ("override with GEMINI_MODEL"); no system file is changed.
 #   docker compose -f docker-compose.yml -f <this file> up -d --no-deps --force-recreate eternalai   (with GEMINI_MODEL set in the shell)
 services:
   eternalai:

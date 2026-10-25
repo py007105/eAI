@@ -1,6 +1,6 @@
 ## Canonical methodology, results and limitations: benchmark v2 (final)
 
-This section is the single place where the v2 caveats are written out in full. The README, the demo script and the judge Q&A refer here instead of repeating them. Every number below is filled in by `scripts/build_docs.py` from the exported rows (`results/benchmark-v2/rerun/`); the full tables are in `docs/results/benchmark_v2.md` (rendered by `scripts/render_v2_report.py`) and `docs/results/benchmark_v1_v2.md` (side by side). Nothing here is typed by hand.
+This section is the single place where the v2 caveats are written out in full. The README, the demo script and the judge Q&A refer here instead of repeating them. Every number below is filled in by `tools/build_docs.py` from the exported rows (`results/benchmark-v2/rerun/`); the full tables are in `docs/results/benchmark_v2.md` (rendered by `tools/render_v2_report.py`) and `docs/results/benchmark_v1_v2.md` (side by side). Nothing here is typed by hand.
 
 ### What v2 is, and the wording rule (Amendment 6)
 
@@ -45,15 +45,15 @@ The retrained models were trained on **two telemetry conditions**: the 72 origin
 
 ### Health-log coverage
 
-An external container health log (`scripts/health_watch.py`, once a minute, read-only) exists only from 2026-10-19 00:29:31 IST. Original valid rows that ran before then, including the P1 runs and the first ask-first fault runs, are **not covered** by it, so a container fault outside the brain's own record could not be excluded for those runs. All {{n_rerun}} replacement runs are covered. A once-a-minute sampler can miss a short restart; seven replacement rows show a single-sample "exited" state explained by the injected crash or the brain's start.
+An external container health log (`tools/health_watch.py`, once a minute, read-only) exists only from 2026-10-19 00:29:31 IST. Original valid rows that ran before then, including the P1 runs and the first ask-first fault runs, are **not covered** by it, so a container fault outside the brain's own record could not be excluded for those runs. All {{n_rerun}} replacement runs are covered. A once-a-minute sampler can miss a short restart; seven replacement rows show a single-sample "exited" state explained by the injected crash or the brain's start.
 
 ### What remains undemonstrated
 
-- **Forecast lead time**: forecasting is implemented and unit-tested, but its live lead time was not demonstrated.
+- **Forecast lead time**: The pre-registered 20-run live forecast check (v3, `docs/results/forecast_check.md`) FAILED its memory-lead criterion (median lead 18.3 s against the 30 s target, warned in 5 of 5 runs) and passed for a gradual disk fill (median lead 86.4 s, 5 of 5), with 0 warnings in 10 healthy runs; its stated time-to-limit window held the actual time in 0 of 10 runs.
 - **Groq** was never tested (no key was available).
 - **Gemini**: see the LLM paragraph in section 5 (Limitations) for the tests actually performed; the benchmark brains ran without LLM keys, so the LLM did not contribute to any benchmark number.
 - **Other applications**: nothing was tested on another application.
 
 ### Deviations, exclusions and amendments, in order
 
-Amendment 4 (reduced v2 plan, pass criteria, demo rule P, triage classes) · Amendment 5 (Stage 1 record, longer gap between runs) · Amendment 6 (this wording rule) · Amendment 7 (external health log, 2026-10-19 00:29 IST) · Amendment 8 (stock-out, exclusion rule, direct-SQL restock as a harness action, replacement plan). All are in `docs/EVALUATION_PLAN.md`. The criteria were not changed after any result was read. Original files are kept, replacements are in their own files, and the evaluated set is a derived file (`scripts/v2_combine.py`) that can be rebuilt; checksums: `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun`.
+Amendment 4 (reduced v2 plan, pass criteria, demo rule P, triage classes) · Amendment 5 (Stage 1 record, longer gap between runs) · Amendment 6 (this wording rule) · Amendment 7 (external health log, 2026-10-19 00:29 IST) · Amendment 8 (stock-out, exclusion rule, direct-SQL restock as a harness action, replacement plan). All are in `docs/EVALUATION_PLAN.md`. The criteria were not changed after any result was read. Original files are kept, replacements are in their own files, and the evaluated set is a derived file (`tools/v2_combine.py`) that can be rebuilt; checksums: `results/benchmark-v2/SHA256SUMS` and `SHA256SUMS-rerun`.

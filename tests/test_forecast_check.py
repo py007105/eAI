@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("fc", Path(__file__).resolve().parents[1] / "scripts" / "forecast_check.py")
+spec = importlib.util.spec_from_file_location("fc", Path(__file__).resolve().parents[1] / "tools" / "forecast_check.py")
 fc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fc)
 T0 = 1000.0
@@ -81,3 +81,30 @@ def test_healthy_run_with_a_predicted_incident_fails_the_criterion_and_wording_i
     row = next(x for x in crit if x[0].startswith("good_deploy"))
     assert row[1] is False and "warnings in" in row[2] and "no false" not in " ".join(c[2] for c in crit).lower()
     assert "FIXTURE" in fc.render(r, crit, fixture=True)
+
+
+def test_a_timestamped_warning_on_a_reactive_incident_counts():
+    reactive = {"id": "r", "kind": "reactive", "opened_t": T0 + 8, "services": ["orders", "web"], "actions": [], "evidence": [],
+                "forecasts": [{"service": "orders", "resource": "memory", "t": T0 + 35, "eta_earliest_s": 40, "eta_latest_s": 70}]}
+    a = fc.analyse_run(run("memory_leak", 1, limit_at=90, extra_incidents=[reactive]))
+    assert a["warned"] and a["t_warn_after_inject_s"] == 35.0 and a["lead_s"] == 55.0 and not a["wrong service"]
+    assert a["predicted incidents"] == 0 and a["warnings"] == 1 and a["actual_inside_window"] is True
+
+
+def test_process_death_counts_as_the_limit():
+    r = run("memory_leak", 1, warn_at=30)
+    r["prom"]["up"] = [(T0 + i, 1.0 if i < 60 else 0.0) for i in range(-30, 120)]   # dies before memory reads 95% (at 72 s)
+    assert fc.analyse_run(r)["lead_s"] == 30.0
+
+
+def test_a_warning_on_a_healthy_run_fails_even_when_attached_to_a_reactive_incident():
+    reactive = {"id": "r", "kind": "reactive", "opened_t": T0 + 8, "services": ["web"], "actions": [], "evidence": [],
+                "forecasts": [{"service": "web", "resource": "memory", "t": T0 + 20, "eta_earliest_s": 40, "eta_latest_s": 70}]}
+    r = rows(True) + [fc.analyse_run(run("traffic_surge", 9, extra_incidents=[reactive]))]
+    row = next(x for x in fc.evaluate(r) if x[0].startswith("traffic_surge"))
+    assert row[1] is False and row[2].startswith("1 warnings")
+
+
+def test_run_options_are_opt_in_per_scenario():
+    assert fc.RUN_OPTIONS["disk_fill"] == {"observe_full": True, "variant": "gradual"}
+    assert fc.RUN_OPTIONS["memory_leak"] == {"observe_full": True} and "traffic_surge" not in fc.RUN_OPTIONS

@@ -63,4 +63,36 @@ body { background:
 .dash-options-list, .dash-options-list * { color: var(--text); }
 .dash-options-list label:hover, .dash-options-list [role=option]:hover { background: rgba(255,178,30,.14); }
 .muted { color: var(--muted); font-size:.85rem; }
+
+/* plain-language status line above the pills */
+.status-line { font-size: 1.05rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; margin-bottom: 6px; border: 1px solid var(--line); }
+.status-line.ok { color: var(--ok); border-color: rgba(46,230,166,.45); background: rgba(46,230,166,.07); }
+.status-line.warn { color: var(--gold); border-color: rgba(255,178,30,.55); background: rgba(255,178,30,.09); }
+.status-line.bad { color: var(--bad); border-color: rgba(255,77,109,.5); background: rgba(255,77,109,.08); }
 .form-control, .Select-control, .form-select { background: var(--panel2) !important; color: var(--text) !important; border-color: var(--line) !important; }
+
+/* pending approval: highlighted card, pulsing panel, countdown bar */
+@keyframes pending-pulse { 0%,100% { box-shadow: 0 0 10px rgba(255,178,30,.25), 0 10px 30px rgba(0,0,0,.45); }
+                           50% { box-shadow: 0 0 30px rgba(255,178,30,.75), 0 10px 30px rgba(0,0,0,.45); } }
+.panel.glow-pending { border-color: rgba(255,178,30,.8); animation: pending-pulse 1.6s ease-in-out infinite; }
+.pending-card { border-color: rgba(255,178,30,.7); background: rgba(255,178,30,.07); }
+.pending-card.urgent { border-color: rgba(255,77,109,.8); background: rgba(255,77,109,.09); }
+.countdown { margin-bottom: 8px; }
+.countdown-text { font-weight: 800; color: var(--gold); font-size: 1rem; }
+.pending-card.urgent .countdown-text { color: var(--bad); }
+.countdown-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 4px; overflow: hidden; }
+.countdown-fill { height: 100%; background: linear-gradient(90deg, var(--saffron), var(--gold)); transition: width 1.2s linear; }
+.pending-card.urgent .countdown-fill { background: var(--bad); }
+
+/* collapsed evidence panel */
+.ev-summary { cursor: pointer; color: var(--text); font-size: .85rem; list-style-position: inside; }
+.ev-summary:hover { color: var(--gold); }
+
+/* a new pending proposal flashes the page once */
+@keyframes page-flash { 0%,100% { box-shadow: inset 0 0 0 0 rgba(255,178,30,0); } 20%,60% { box-shadow: inset 0 0 0 10px rgba(255,178,30,.85); } }
+body.flash { animation: page-flash 1.2s ease-in-out 2; }
+
+/* Demo mode */
+.demo-ind { font-size: .9rem; }
+.demo-run { font-size: .85rem; }
+.btn:disabled { cursor: not-allowed; }

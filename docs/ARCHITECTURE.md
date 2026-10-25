@@ -49,7 +49,7 @@ The evaluator injects faults and writes ground truth to a volume the EternalAI c
 - memory_leak, disk_filling, bad_deploy, crash and overload exist only in the `eternalai_bench` source, so a model can learn "which source" instead of "which fault". Reports state this, and cross-system claims for these classes come only from live runs of our own app.
 - The stored baseline reports macro-F1 0.957 with case folds mixing systems but 0.117 to 0.585 with a system held out. Mitigations to be measured, not assumed: domain-invariant ratio features, per-service normalisation, abstention.
 - 59 outcome runs are too few for RL or "optimal action" claims. Actions are chosen by the deterministic policy; outcomes are evidence, not a learned policy.
-- Runtime label mapping (explicit table in `data/label_map.py`): app_error to error_spike, slow_service to latency_spike, crash to down, with the rest mapped one by one. Labels marked "keyword match - verify by reading" are excluded from training truth.
+- Runtime label mapping (explicit table in `ml/data/label_map.py`): app_error to error_spike, slow_service to latency_spike, crash to down, with the rest mapped one by one. Labels marked "keyword match - verify by reading" are excluded from training truth.
 
 ## Runtime prerequisites
 

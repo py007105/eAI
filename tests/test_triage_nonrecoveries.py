@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("tri", Path(__file__).resolve().parents[1] / "scripts" / "triage_nonrecoveries.py")
+spec = importlib.util.spec_from_file_location("tri", Path(__file__).resolve().parents[1] / "tools" / "triage_nonrecoveries.py")
 tri = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tri)
 

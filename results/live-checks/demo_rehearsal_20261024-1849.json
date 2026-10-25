@@ -1,0 +1,98 @@
+{
+ "kind": "demo rehearsal (not a gate, not a benchmark)",
+ "checkout": "D:\\eAI\\eAI-demo-stable-1",
+ "commit": "49155ea",
+ "tag": "demo-stable-1",
+ "started": "2026-10-24 18:49:32 IST",
+ "steps": {
+  "3_bad_deploy_ask_first": {
+   "run_id": "b3ba760ebb",
+   "t_inject": "2026-10-24 18:51:42 IST",
+   "detected": true,
+   "time_to_detect_s": 26.3,
+   "recovered": true,
+   "time_to_verified_recovery_s": 115.6,
+   "failed_request_pct": 14.99,
+   "incidents": [
+    {
+     "id": "554e0329",
+     "status": "recovered",
+     "cause": "bad_deploy",
+     "services": [
+      "orders",
+      "payments"
+     ],
+     "verification": "recovered",
+     "actions": [
+      {
+       "runbook_id": "rollback_release",
+       "service": "payments",
+       "verdict": "needs_approval",
+       "risk": "high",
+       "reason": "payments is a protected service: every action needs approval",
+       "executed": true,
+       "approved_by": "dashboard",
+       "t": 1792848136.4528697,
+       "executed_t": 1792848194.5719717
+      }
+     ]
+    }
+   ],
+   "audit": [
+    {
+     "t": 1792848194.5695992,
+     "runbook": "rollback_release",
+     "service": "payments",
+     "actor": "human:dashboard",
+     "ok": true
+    },
+    {
+     "t": 1792848217.6110632,
+     "runbook": "rollback_release",
+     "service": "payments",
+     "actor": null,
+     "ok": null
+    }
+   ],
+   "pending": {
+    "t": "2026-10-24 18:52:17 IST",
+    "incident_id": "554e0329",
+    "runbook": "rollback_release",
+    "free_gb": 2.38
+   },
+   "approver_recorded": "dashboard",
+   "wait_proposal_to_execution_s": 58.1,
+   "executed_without_approval": [],
+   "result": "PASS"
+  }
+ },
+ "free_gb_at_start": 3.06,
+ "approval_ttl_s": "300 s (demo override D:\\eAI\\demo\\compose.demo-ttl300.yml, no code change)",
+ "compose_override": "D:\\eAI\\demo\\compose.demo-ttl300.yml",
+ "note": "approval window 300 s (demo override, no code change); a first step-3 retry at 18:46 was stopped by the main session before any fault to add this override",
+ "build_exit": 0,
+ "up_exit": 0,
+ "status": {
+  "mode": "autopilot",
+  "policy_file": "default.yaml",
+  "auto_allowed_risks": [
+   "low"
+  ],
+  "protected": [
+   "payments"
+  ]
+ },
+ "free_gb_stack_up": 2.59,
+ "restock_exit": 0,
+ "steps_requested": [
+  "3"
+ ],
+ "mode_switch_http": 200,
+ "state_before_step": {
+  "3": {
+   "mode": "ask-first",
+   "kill_switch": false
+  }
+ },
+ "finished": "2026-10-24 18:54:12 IST"
+}

@@ -1,0 +1,22 @@
+{
+  "margin": 0.121529,
+  "rule": "1% quantile of the top-2 support gap over correctly ranked out-of-fold incidents",
+  "incidents": 316,
+  "top1_right": 309,
+  "top1_wrong": 7,
+  "right_that_would_abstain": 4,
+  "wrong_that_would_abstain": 1,
+  "wrong_gaps": [
+    0.0231,
+    0.1432,
+    0.3898,
+    0.4375,
+    0.7785,
+    0.9307,
+    0.9689
+  ],
+  "source": "out-of-fold ranker supports from models/train_models.py --oof-rank-out",
+  "source_sha256": "fec8ae4b78f3ff086cc678f357c53dca055129d0d70b4ad8f6caf97d905d463b",
+  "git_commit": "b68bd82",
+  "chosen_at_utc": "2026-10-23T13:41:46Z"
+}

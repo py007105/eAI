@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("hw", Path(__file__).resolve().parents[1] / "scripts" / "health_watch.py")
+spec = importlib.util.spec_from_file_location("hw", Path(__file__).resolve().parents[1] / "tools" / "health_watch.py")
 hw = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(hw)
 

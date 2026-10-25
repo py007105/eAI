@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
 
-spec = importlib.util.spec_from_file_location("rb", Path(__file__).resolve().parents[1] / "scripts" / "run_benchmark.py")
+spec = importlib.util.spec_from_file_location("rb", Path(__file__).resolve().parents[1] / "tools" / "run_benchmark.py")
 rb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rb)
 
@@ -82,12 +82,12 @@ def test_token_never_comes_from_the_polluted_environment_variable(monkeypatch):
 
 
 def test_mechanism_of_v1_importing_eternalai_config_loads_dotenv_into_the_environment(tmp_path):
-    """Deterministic proof of the v1 cause: with a .env that defines the placeholder, merely importing eternalai.config puts it in os.environ."""
+    """Deterministic proof of the v1 cause: with a .env that defines the placeholder, merely importing engine.config puts it in os.environ."""
     import subprocess
     import sys
     (tmp_path / ".env").write_text("ETERNALAI_APPROVAL_TOKEN=change-me" + chr(10))
     root = Path(__file__).resolve().parents[1]
-    code = f"import sys, os; sys.path.insert(0, r'{root}'); import eternalai.config; print(os.environ.get('ETERNALAI_APPROVAL_TOKEN'))"
+    code = f"import sys, os; sys.path.insert(0, r'{root}'); import engine.config; print(os.environ.get('ETERNALAI_APPROVAL_TOKEN'))"
     env = {k: v for k, v in __import__("os").environ.items() if k != "ETERNALAI_APPROVAL_TOKEN"}
     out = subprocess.run([sys.executable, "-c", code], cwd=tmp_path, capture_output=True, text=True, env=env).stdout.strip()
     assert out == "change-me"

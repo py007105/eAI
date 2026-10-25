@@ -1,0 +1,590 @@
+{
+  "timestamp": "2026-10-24T20:04:31.783Z",
+  "candidate": "b7ee5d2def943e40bb2b02b8f307ea8e62d821a1",
+  "workingTree": "",
+  "backendRef": null,
+  "pages": [
+    {
+      "mode": "dev",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console",
+      "width": 1440,
+      "height": 900,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents",
+      "width": 1440,
+      "height": 900,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/topology",
+      "width": 1440,
+      "height": 900,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/approvals",
+      "width": 1440,
+      "height": 900,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/safety",
+      "width": 1440,
+      "height": 900,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/audit",
+      "width": 1440,
+      "height": 900,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/results",
+      "width": 1440,
+      "height": 900,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents/unavailable-record",
+      "width": 1440,
+      "height": 900,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/",
+      "width": 1280,
+      "height": 720,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console",
+      "width": 1280,
+      "height": 720,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents",
+      "width": 1280,
+      "height": 720,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/topology",
+      "width": 1280,
+      "height": 720,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/approvals",
+      "width": 1280,
+      "height": 720,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/safety",
+      "width": 1280,
+      "height": 720,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/audit",
+      "width": 1280,
+      "height": 720,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/results",
+      "width": 1280,
+      "height": 720,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents/unavailable-record",
+      "width": 1280,
+      "height": 720,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/",
+      "width": 390,
+      "height": 844,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console",
+      "width": 390,
+      "height": 844,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents",
+      "width": 390,
+      "height": 844,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/topology",
+      "width": 390,
+      "height": 844,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/approvals",
+      "width": 390,
+      "height": 844,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/safety",
+      "width": 390,
+      "height": 844,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/audit",
+      "width": 390,
+      "height": 844,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/results",
+      "width": 390,
+      "height": 844,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "dev",
+      "route": "/console/incidents/unavailable-record",
+      "width": 390,
+      "height": 844,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console",
+      "width": 1440,
+      "height": 900,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents",
+      "width": 1440,
+      "height": 900,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/topology",
+      "width": 1440,
+      "height": 900,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/approvals",
+      "width": 1440,
+      "height": 900,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/safety",
+      "width": 1440,
+      "height": 900,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/audit",
+      "width": 1440,
+      "height": 900,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/results",
+      "width": 1440,
+      "height": 900,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents/unavailable-record",
+      "width": 1440,
+      "height": 900,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/",
+      "width": 1280,
+      "height": 720,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console",
+      "width": 1280,
+      "height": 720,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents",
+      "width": 1280,
+      "height": 720,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/topology",
+      "width": 1280,
+      "height": 720,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/approvals",
+      "width": 1280,
+      "height": 720,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/safety",
+      "width": 1280,
+      "height": 720,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/audit",
+      "width": 1280,
+      "height": 720,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/results",
+      "width": 1280,
+      "height": 720,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents/unavailable-record",
+      "width": 1280,
+      "height": 720,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/",
+      "width": 390,
+      "height": 844,
+      "heading": "Understand the failure. Inspect the response.",
+      "connection": null,
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console",
+      "width": 390,
+      "height": 844,
+      "heading": "Overview",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents",
+      "width": 390,
+      "height": 844,
+      "heading": "Incidents",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/topology",
+      "width": 390,
+      "height": 844,
+      "heading": "Topology",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/approvals",
+      "width": 390,
+      "height": 844,
+      "heading": "Approvals",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/safety",
+      "width": 390,
+      "height": 844,
+      "heading": "Safety",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/audit",
+      "width": 390,
+      "height": 844,
+      "heading": "Audit",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/results",
+      "width": 390,
+      "height": 844,
+      "heading": "Verified Results",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    },
+    {
+      "mode": "preview",
+      "route": "/console/incidents/unavailable-record",
+      "width": 390,
+      "height": 844,
+      "heading": "Incident detail",
+      "connection": "Disconnected · retrying",
+      "overflow": false
+    }
+  ],
+  "proxies": [
+    {
+      "mode": "dev",
+      "endpoint": "health",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "dev",
+      "endpoint": "status",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "dev",
+      "endpoint": "services",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "dev",
+      "endpoint": "incidents",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "dev",
+      "endpoint": "approvals",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "dev",
+      "endpoint": "audit",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "health",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "status",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "services",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "incidents",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "approvals",
+      "status": 500,
+      "contentType": "text/plain"
+    },
+    {
+      "mode": "preview",
+      "endpoint": "audit",
+      "status": 500,
+      "contentType": "text/plain"
+    }
+  ],
+  "polling": [
+    {
+      "mode": "dev",
+      "observedAt": [
+        1792872280134,
+        1792872282143
+      ],
+      "requests": 2
+    },
+    {
+      "mode": "preview",
+      "observedAt": [
+        1792872357010,
+        1792872359012
+      ],
+      "requests": 2
+    }
+  ],
+  "failures": [],
+  "backend": {
+    "unreachable": true
+  }
+}

@@ -2,7 +2,7 @@ import importlib.util
 import json
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("csr", Path(__file__).resolve().parents[1] / "scripts" / "check_seed_ranges.py")
+spec = importlib.util.spec_from_file_location("csr", Path(__file__).resolve().parents[1] / "tools" / "check_seed_ranges.py")
 csr = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(csr)
 
