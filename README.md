@@ -49,7 +49,7 @@ flowchart TD
         Forecaster["Forecaster (Theil-Sen Trends)"]
         Ranker["Root-Cause Ranker (Service Graph)"]
         Classifier["Fault Classifier (HistGradientBoosting + Novelty Gate)"]
-        KB["Knowledge Base & Fix Ranker (data/kb/)"]
+        KB["Knowledge Base & Fix Ranker (ml/data/kb/)"]
         Policy["Rulebook & Policy Engine (Auto / Ask-First / Watch)"]
         Verifier["Internal Verifier (Synthetic Checkout Probe)"]
 
@@ -166,8 +166,32 @@ See also:
 
 ## Repository layout
 
-`app/` four services · `loadgen/` traffic · `eternalai/` the brain (features, detection, classification, ranking, forecast, policy, executor, verification, LLM, API) · `evaluator/` fault injection and scoring ·
-`dashboard/` Dash UI (all text in one labels file, English and Hindi) · `data/` data scripts · `models/` training and frozen artifacts · `scripts/` benchmark, status, rendering and debugging tools · `tests/` unit and regression tests · `docs/`.
+```
+eAI/
+├── engine/        the brain: features, detection, classification, ranking, forecast, policy,
+│                  executor, verification, LLM reports, API (Python package `engine`)
+│   ├── kb/            knowledge base loader and outcome-ranked fix choice
+│   ├── notify/        Telegram notifier and approval bot
+│   └── rulebooks/     policy rulebooks (default.yaml)
+├── services/
+│   ├── shop/          the four protected services: web, orders, payments, inventory
+│   └── loadgen/       steady traffic generator
+├── evaluator/     fault injection, truth records and scoring
+├── dashboard/     operator dashboard (Dash; English and Hindi labels)
+├── console/       read-only web console (React + Vite)
+├── ml/
+│   ├── models/        training, evaluation and frozen artifacts (ml/models/artifacts)
+│   └── data/          data scripts and the knowledge base (ml/data/kb)
+├── deploy/
+│   └── telemetry/     Prometheus configuration (Kubernetes manifests join here)
+├── tools/         benchmark, live-check, release, rendering and debugging scripts
+├── tests/         unit and regression tests (pytest)
+├── docs/          architecture, evaluation, demo, pitch, results, postmortems
+├── results/       raw evidence from benchmark and live runs
+└── docker-compose.yml, docker-compose.llm.yml   start the stack from the repository root
+```
+
+Who owns which folder and how to contribute: `CONTRIBUTING.md` and `.github/CODEOWNERS`. Old-to-new paths: `docs/STRUCTURE.md`.
 
 ## Credits and licences
 
