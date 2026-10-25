@@ -52,7 +52,7 @@ def main():
     a = ap.parse_args()
     steps = {s.strip() for s in a.steps.split(",") if s.strip()}
     ck = Path(a.checkout)
-    sys.path.insert(0, str(ck / "tools"))
+    sys.path.insert(0, str(ck / "scripts"))
     import live_check_phase1 as lc  # the checkout's helpers: run() and the API calls use the checkout's compose files
     import memguard
     h, m = map(int, a.stop_by.split(":"))

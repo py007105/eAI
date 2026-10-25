@@ -96,7 +96,7 @@ def load(name, path):
 
 def run_stage(a):
     sc = load("surge_capture", Path(__file__).resolve().parent / "surge_capture.py")
-    mg = load("memguard", MAIN / "tools" / "memguard.py")
+    mg = load("memguard", MAIN / "scripts" / "memguard.py")
     seeds = a.seeds
     assert len(seeds) == 6, "Stage 0 uses exactly the six remaining level-40 capture seeds, two per condition"
     plan = {"T2": seeds[0:2], "T3": seeds[2:4], "T1": seeds[4:6]}

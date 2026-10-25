@@ -62,7 +62,7 @@ def main():
     repo = Path(a.repo)
     jobs = json.loads(Path(a.jobs).read_text(encoding="utf-8"))["jobs"]
     raw, slog = repo / a.raw, repo / a.stock_log
-    sys.path[:0] = [str(repo / "tools"), str(repo / "ml" / "models")]
+    sys.path[:0] = [str(repo / "scripts"), str(repo / "models")]
     os.chdir(repo)
     import run_benchmark as rb      # start/stop of the brain and the benchmark token only; runs go through its CLI
     token = rb.benchmark_token()
