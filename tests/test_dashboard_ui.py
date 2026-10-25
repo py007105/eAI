@@ -66,7 +66,7 @@ def test_status_line_has_hindi_text():
 
 
 def test_dashboard_ttl_matches_the_brain_default():
-    src = (Path(__file__).resolve().parents[1] / "eternalai" / "config.py").read_text(encoding="utf-8")   # read, not imported (no .env load)
+    src = (Path(__file__).resolve().parents[1] / "engine" / "config.py").read_text(encoding="utf-8")   # read, not imported (no .env load)
     m = re.search(r'APPROVAL_TTL_S = float\(os.getenv\("ETERNALAI_APPROVAL_TTL_S", "(\d+)"\)\)', src)
     assert m and float(m.group(1)) == views.APPROVAL_TTL_S == 120
 

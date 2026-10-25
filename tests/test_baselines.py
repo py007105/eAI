@@ -1,6 +1,6 @@
 import numpy as np
 
-from eternalai.baselines import ZScoreDetector, proto_find, upstream, downstream
+from engine.baselines import ZScoreDetector, proto_find, upstream, downstream
 
 TOPO = {"web": ["orders", "inventory"], "orders": ["inventory", "payments"], "inventory": [], "payments": []}
 
@@ -57,7 +57,7 @@ def test_cpu_with_normal_traffic_is_runaway_and_with_high_traffic_is_overload():
 def test_quiet_service_with_empty_forecasts_is_not_anomalous():
     """Regression: preds[s] == {'mem': None, 'disk': None} is a non-empty dict, hence truthy; the prototype port flagged every
     service permanently and opened a bogus incident before any fault."""
-    from eternalai.baselines import proto_anomalous
+    from engine.baselines import proto_anomalous
     quiet_z = z(p95=False, err=False, cpu=False, mem=False)
     assert not proto_anomalous("web", set(), {"web": {"mem": None, "disk": None}}, snap(), quiet_z)
     assert proto_anomalous("web", set(), {"web": {"mem": {"slope": 1.0, "eta_s": 30.0}, "disk": None}}, snap(), quiet_z)

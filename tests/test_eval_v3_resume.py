@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("cases", ROOT / "scripts" / "eval_v3_cases.py")
+spec = importlib.util.spec_from_file_location("cases", ROOT / "tools" / "eval_v3_cases.py")
 cases = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cases)
 

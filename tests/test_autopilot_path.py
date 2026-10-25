@@ -1,15 +1,15 @@
 """The whole automatic path, diagnosis -> policy -> executor, for every diagnosis x service and every runbook x service, under
-both rulebooks: the plan's default (eternalai/rulebooks/default.yaml) and the reproduction of the measured benchmark-v2 system.
+both rulebooks: the plan's default (engine/rulebooks/default.yaml) and the reproduction of the measured benchmark-v2 system.
 The expected decisions below are written out by hand from the plan (§6.4, §13.2, §14), not computed by the code under test.
 No Docker or Prometheus: the telemetry, ranker, classifier, investigator and executor are fakes, the engine and policy are real."""
 import threading
 
 import pytest
 
-from eternalai import config, engine as engine_mod, rulebook
-from eternalai.classify import CAUSE_RUNBOOKS, Prediction
-from eternalai.engine import Engine, Incident
-from eternalai.policy import RUNBOOKS, PolicyEngine
+from engine import config, engine as engine_mod, rulebook
+from engine.classify import CAUSE_RUNBOOKS, Prediction
+from engine.engine import Engine, Incident
+from engine.policy import RUNBOOKS, PolicyEngine
 
 SERVICES = list(config.SERVICES)
 RULEBOOKS = {"plan": rulebook.load(rulebook.DEFAULT_FILE, SERVICES),
@@ -213,7 +213,7 @@ def test_db_slowdown_is_always_escalated(monkeypatch):
 def test_killswitch_endpoint_needs_the_token_and_returns_to_watch_mode(monkeypatch):
     from fastapi.testclient import TestClient
 
-    from eternalai import api
+    from engine import api
     monkeypatch.setenv("ETERNALAI_APPROVAL_TOKEN", "test-token-123")
     e = make_engine("autopilot", "web", "down", monkeypatch)
     monkeypatch.setattr(api, "engine", e)
@@ -254,7 +254,7 @@ def test_forest_only_anomaly_never_runs_automatically(monkeypatch):
 
 
 def test_anomaly_source():
-    from eternalai.detect import anomaly_source
+    from engine.detect import anomaly_source
 
     class Lim(ForestOnlyDetector):
         def out_of_range(self, feats):

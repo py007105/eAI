@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from eternalai.llm import make_report, template_report, validate
+from engine.llm import make_report, template_report, validate
 
 CTX = {"cause": "memory_leak", "confidence": 0.91, "candidates": ["recreate_container", "restart_service"],
        "ranking": [{"service": "orders", "score": 0.8}], "alternatives": ["bad_deploy"],
@@ -47,7 +47,7 @@ def test_abstain_template_has_no_runbook():
 def test_provider_failure_falls_back_and_engine_cause_wins(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "x")
     monkeypatch.setenv("GROQ_API_KEY", "y")
-    import eternalai.llm as llm
+    import engine.llm as llm
     monkeypatch.setattr(llm, "_gemini", lambda p, c: (_ for _ in ()).throw(httpx.ConnectError("down")))
     monkeypatch.setattr(llm, "_groq", lambda p, c: ok(likely_cause="bad_deploy", runbook_id="recreate_container"))
     rep, meta = make_report(CTX)

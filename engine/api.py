@@ -1,0 +1,275 @@
+"""EternalAI backend REST API (FastAPI). The dashboard talks only to this.
+
+    uvicorn engine.api:app --port 8000
+
+Approve / reject / mode changes need the X-Approval-Token header. The token has no default that
+works: if ETERNALAI_APPROVAL_TOKEN is unset or left as the placeholder, those endpoints are refused.
+"""
+from __future__ import annotations
+
+import hmac
+import os
+import threading
+from contextlib import asynccontextmanager
+
+import httpx
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+from . import config
+from .engine import Engine
+from .rulebook import canonical_mode
+
+EVALUATOR_URL = os.getenv("EVALUATOR_URL", "http://localhost:8200")
+engine: Engine | None = None
+
+
+def make_engine() -> Engine:
+    """ETERNALAI_BRAIN selects the brain: `eternalai` (default) or one of the benchmark baselines."""
+    brain = os.getenv("ETERNALAI_BRAIN", "eternalai")
+    if brain == "eternalai":
+        return Engine()
+    from .baselines import PrototypeRulesEngine, ThresholdRestartEngine
+    cls = {"threshold_restart": ThresholdRestartEngine, "prototype_rules": PrototypeRulesEngine}.get(brain)
+    if cls is None:
+        raise RuntimeError(f"unknown ETERNALAI_BRAIN={brain!r}")
+    return cls("autopilot")  # baselines have no approval flow
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global engine
+    engine = make_engine()
+    t = threading.Thread(target=engine.run_forever, daemon=True)
+    t.start()
+    yield
+    engine.stop()
+
+
+app = FastAPI(title="EternalAI", lifespan=lifespan)
+
+
+def _auth(token: str | None):
+    good = os.getenv("ETERNALAI_APPROVAL_TOKEN", "")
+    if not good or good == "change-me":
+        raise HTTPException(503, "approval API disabled: set ETERNALAI_APPROVAL_TOKEN to a real secret")
+    if not token or not hmac.compare_digest(token, good):
+        raise HTTPException(403, "invalid approval token")
+
+
+class Who(BaseModel):
+    approver: str = "operator"
+
+
+class Mode(BaseModel):
+    mode: str
+
+
+class KillSwitch(BaseModel):
+    on: bool
+
+
+class Feedback(BaseModel):
+    approver: str = Field("operator", max_length=64)
+    confirmed: bool                                     # the diagnosis was right
+    correct_fault: str | None = Field(None, max_length=64, pattern=r"^[a-z][a-z0-9_]*$")   # if not: what it really was
+    note: str = Field("", max_length=500)
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
+@app.get("/status")
+def status():
+    return {"mode": engine.policy.mode, "brain": os.getenv("ETERNALAI_BRAIN", "eternalai"), "models": engine.models_loaded,
+            "model_meta": {k: v and {"trained_at": v["trained_at_utc"], "git_commit": v["git_commit"]}
+                           for k, v in (("detectors", engine.det_meta), ("classifier", engine.cls_meta),
+                                        ("ranker", engine.rank_meta))},
+            "fallbacks_in_use": [k for k, v in engine.models_loaded.items() if not v],
+            # a probability may be shown as a percentage only if training verified its calibration (ECE <= 0.05)
+            "calibration": {"ece": (engine.cls_meta or {}).get("ece_oof"),
+                            "show_probability": bool((engine.cls_meta or {}).get("show_probability_in_ui", False)),
+                            "data_hash": (engine.cls_meta or {}).get("data_hash")},
+            "breakers_open": sorted(engine.policy.breaker_open), "last_error": engine.last_error,
+            "last_error_t": getattr(engine, "last_error_t", None),
+            "kill_switch": engine.policy.kill_switch, "protected_services": sorted(engine.policy.protected),
+            "policy": engine.policy.rulebook.summary(),
+            "root_margin": getattr(engine, "root_margin", None),
+            "knowledge_base": engine.kb.summary() if getattr(engine, "kb", None) else {"error": getattr(engine, "kb_error", None)},
+            "learn_store": {"path": str(engine.store.path) if getattr(engine, "store", None) else None,
+                            "error": getattr(engine, "store_error", None)},
+            "telemetry_failed": getattr(engine, "telemetry_failed", {}),
+            "open_incidents": sum(i.status in ("open", "awaiting_approval", "executing", "verifying")
+                                  for i in engine.incidents)}
+
+
+@app.get("/services")
+def services():
+    return {"services": engine.latest, "topology": config.TOPOLOGY, "depfail": {
+        f"{a}->{b}": v for (a, b), v in engine.depfail.items()}}
+
+
+@app.get("/incidents")
+def incidents():
+    with engine.lock:
+        return [i.public() for i in engine.incidents]
+
+
+@app.get("/incidents/{iid}")
+def incident(iid: str):
+    with engine.lock:
+        i = next((x for x in engine.incidents if x.id == iid), None)
+    if not i:
+        raise HTTPException(404)
+    return i.public()
+
+
+@app.get("/approvals")
+def approvals():
+    with engine.lock:
+        return [{"incident_id": i.id, "service": i.actions[-1]["service"], "runbook_id": i.actions[-1]["runbook_id"],
+                 "risk": i.actions[-1]["risk"], "reason": i.actions[-1]["reason"], "cause": i.likely_cause,
+                 "report": i.report} for i in engine.incidents if i.status == "awaiting_approval"]
+
+
+@app.post("/approvals/{iid}/approve")
+def approve(iid: str, who: Who, x_approval_token: str | None = Header(None)):
+    _auth(x_approval_token)
+    try:
+        engine.approve(iid, who.approver)
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return {"ok": True}
+
+
+@app.post("/approvals/{iid}/reject")
+def reject(iid: str, who: Who, x_approval_token: str | None = Header(None)):
+    _auth(x_approval_token)
+    try:
+        engine.reject(iid, who.approver)
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return {"ok": True}
+
+
+@app.post("/mode")
+def set_mode(m: Mode, x_approval_token: str | None = Header(None)):
+    _auth(x_approval_token)
+    try:
+        mode = canonical_mode(m.mode)          # plan names watch / ask / autopilot are accepted too
+    except ValueError:
+        raise HTTPException(400, "mode must be watch-only, ask-first or autopilot (or watch, ask)")
+    if engine.policy.kill_switch and mode != "watch-only":
+        raise HTTPException(409, "kill switch is on: switch it off before leaving watch-only")
+    engine.policy.mode = mode
+    return {"mode": mode}
+
+
+@app.post("/killswitch")
+def killswitch(k: KillSwitch, x_approval_token: str | None = Header(None)):
+    """Switch execution off (on=true) or back on (on=false). On: the mode becomes watch-only (plan §14), the policy blocks every
+    action and approvals are refused. Off: the mode stays watch-only until someone changes it with POST /mode."""
+    _auth(x_approval_token)
+    engine.policy.set_kill_switch(k.on)
+    return {"kill_switch": engine.policy.kill_switch, "mode": engine.policy.mode}
+
+
+@app.post("/admin/reset")
+def admin_reset(x_approval_token: str | None = Header(None)):
+    """v2 (harness independence): clear cooldowns, breakers, de-duplication state and any open or pending incident between benchmark runs.
+    Refused while an action is executing or being verified. Uses the same token as the approval API."""
+    _auth(x_approval_token)
+    try:
+        return engine.reset_run_state()
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
+def _store():
+    if getattr(engine, "store", None) is None:
+        raise HTTPException(503, f"learn store unavailable: {getattr(engine, 'store_error', None)}")
+    return engine.store
+
+
+@app.post("/feedback/{iid}")
+@app.post("/api/feedback/{iid}")          # the plan's route name (§15.2)
+def feedback(iid: str, fb: Feedback, x_approval_token: str | None = Header(None)):
+    """A human confirms or corrects the diagnosis of a closed incident; the row becomes labelled training data (plan §9.7)."""
+    _auth(x_approval_token)
+    if not fb.confirmed and not fb.correct_fault:
+        raise HTTPException(400, "if the diagnosis was wrong, give correct_fault")
+    try:
+        fid = _store().add_feedback(iid, fb.approver, fb.confirmed, fb.correct_fault, fb.note)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True, "feedback_id": fid}
+
+
+@app.get("/learn/stats")
+def learn_stats():
+    return _store().counts()
+
+
+@app.get("/learn/{iid}")
+def learn_incident(iid: str):
+    rec = _store().incident(iid)
+    if rec is None:
+        raise HTTPException(404, "not in the learn store (only closed incidents are stored)")
+    return rec
+
+
+@app.get("/kb/{fault}")
+@app.get("/api/kb/{fault}")              # the plan's route name (§15.2)
+def kb_entry(fault: str):
+    """Knowledge-base entry and ranked fixes for a live label (e.g. memory_leak) or a plan fault type (e.g. disk_filling).
+    Read-only. Rows are drafted with AI help and flagged unreviewed until the team reviews them."""
+    from .kb.labels import LIVE_TO_PLAN, PLAN_TO_LIVE
+    kb = getattr(engine, "kb", None)
+    if kb is None:
+        raise HTTPException(503, f"knowledge base not loaded: {getattr(engine, 'kb_error', None) or 'ml/data/kb missing'}")
+    live = fault if fault in LIVE_TO_PLAN else PLAN_TO_LIVE.get(fault)
+    plan = LIVE_TO_PLAN.get(fault, fault)
+    entry = kb.entry(plan)
+    if entry is None and live is None:
+        raise HTTPException(404, f"no knowledge-base entry for {fault!r}")
+    from .kb import ranked_fixes
+    return {"fault": fault, "plan_fault_type": plan, "live_label": live, "entry": entry,
+            "ranked_fixes": [f.public() for f in ranked_fixes(kb, live)] if live else [],
+            "note": "ranked fixes exist only for faults the live classifier can name"}
+
+
+@app.get("/audit")
+def audit():
+    return engine.executor.audit[-100:]
+
+
+# ---- blind-challenge pass-through for the dashboard. The engine never reads these responses.
+@app.post("/challenge/start")
+def challenge_start(x_approval_token: str | None = Header(None)):
+    """Starts a real fault injection, so it needs the approval token; the token is forwarded to the evaluator."""
+    _auth(x_approval_token)
+    r = httpx.post(f"{EVALUATOR_URL}/runs", json={}, timeout=15,   # no scenario: the evaluator picks one itself
+                   headers={"X-Approval-Token": x_approval_token})
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, r.json().get("detail", "evaluator refused"))
+    return r.json()
+
+
+@app.get("/challenge/{run_id}/status")
+def challenge_status(run_id: str):
+    return httpx.get(f"{EVALUATOR_URL}/runs/{run_id}/status", timeout=10).json()
+
+
+@app.get("/challenge/{run_id}/reveal")
+def challenge_reveal(run_id: str):
+    r = httpx.get(f"{EVALUATOR_URL}/runs/{run_id}/reveal", timeout=10)
+    if r.status_code != 200:
+        raise HTTPException(r.status_code, r.json().get("detail", "not available yet"))
+    return r.json()
+
+
+@app.get("/scorecard")
+def scorecard():
+    return httpx.get(f"{EVALUATOR_URL}/scorecard", timeout=10).json()

@@ -1,10 +1,10 @@
-"""models/choose_root_margin.py: the margin is the 1% quantile of the top-2 gap on correctly ranked out-of-fold incidents."""
+"""ml/models/choose_root_margin.py: the margin is the 1% quantile of the top-2 gap on correctly ranked out-of-fold incidents."""
 import importlib.util
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("crm", ROOT / "models" / "choose_root_margin.py")
+spec = importlib.util.spec_from_file_location("crm", ROOT / "ml" / "models" / "choose_root_margin.py")
 crm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(crm)
 
@@ -23,7 +23,7 @@ def test_margin_rule():
 
 
 def test_engine_reads_the_artifact(tmp_path, monkeypatch):
-    from eternalai import artifacts, engine
+    from engine import artifacts, engine
     monkeypatch.setattr(artifacts, "ARTIFACT_DIR", tmp_path)
     assert engine.load_root_margin() is None
     (tmp_path / "root_margin.json").write_text(json.dumps({"margin": 0.12}), encoding="utf-8")

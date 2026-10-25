@@ -78,7 +78,7 @@ def test_shop_services_refuse_to_start_without_a_real_chaos_token(monkeypatch, c
         setattr(stub, name, lambda *a, **k: None)
     stub.CONTENT_TYPE_LATEST = "text/plain"
     monkeypatch.setitem(sys.modules, "prometheus_client", stub)
-    monkeypatch.syspath_prepend(str(ROOT / "app" / "common"))
+    monkeypatch.syspath_prepend(str(ROOT / "services" / "shop" / "common"))
     if chaos is None:
         monkeypatch.delenv("CHAOS_TOKEN", raising=False)
     else:
@@ -90,7 +90,7 @@ def test_shop_services_refuse_to_start_without_a_real_chaos_token(monkeypatch, c
 
 
 def test_brain_challenge_start_needs_the_token_and_forwards_it(monkeypatch):
-    from eternalai import api
+    from engine import api
     monkeypatch.setenv("ETERNALAI_APPROVAL_TOKEN", "test-token-123")
     sent = []
 

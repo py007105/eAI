@@ -3,8 +3,8 @@ import json
 
 import httpx
 
-from eternalai import llm
-from eternalai.redact import redact
+from engine import llm
+from engine.redact import redact
 
 
 def test_known_secret_values_are_removed(monkeypatch):

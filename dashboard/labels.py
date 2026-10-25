@@ -13,7 +13,7 @@ LABELS = {
         "mode_ask-first": "Ask first",
         "mode_autopilot": "Autopilot",
         "token_placeholder": "Approval token",
-        "backend_offline": "Backend offline: start it with  uvicorn eternalai.api:app --port 8000",
+        "backend_offline": "Backend offline: start it with  uvicorn engine.api:app --port 8000",
         "models_ok": "Models loaded from saved artifacts",
         "models_fallback": "Rule fallbacks in use for",
         "breakers_open": "Circuit breaker open",

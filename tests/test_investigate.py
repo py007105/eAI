@@ -5,8 +5,8 @@ import time
 import numpy as np
 import pandas as pd
 
-from eternalai import investigate
-from eternalai.investigate import Investigator, remember_verified
+from engine import investigate
+from engine.investigate import Investigator, remember_verified
 
 
 class State:

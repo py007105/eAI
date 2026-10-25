@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("g", Path(__file__).resolve().parents[1] / "scripts" / "ask_first_guard.py")
+spec = importlib.util.spec_from_file_location("g", Path(__file__).resolve().parents[1] / "tools" / "ask_first_guard.py")
 g = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(g)
 

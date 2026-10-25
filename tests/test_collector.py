@@ -3,9 +3,9 @@ losing the whole tick. A failed `up` query is not mistaken for a service that is
 import httpx
 import numpy as np
 
-from eternalai import config
-from eternalai.collector import Q, Prom
-from eternalai.engine import Engine
+from engine import config
+from engine.collector import Q, Prom
+from engine.engine import Engine
 
 
 def prom_with(fail_on=(), mode="http500"):
@@ -120,7 +120,7 @@ def test_unreachable_prometheus_costs_one_attempt_per_tick_not_one_per_query(mon
     p = Prom.__new__(Prom)
     p.c, p.failures, p._down_until = httpx.Client(base_url="http://prom", transport=httpx.MockTransport(handler)), [], 0.0
     clock = {"t": 1000.0}
-    monkeypatch.setattr("eternalai.collector.time.time", lambda: clock["t"])
+    monkeypatch.setattr("engine.collector.time.time", lambda: clock["t"])
     df = p.signals("orders", 60, end=1_000_000.0)
     assert len(calls) == 1                                   # the other queries were not sent
     assert set(df.attrs["failed_queries"]) >= set(Q) and df.isna().all().all()
@@ -132,7 +132,7 @@ def test_unreachable_prometheus_costs_one_attempt_per_tick_not_one_per_query(mon
 
 def test_a_container_removed_mid_poll_is_skipped():
     import docker
-    from eternalai.collector import DockerView
+    from engine.collector import DockerView
 
     class Gone:
         labels, name = {"com.docker.compose.service": "orders"}, "eai-orders-1"

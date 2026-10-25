@@ -1,10 +1,10 @@
-"""scripts/run_final_eval.py: the v3 report is rendered only from raw rows (synthetic rows here)."""
+"""tools/run_final_eval.py: the v3 report is rendered only from raw rows (synthetic rows here)."""
 import importlib.util
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("rfe", ROOT / "scripts" / "run_final_eval.py")
+spec = importlib.util.spec_from_file_location("rfe", ROOT / "tools" / "run_final_eval.py")
 rfe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rfe)
 

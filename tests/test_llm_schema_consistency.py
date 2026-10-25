@@ -2,8 +2,8 @@
 Regression: the first live Gemini call returned free-text alternative_causes and a string missing_information."""
 from typing import get_args
 
-from eternalai import llm
-from eternalai.llm import CAUSES, RUNBOOKS, GEMINI_SCHEMA, IncidentReport, SYSTEM
+from engine import llm
+from engine.llm import CAUSES, RUNBOOKS, GEMINI_SCHEMA, IncidentReport, SYSTEM
 
 
 def test_schema_enums_match_validator_literals():

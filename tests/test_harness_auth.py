@@ -5,11 +5,11 @@ from pathlib import Path
 import httpx
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import harness_auth  # noqa: E402
 
-HARNESS = ["models/collect_runs.py", "scripts/diag_approver.py", "scripts/evaluator_smoke.py", "scripts/forecast_check.py",
-           "scripts/rollback_check.py", "scripts/safe_collect.py", "scripts/surge_capture.py", "scripts/run_benchmark.py"]
+HARNESS = ["ml/models/collect_runs.py", "tools/diag_approver.py", "tools/evaluator_smoke.py", "tools/forecast_check.py",
+           "tools/rollback_check.py", "tools/safe_collect.py", "tools/surge_capture.py", "tools/run_benchmark.py"]
 
 
 def test_token_from_env(monkeypatch):
@@ -44,4 +44,4 @@ def test_every_harness_script_sends_the_header():
     for f in HARNESS:
         src = (root / f).read_text(encoding="utf-8")
         assert 'httpx.post(f"{EV}/runs", headers=evaluator_headers()' in src, f
-    assert 'call("POST", f"{EV}/runs", token,' in (root / "scripts/rehearsal.py").read_text(encoding="utf-8")
+    assert 'call("POST", f"{EV}/runs", token,' in (root / "tools/rehearsal.py").read_text(encoding="utf-8")

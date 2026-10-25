@@ -12,26 +12,26 @@ x-app: &app
 services:
   inventory:
     <<: *app
-    build: {context: ./app, args: {SERVICE: inventory, VERSION: v1, RELEASE_SEQ: "1"}}
+    build: {context: ./services/shop, args: {SERVICE: inventory, VERSION: v1, RELEASE_SEQ: "1"}}
     image: eai/inventory:v1
     volumes: [inventory-data:/data]
     labels: {eai.managed: "true", eai.role: app}
   payments:
     <<: *app
-    build: {context: ./app, args: {SERVICE: payments, VERSION: v1, RELEASE_SEQ: "1"}}
+    build: {context: ./services/shop, args: {SERVICE: payments, VERSION: v1, RELEASE_SEQ: "1"}}
     image: eai/payments:v1
     volumes: [payments-data:/data]
     labels: {eai.managed: "true", eai.role: app}
   orders:
     <<: *app
-    build: {context: ./app, args: {SERVICE: orders, VERSION: v1, RELEASE_SEQ: "1"}}
+    build: {context: ./services/shop, args: {SERVICE: orders, VERSION: v1, RELEASE_SEQ: "1"}}
     image: eai/orders:v1
     volumes: [orders-data:/data]
     depends_on: [inventory, payments]
     labels: {eai.managed: "true", eai.role: app}
   web:
     <<: *app
-    build: {context: ./app, args: {SERVICE: web, VERSION: v1, RELEASE_SEQ: "1"}}
+    build: {context: ./services/shop, args: {SERVICE: web, VERSION: v1, RELEASE_SEQ: "1"}}
     image: eai/web:v1
     ports: ["127.0.0.1:8080:8000"]
     depends_on: [orders, inventory]
@@ -39,14 +39,14 @@ services:
 
   # Release images used by the evaluator for deploy scenarios. Built with
   # `docker compose --profile releases build`; never started by `up`.
-  web-v2: {build: {context: ./app, args: {SERVICE: web, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/web:v2-good", profiles: [releases]}
-  orders-v2: {build: {context: ./app, args: {SERVICE: orders, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/orders:v2-good", profiles: [releases]}
-  payments-v2: {build: {context: ./app, args: {SERVICE: payments, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/payments:v2-good", profiles: [releases]}
-  inventory-v2: {build: {context: ./app, args: {SERVICE: inventory, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/inventory:v2-good", profiles: [releases]}
-  web-v3: {build: {context: ./app, args: {SERVICE: web, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/web:v3-bad", profiles: [releases]}
-  orders-v3: {build: {context: ./app, args: {SERVICE: orders, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/orders:v3-bad", profiles: [releases]}
-  payments-v3: {build: {context: ./app, args: {SERVICE: payments, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/payments:v3-bad", profiles: [releases]}
-  inventory-v3: {build: {context: ./app, args: {SERVICE: inventory, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/inventory:v3-bad", profiles: [releases]}
+  web-v2: {build: {context: ./services/shop, args: {SERVICE: web, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/web:v2-good", profiles: [releases]}
+  orders-v2: {build: {context: ./services/shop, args: {SERVICE: orders, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/orders:v2-good", profiles: [releases]}
+  payments-v2: {build: {context: ./services/shop, args: {SERVICE: payments, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/payments:v2-good", profiles: [releases]}
+  inventory-v2: {build: {context: ./services/shop, args: {SERVICE: inventory, VERSION: v2-good, RELEASE_SEQ: "2"}}, image: "eai/inventory:v2-good", profiles: [releases]}
+  web-v3: {build: {context: ./services/shop, args: {SERVICE: web, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/web:v3-bad", profiles: [releases]}
+  orders-v3: {build: {context: ./services/shop, args: {SERVICE: orders, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/orders:v3-bad", profiles: [releases]}
+  payments-v3: {build: {context: ./services/shop, args: {SERVICE: payments, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/payments:v3-bad", profiles: [releases]}
+  inventory-v3: {build: {context: ./services/shop, args: {SERVICE: inventory, VERSION: v3-bad, RELEASE: bad, RELEASE_SEQ: "3"}}, image: "eai/inventory:v3-bad", profiles: [releases]}
 
   # Independent fault injector and scorer. Only this service mounts the truth volume;
   # EternalAI cannot read what was injected until scoring.
@@ -68,7 +68,7 @@ services:
   # The brain. It mounts the Docker socket (root-equivalent on the host; see docs/EVALUATION.md, Security)
   # but NOT the truth volume. Approve/reject/mode endpoints are refused until a real token is set in .env.
   eternalai:
-    build: {context: ., dockerfile: eternalai/Dockerfile}
+    build: {context: ., dockerfile: engine/Dockerfile}
     image: eai/eternalai:v2
     networks: [eai]
     ports: ["127.0.0.1:8000:8000"]
@@ -80,7 +80,7 @@ services:
       EVALUATOR_URL: http://evaluator:8200
       ETERNALAI_BRAIN: ${ETERNALAI_BRAIN:-eternalai}   # eternalai | threshold_restart | prototype_rules (benchmark baselines)
       ETERNALAI_MODE: ${ETERNALAI_MODE:-}             # empty: the rulebook's mode
-      ETERNALAI_POLICY_FILE: ${ETERNALAI_POLICY_FILE:-}  # empty: eternalai/rulebooks/default.yaml (the plan's values)
+      ETERNALAI_POLICY_FILE: ${ETERNALAI_POLICY_FILE:-}  # empty: engine/rulebooks/default.yaml (the plan's values)
       ETERNALAI_APPROVAL_TOKEN: ${ETERNALAI_APPROVAL_TOKEN:-change-me}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
@@ -97,7 +97,7 @@ services:
     depends_on: [eternalai]
 
   loadgen:
-    build: ./loadgen
+    build: ./services/loadgen
     image: eai/loadgen:v1
     mem_limit: 128m
     networks: [eai]
@@ -112,7 +112,7 @@ services:
     mem_limit: 512m
     networks: [eai]
     ports: ["127.0.0.1:9090:9090"]
-    volumes: [./telemetry/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    volumes: [./deploy/telemetry/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=2h"]
 
   jaeger:

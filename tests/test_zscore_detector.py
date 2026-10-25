@@ -1,11 +1,11 @@
-"""eternalai.zscore_detector: equals the benchmark port, and follows the plan's rule (§6.3, §9.1)."""
+"""engine.zscore_detector: equals the benchmark port, and follows the plan's rule (§6.3, §9.1)."""
 import math
 
 import numpy as np
 import pytest
 
-from eternalai import baselines as port                     # read-only: the frozen benchmark port
-from eternalai.zscore_detector import (BASELINE_WINDOW, STREAK_NEEDED, WARMUP_POINTS, Z_LIMIT, SignalConfig,
+from engine import baselines as port                     # read-only: the frozen benchmark port
+from engine.zscore_detector import (BASELINE_WINDOW, STREAK_NEEDED, WARMUP_POINTS, Z_LIMIT, SignalConfig,
                                        ZResult, ZScoreDetector)
 
 PORT_CONFIGS = {m: SignalConfig(c["floor"], c["min_gap"], "upper") for m, c in port.ZSCORE_METRICS.items()}

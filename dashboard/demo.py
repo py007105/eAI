@@ -1,6 +1,6 @@
 """Demo mode: start, follow and reveal evaluator runs from the dashboard server, so the presenter never needs a terminal on stage.
 
-Same rules as scripts/demo_challenge.py: a hidden pick from the six supported faults and the two healthy scenarios (never the unseen
+Same rules as tools/demo_challenge.py: a hidden pick from the six supported faults and the two healthy scenarios (never the unseen
 fault), or the clearly labelled unseen-fault segment. The scenario is drawn here, on the server, with `secrets`; it is sent only to the
 evaluator and never to the browser, so the page cannot show it before the reveal. Talks to the evaluator's existing API only
 (POST /runs, GET /runs/{id}/status, GET /runs/{id}/reveal, GET /scorecard). Only runs started from this dashboard are tracked: the

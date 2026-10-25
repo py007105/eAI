@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("fc", Path(__file__).resolve().parents[1] / "scripts" / "forecast_check.py")
+spec = importlib.util.spec_from_file_location("fc", Path(__file__).resolve().parents[1] / "tools" / "forecast_check.py")
 fc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fc)
 T0 = 1000.0

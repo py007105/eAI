@@ -3,7 +3,7 @@ incidents outside its lock; POST /feedback is token-protected."""
 import pytest
 from fastapi.testclient import TestClient
 
-from eternalai.store import LearnStore, StoreError
+from engine.store import LearnStore, StoreError
 from tests.test_autopilot_path import diagnose, make_engine
 
 
@@ -67,7 +67,7 @@ def test_engine_stores_closed_incidents_with_root_features(tmp_path, monkeypatch
 
 
 def test_feedback_endpoint(tmp_path, monkeypatch):
-    from eternalai import api
+    from engine import api
     monkeypatch.setenv("ETERNALAI_APPROVAL_TOKEN", "fb-token-1234")
     e = make_engine("ask-first", "orders", "down", monkeypatch)
     e.store = store(tmp_path)
@@ -92,7 +92,7 @@ def test_export_script(tmp_path):
     s.record_incident(closed_incident())
     s.add_feedback("i1", "alice", True, None, "")
     root = Path(__file__).resolve().parents[1]
-    r = subprocess.run([sys.executable, str(root / "scripts" / "export_learn_store.py"), "--db", str(s.path), "--out", str(tmp_path / "x")],
+    r = subprocess.run([sys.executable, str(root / "tools" / "export_learn_store.py"), "--db", str(s.path), "--out", str(tmp_path / "x")],
                        capture_output=True, text=True)
     assert r.returncode == 0 and "1 human-labelled" in r.stdout
     head = (tmp_path / "x" / "A_learned_rows.csv").read_text(encoding="utf-8").splitlines()

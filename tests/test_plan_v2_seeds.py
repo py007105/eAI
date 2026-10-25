@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("p", Path(__file__).resolve().parents[1] / "scripts" / "plan_v2_seeds.py")
+spec = importlib.util.spec_from_file_location("p", Path(__file__).resolve().parents[1] / "tools" / "plan_v2_seeds.py")
 p = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
 

@@ -3,7 +3,7 @@ is active. Before 2026-10-21 the forecast ran only with no incident open, so it 
 import numpy as np
 import pandas as pd
 
-from eternalai.engine import Engine, Incident
+from engine.engine import Engine, Incident
 from tests.test_autopilot_path import make_engine
 
 LIMIT = 268e6
@@ -23,8 +23,8 @@ def flat_frame():
 
 def real_warnings(e, frames):
     """Run the real forecaster (not the test fake) on the given frames."""
-    from eternalai.investigate import Investigator
-    import eternalai.engine as eng
+    from engine.investigate import Investigator
+    import engine.engine as eng
     e.frames = frames
     saved = eng.Investigator
     eng.Investigator = Investigator

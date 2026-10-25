@@ -1,4 +1,4 @@
-"""models/eval_nab.py event scoring on small synthetic series written here (no NAB data is read)."""
+"""ml/models/eval_nab.py event scoring on small synthetic series written here (no NAB data is read)."""
 import hashlib
 import importlib.util
 import json
@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-spec = importlib.util.spec_from_file_location("eval_nab", Path(__file__).resolve().parents[1] / "models" / "eval_nab.py")
+spec = importlib.util.spec_from_file_location("eval_nab", Path(__file__).resolve().parents[1] / "ml" / "models" / "eval_nab.py")
 ev = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ev)
 

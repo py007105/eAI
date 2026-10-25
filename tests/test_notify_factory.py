@@ -4,7 +4,7 @@ import time
 
 import httpx
 
-from eternalai.notify import NullNotifier, TelegramNotifier, make_notifier
+from engine.notify import NullNotifier, TelegramNotifier, make_notifier
 
 
 def callbacks():

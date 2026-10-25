@@ -1,15 +1,15 @@
 """Retry once with the second candidate fix after a failed verification, then escalate (plan P8/L5: max 2 attempts).
 
-Real engine and policy (plan rulebook, eternalai/rulebooks/default.yaml); fakes for telemetry, ranker, classifier, executor
+Real engine and policy (plan rulebook, engine/rulebooks/default.yaml); fakes for telemetry, ranker, classifier, executor
 and the verification probe. Expected candidates are the fixed table (no knowledge base loaded):
 down -> restart_service, recreate_container; disk_fill -> clear_temp_path only."""
 import threading
 from types import SimpleNamespace
 
-from eternalai import config, engine as engine_mod, rulebook
-from eternalai.classify import Prediction
-from eternalai.engine import Engine, Incident
-from eternalai.policy import PolicyEngine
+from engine import config, engine as engine_mod, rulebook
+from engine.classify import Prediction
+from engine.engine import Engine, Incident
+from engine.policy import PolicyEngine
 
 SERVICES = list(config.SERVICES)
 PLAN = rulebook.load(rulebook.DEFAULT_FILE, SERVICES)

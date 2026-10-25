@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location("sc", Path(__file__).resolve().parents[1] / "scripts" / "surge_capture.py")
+spec = importlib.util.spec_from_file_location("sc", Path(__file__).resolve().parents[1] / "tools" / "surge_capture.py")
 sc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sc)
 T0, MB = 1000.0, 1e6

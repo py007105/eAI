@@ -1,8 +1,8 @@
 """rca.py: the evidence table on the shop topology, the ranker's normalisation, and the two baseline rankings."""
 import numpy as np
 
-from eternalai import config
-from eternalai.rca import EVIDENCE, Ranker, baro_rank, deepest_anomalous, evidence_table
+from engine import config
+from engine.rca import EVIDENCE, Ranker, baro_rank, deepest_anomalous, evidence_table
 
 S = list(config.SERVICES)
 

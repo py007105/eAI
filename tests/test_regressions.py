@@ -7,14 +7,14 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evaluator"))
-sys.path.insert(0, str(ROOT / "models"))
+sys.path.insert(0, str(ROOT / "ml" / "models"))
 
 import scenarios as ev_scenarios  # noqa: E402
 from collect_runs import SCENARIOS, scenario_order  # noqa: E402
 from timing import DEPLOY_SETTLE_S, NORMAL_SETTLE_S, settle_seconds  # noqa: E402
 
-from eternalai.executor import strip_inherited  # noqa: E402
-from eternalai.features.window import fit_baseline, window_features  # noqa: E402
+from engine.executor import strip_inherited  # noqa: E402
+from engine.features.window import fit_baseline, window_features  # noqa: E402
 
 OLD_IMAGE_ENV = ["PATH=/usr/bin", "RELEASE_FLAVOR=good", "APP_VERSION=v1", "RELEASE_SEQ=1"]
 CONTAINER_ENV = OLD_IMAGE_ENV + ["CHAOS_TOKEN=evaluator-only", "OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318"]

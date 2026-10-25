@@ -227,7 +227,7 @@ def status_view(state: str, text: str):
     return html.Div(text, id="status_line", className=f"status-line {STATUS_CLS[state]}")
 
 
-# The brain expires an unapproved proposal after ETERNALAI_APPROVAL_TTL_S (eternalai/config.py, default 120 s). /approvals does not
+# The brain expires an unapproved proposal after ETERNALAI_APPROVAL_TTL_S (engine/config.py, default 120 s). /approvals does not
 # return the deadline, so the dashboard computes it from the proposal's time in /incidents and the same setting.
 APPROVAL_TTL_S = float(os.getenv("ETERNALAI_APPROVAL_TTL_S", "120"))
 URGENT_S = 30

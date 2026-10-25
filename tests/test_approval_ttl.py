@@ -4,8 +4,8 @@ import threading
 
 import pytest
 
-from eternalai import config
-from eternalai.engine import Engine, Incident
+from engine import config
+from engine.engine import Engine, Incident
 
 
 def engine(anom=None):

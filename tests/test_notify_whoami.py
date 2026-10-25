@@ -1,8 +1,8 @@
-"""Tests for eternalai.notify.whoami using httpx.MockTransport."""
+"""Tests for engine.notify.whoami using httpx.MockTransport."""
 import json
 import httpx
 
-from eternalai.notify.whoami import get_recent_identities
+from engine.notify.whoami import get_recent_identities
 
 
 def test_get_recent_identities_extracts_messages_and_callbacks():

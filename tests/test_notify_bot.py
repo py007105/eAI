@@ -1,11 +1,11 @@
-"""Tests for eternalai.notify.bot using httpx.MockTransport."""
+"""Tests for engine.notify.bot using httpx.MockTransport."""
 import json
 import logging
 from pathlib import Path
 
 import httpx
 
-from eternalai.notify.bot import RestTelegramBot
+from engine.notify.bot import RestTelegramBot
 
 
 def pending_incident(iid="incident-1", status="awaiting_approval"):

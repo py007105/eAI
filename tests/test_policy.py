@@ -1,5 +1,5 @@
-from eternalai import config, rulebook
-from eternalai.policy import PolicyEngine
+from engine import config, rulebook
+from engine.policy import PolicyEngine
 
 PLAN = rulebook.load(rulebook.DEFAULT_FILE, config.SERVICES)
 V2 = rulebook.load(rulebook.RULEBOOK_DIR / "benchmark-v2.yaml", config.SERVICES)
@@ -95,7 +95,7 @@ def test_mode_from_env_overrides_the_rulebook(monkeypatch):
 
 
 def test_env_parsing():
-    from eternalai.config import env_flag, env_list
+    from engine.config import env_flag, env_list
     assert env_flag("true") and env_flag(" ON ") and env_flag("1") and not env_flag("") and not env_flag(None) and not env_flag("no")
     assert env_list("payments, inventory ,,") == {"payments", "inventory"} and env_list(None) == set()
 

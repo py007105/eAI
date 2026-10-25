@@ -1,11 +1,11 @@
-"""scripts/run_v3_sequence.py fails closed: only fresh results naming this commit and execution, with every check passed."""
+"""tools/run_v3_sequence.py fails closed: only fresh results naming this commit and execution, with every check passed."""
 import importlib.util
 import os
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("seq", ROOT / "scripts" / "run_v3_sequence.py")
+spec = importlib.util.spec_from_file_location("seq", ROOT / "tools" / "run_v3_sequence.py")
 seq = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(seq)
 

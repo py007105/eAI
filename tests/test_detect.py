@@ -1,6 +1,6 @@
 import numpy as np
 
-from eternalai.detect import FEATURES, Persistence, fit_service
+from engine.detect import FEATURES, Persistence, fit_service
 
 
 def healthy(n, rng):
@@ -38,7 +38,7 @@ def test_single_feature_excursions_are_caught():
 def test_live_decision_uses_limits_not_only_the_forest_score():
     """Regression (found by the live smoke test): the engine compared only the forest score with its threshold, so a
     1.4 s latency fault (lat_ratio ~28) was never flagged live although it is flagged 100% offline."""
-    from eternalai.detect import service_anomalous
+    from engine.detect import service_anomalous
     rng = np.random.default_rng(5)
     d = fit_service(healthy(800, rng), healthy(800, rng))
     latency_fault = row(lat_ratio=28.0)

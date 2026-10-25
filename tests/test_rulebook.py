@@ -4,8 +4,8 @@ import copy
 import pytest
 import yaml
 
-from eternalai import config, rulebook
-from eternalai.rulebook import RulebookError, parse
+from engine import config, rulebook
+from engine.rulebook import RulebookError, parse
 
 S = list(config.SERVICES)
 BASE = yaml.safe_load(rulebook.DEFAULT_FILE.read_text(encoding="utf-8"))
@@ -81,7 +81,7 @@ def test_missing_or_broken_file(tmp_path):
 
 def test_policy_file_env(monkeypatch):
     monkeypatch.delenv("POLICY_FILE", raising=False)
-    monkeypatch.setenv("ETERNALAI_POLICY_FILE", "benchmark-v2.yaml")       # a bare name is looked up in eternalai/rulebooks/
+    monkeypatch.setenv("ETERNALAI_POLICY_FILE", "benchmark-v2.yaml")       # a bare name is looked up in engine/rulebooks/
     assert rulebook.policy_file() == rulebook.RULEBOOK_DIR / "benchmark-v2.yaml"
     monkeypatch.delenv("ETERNALAI_POLICY_FILE")
     monkeypatch.setenv("POLICY_FILE", "benchmark-v2.yaml")                 # the plan's variable name

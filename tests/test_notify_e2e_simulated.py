@@ -20,9 +20,9 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from playwright.sync_api import sync_playwright
 
-from eternalai.notify.bot import RestTelegramBot
-from eternalai.notify.format import format_incident
-from eternalai.redact import redact
+from engine.notify.bot import RestTelegramBot
+from engine.notify.format import format_incident
+from engine.redact import redact
 
 ROOT = Path(__file__).resolve().parents[1]
 SHOTS_DIR = ROOT / "docs" / "screenshots"

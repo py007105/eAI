@@ -2,7 +2,7 @@
 (found by the live smoke test on the threshold baseline). The engine must escalate instead."""
 import threading
 
-from eternalai.engine import Engine, Incident
+from engine.engine import Engine, Incident
 
 
 def bare_engine():

@@ -39,7 +39,7 @@ class FakeEvaluator:
 
 
 def test_pool_matches_the_terminal_helper_and_never_includes_the_unseen_fault():
-    src = (ROOT / "scripts" / "demo_challenge.py").read_text(encoding="utf-8")
+    src = (ROOT / "tools" / "demo_challenge.py").read_text(encoding="utf-8")
     pool = re.findall(r'"([a-z_]+)"', re.search(r"POOL = \[(.*?)\]", src).group(1))
     assert pool == demo.POOL and demo.UNSEEN == re.search(r'UNSEEN = "([a-z_]+)"', src).group(1)
     assert demo.UNSEEN not in demo.POOL

@@ -3,11 +3,11 @@ import threading
 
 import pytest
 
-from eternalai.dedupe import Suppressor
-from eternalai.detect import Persistence
-from eternalai.engine import Engine, Incident
-from eternalai import config, rulebook
-from eternalai.policy import PolicyEngine
+from engine.dedupe import Suppressor
+from engine.detect import Persistence
+from engine.engine import Engine, Incident
+from engine import config, rulebook
+from engine.policy import PolicyEngine
 
 V2 = rulebook.load(rulebook.RULEBOOK_DIR / "benchmark-v2.yaml", config.SERVICES)   # cooldown 90 s, as in v1/v2
 

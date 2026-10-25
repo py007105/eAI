@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from eternalai import api
+from engine import api
 from tests.test_autopilot_path import diagnose, make_engine
 
 TOKEN = "api-test-token-42"

@@ -5,9 +5,9 @@ import time
 
 from fastapi.testclient import TestClient
 
-from eternalai import api
+from engine import api
 from tests.test_autopilot_path import FakeInvestigator, make_engine
-from eternalai.engine import Incident
+from engine.engine import Incident
 
 SLOW_S = 1.5
 
@@ -26,7 +26,7 @@ def slow_investigator(started: threading.Event):
 def test_get_approvals_answers_in_under_200_ms_while_a_diagnosis_runs(monkeypatch):
     e = make_engine("ask-first", "orders", "error_spike", monkeypatch)
     started = threading.Event()
-    monkeypatch.setattr("eternalai.engine.Investigator", slow_investigator(started))
+    monkeypatch.setattr("engine.engine.Investigator", slow_investigator(started))
     pending = Incident("pend", 900.0)                     # a proposal already waiting for a human
     pending.services, pending.diagnosed, pending.status = ["payments"], True, "awaiting_approval"
     pending.actions.append({"t": time.time(), "runbook_id": "restart_service", "service": "payments", "verdict": "needs_approval",
@@ -64,7 +64,7 @@ def test_a_diagnosis_result_is_dropped_if_the_incident_was_closed_meanwhile(monk
                     started.set()
                     release.wait(5)
             return call
-    monkeypatch.setattr("eternalai.engine.Investigator", Gate)
+    monkeypatch.setattr("engine.engine.Investigator", Gate)
     inc = Incident("x", 1000.0)
     inc.services = ["web"]
     e.incidents.append(inc)

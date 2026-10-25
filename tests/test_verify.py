@@ -1,8 +1,8 @@
 """verify.py: one checkout probe, and the recovered / partially_recovered / unresolved verdict over a window. No network."""
 import httpx
 
-from eternalai import verify
-from eternalai.verify import Probe, checkout_probe
+from engine import verify
+from engine.verify import Probe, checkout_probe
 
 
 def client(handler):

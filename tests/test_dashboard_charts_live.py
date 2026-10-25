@@ -1,5 +1,5 @@
 """Mihir's chart components wired into the live dashboard: the poller feeds the history from /services, and the
-charts callback reads only the poller's cache (live shapes from eternalai/api.py: /services and /incidents)."""
+charts callback reads only the poller's cache (live shapes from engine/api.py: /services and /incidents)."""
 import sys
 from pathlib import Path
 
@@ -62,10 +62,10 @@ def test_charts_callback_without_backend_shows_no_chart(monkeypatch):
 
 
 def test_populated_explanation_check_needs_a_non_empty_match():
-    """D6 of scripts/live_check_dashboard_charts.py: empty-versus-empty never counts; the sentences must equal
+    """D6 of tools/live_check_dashboard_charts.py: empty-versus-empty never counts; the sentences must equal
     explain_service() on API features sampled within 4 s of the page read."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("ldc", Path(__file__).resolve().parents[1] / "scripts" / "live_check_dashboard_charts.py")
+    spec = importlib.util.spec_from_file_location("ldc", Path(__file__).resolve().parents[1] / "tools" / "live_check_dashboard_charts.py")
     ldc = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(ldc)
     from explain_words import explain_service

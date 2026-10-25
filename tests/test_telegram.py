@@ -4,7 +4,7 @@ import logging
 
 import httpx
 
-from eternalai.notify.telegram import TelegramNotifier
+from engine.notify.telegram import TelegramNotifier
 
 
 def pending(iid="incident-1"):

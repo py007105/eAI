@@ -1,6 +1,6 @@
 """Telegram message content is useful, calibrated, and safe to send."""
-from eternalai.engine import Incident
-from eternalai.notify.format import format_incident
+from engine.engine import Incident
+from engine.notify.format import format_incident
 
 
 def incident():

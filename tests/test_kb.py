@@ -5,11 +5,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from eternalai.classify import CAUSE_RUNBOOKS
-from eternalai.kb import KBError, load_kb, ranked_fixes, ranked_runbooks
-from eternalai.kb.labels import FIX_TO_RUNBOOK, LIVE_TO_PLAN
+from engine.classify import CAUSE_RUNBOOKS
+from engine.kb import KBError, load_kb, ranked_fixes, ranked_runbooks
+from engine.kb.labels import FIX_TO_RUNBOOK, LIVE_TO_PLAN
 
-REAL = Path(__file__).resolve().parents[1] / "data" / "kb"
+REAL = Path(__file__).resolve().parents[1] / "ml" / "data" / "kb"
 
 
 def tiny_kb(tmp_path, measured=None, prototype=None, options=None):
@@ -82,7 +82,7 @@ def test_unknown_or_abstained_label():
     assert ranked_runbooks(None, "insufficient_evidence") == []
 
 
-@pytest.mark.skipif(not REAL.exists(), reason="data/kb not built")
+@pytest.mark.skipif(not REAL.exists(), reason="ml/data/kb not built")
 def test_real_kb_keeps_the_top_runbook_for_every_live_label():
     """With the committed knowledge base the proposed (first) runbook equals the old fixed table for every label: each top
     choice is backed by runs measured on this stack. A change here is a behaviour change and must be reported."""
@@ -101,11 +101,11 @@ def test_label_maps_are_consistent():
     assert set(FIX_TO_RUNBOOK.values()) <= {"restart_service", "recreate_container", "rollback_release", "clear_temp_path"}
 
 
-@pytest.mark.skipif(not REAL.exists(), reason="data/kb not built")
+@pytest.mark.skipif(not REAL.exists(), reason="ml/data/kb not built")
 def test_engine_records_the_ranking_and_api_serves_the_kb(monkeypatch):
     from fastapi.testclient import TestClient
 
-    from eternalai import api
+    from engine import api
     from tests.test_autopilot_path import diagnose, make_engine
     e = make_engine("ask-first", "orders", "memory_leak", monkeypatch)
     e.kb = load_kb(REAL)

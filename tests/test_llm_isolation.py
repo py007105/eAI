@@ -11,8 +11,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-import eternalai.llm as llm
-from eternalai.engine import Engine, Incident
+import engine.llm as llm
+from engine.engine import Engine, Incident
 
 PKG = Path(llm.__file__).resolve().parent
 CTX = {"cause": "memory_leak", "confidence": 0.9, "candidates": ["recreate_container"], "alternatives": ["latency_spike"],
@@ -33,7 +33,7 @@ def test_llm_upgrade_returns_immediately_and_never_holds_the_engine_lock_while_w
     def slow(ctx, client=None):
         release.wait(10)
         return llm.template_report(ctx), {"provider": "gemini", "llm_disagreed": False}
-    monkeypatch.setattr("eternalai.engine.make_report", slow)
+    monkeypatch.setattr("engine.engine.make_report", slow)
     e, inc = bare_engine(), Incident("i1", 100.0)
     t0 = time.time()
     e._llm_upgrade_async(inc, CTX)
@@ -49,7 +49,7 @@ def test_llm_upgrade_returns_immediately_and_never_holds_the_engine_lock_while_w
 def test_report_text_is_replaced_but_the_executed_runbook_is_kept(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "x")
     rep = llm.IncidentReport(summary="s", evidence_ids=["e1"], likely_cause="memory_leak", runbook_id="recreate_container")
-    monkeypatch.setattr("eternalai.engine.make_report", lambda ctx, client=None: (rep, {"provider": "gemini", "llm_disagreed": False}))
+    monkeypatch.setattr("engine.engine.make_report", lambda ctx, client=None: (rep, {"provider": "gemini", "llm_disagreed": False}))
     e, inc = bare_engine(), Incident("i2", 100.0)
     inc.actions = [{"runbook_id": "restart_service"}]                # what the deterministic policy actually proposed
     inc.log = lambda m: None

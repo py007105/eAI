@@ -1,4 +1,4 @@
-from eternalai.dedupe import ReleaseGrace, Suppressor
+from engine.dedupe import ReleaseGrace, Suppressor
 
 
 def test_release_blip_is_ignored_then_judged():
@@ -20,7 +20,7 @@ def test_grace_is_per_service_and_a_rollback_restarts_it():
 def test_callers_of_a_service_in_release_grace_are_covered_too():
     """Regression (live smoke test): a bad inventory release made orders and web fail first; flagging them while inventory
     was still in grace opened an incident on the wrong service."""
-    from eternalai.dedupe import downstream_of
+    from engine.dedupe import downstream_of
     topo = {"web": ["orders", "inventory"], "orders": ["inventory", "payments"], "inventory": [], "payments": []}
     assert downstream_of("web", topo) == {"orders", "inventory", "payments"}
     assert downstream_of("orders", topo) == {"inventory", "payments"} and downstream_of("inventory", topo) == set()
