@@ -23,17 +23,17 @@ You own the files listed for you, and any new file you create under those paths.
 
 | person | area | owns |
 |---|---|---|
-| Rajat | Kubernetes, on Rajat's laptop (with Codex) | `deploy/**`, `eternalai/drivers/**`, `eternalai/sources/**`, `eternalai/verify_k8s.py`, `docs/KUBERNETES.md`, `docs/HANDOFF_K8S_STATUS.md`, `scripts/kind_e2e.py`, `scripts/compose_regression_k8s.py`, `scripts/k8s_window_deadline.py`, his `tests/test_k8s_*.py`, `tests/test_kind_*.py`, `tests/test_drivers.py`, `tests/test_driver_factory.py`, `tests/test_helm_chart.py`, `tests/test_service_map.py`, `tests/test_verify_k8s.py`, `docs/results/kind_e2e*.md`, `results/live-checks/kind_e2e*.json` |
-| Sanskar | Telegram, dashboard UI/UX | `eternalai/notify/**`, `docs/TELEGRAM*.md`, `tests/test_telegram.py`, `tests/test_notify_*.py`, `dashboard/**` except `dashboard/app.py`, `tests/test_dashboard_*.py`, `docs/screenshots/**` |
-| Mihir | knowledge base review, ML (offline), pitch, README | `data/kb/**`, `eternalai/kb/**`, `tests/test_kb*.py`, `models/**` (see the ML rule), `docs/pitch/**` (new), `README.md`, `docs/QA_FOR_JUDGES.md` |
+| Rajat | Kubernetes, on Rajat's laptop (with Codex) | `deploy/**`, `engine/drivers/**`, `engine/sources/**`, `engine/verify_k8s.py`, `docs/KUBERNETES.md`, `docs/HANDOFF_K8S_STATUS.md`, `tools/kind_e2e.py`, `tools/compose_regression_k8s.py`, `tools/k8s_window_deadline.py`, his `tests/test_k8s_*.py`, `tests/test_kind_*.py`, `tests/test_drivers.py`, `tests/test_driver_factory.py`, `tests/test_helm_chart.py`, `tests/test_service_map.py`, `tests/test_verify_k8s.py`, `docs/results/kind_e2e*.md`, `results/live-checks/kind_e2e*.json` |
+| Sanskar | Telegram, dashboard UI/UX | `engine/notify/**`, `docs/TELEGRAM*.md`, `tests/test_telegram.py`, `tests/test_notify_*.py`, `dashboard/**` except `dashboard/app.py`, `tests/test_dashboard_*.py`, `docs/screenshots/**` |
+| Mihir | knowledge base review, ML (offline), pitch, README | `ml/data/kb/**`, `engine/kb/**`, `tests/test_kb*.py`, `models/**` (see the ML rule), `docs/pitch/**` (new), `README.md`, `docs/QA_FOR_JUDGES.md` |
 | integrator | wiring, merges, live checks, tags | the shared files below, `docs/COORDINATION.md`, `docs/RELEASE_GATE.md`, `docs/TEAM_SPLIT.md`, `docs/results/` outside the rows above |
 
 **Shared files: only the integrator edits these.**
-- `eternalai/engine.py`
-- `eternalai/api.py`
-- `eternalai/policy.py`
-- `eternalai/config.py`
-- `eternalai/rulebook.py` and `eternalai/rulebooks/*`
+- `engine/engine.py`
+- `engine/api.py`
+- `engine/policy.py`
+- `engine/config.py`
+- `engine/rulebook.py` and `engine/rulebooks/*`
 - `docker-compose.yml`
 - `dashboard/app.py`
 
@@ -47,7 +47,7 @@ If your work needs a change in one of them, describe it in your PR (function, in
    - Build our images locally and load them into kind with `kind load docker-image` (no registry).
    - Plain Deployments and Services for web, orders, payments, inventory and loadgen.
    - A plain Prometheus Deployment with `kubernetes_sd_configs`, scraping our services' `/metrics`. No heavy monitoring stack, no Prometheus Helm chart (that chart's readiness is the likely cause of the 14:14 failure).
-2. **Then run `scripts/kind_e2e.py` on our shop** and commit every execution's result files, PASS or FAIL:
+2. **Then run `tools/kind_e2e.py` on our shop** and commit every execution's result files, PASS or FAIL:
    - must have: crash → restart;
    - must have: bad deploy → rollback after approval;
    - nice to have: scale.
@@ -67,7 +67,7 @@ If your work needs a change in one of them, describe it in your PR (function, in
 - PR by 19:00.
 
 ### Mihir: knowledge base, ML, pitch
-- **Review the 17 KB rows** in `data/kb/`: set `reviewed_by_team` per row, only for rows actually reviewed, and note what was checked.
+- **Review the 17 KB rows** in `ml/data/kb/`: set `reviewed_by_team` per row, only for rows actually reviewed, and note what was checked.
 - **Dataset-A offline report:** Train Ticket macro-F1 next to the live classifier, same held-out data. Report only, no change to the live models.
 - **Pitch** (`docs/pitch/`).
 - **README and judge Q&A rewrite:** every number from a results file. Forecast: memory lead **FAILED** (median 18.3 s vs the 30 s target); disk **PASSED**.

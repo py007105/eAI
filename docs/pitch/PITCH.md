@@ -49,7 +49,7 @@ flowchart TD
         Forecaster["Forecaster (Theil-Sen Trends)"]
         Ranker["Root-Cause Ranker (Service Graph)"]
         Classifier["Fault Classifier (HistGradientBoosting + Novelty Gate)"]
-        KB["Knowledge Base & Fix Ranker (data/kb/)"]
+        KB["Knowledge Base & Fix Ranker (ml/data/kb/)"]
         Policy["Rulebook & Policy Engine (Auto / Ask-First / Watch)"]
         Verifier["Internal Verifier (Synthetic Checkout Probe)"]
 

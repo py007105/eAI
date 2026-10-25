@@ -28,8 +28,8 @@ If the code moves, line numbers may no longer match.
 Two more labels are used in this folder:
 
 - **benchmark under the previous policy:** results from `docs/results/benchmark_v2.md`, measured under
-  `eternalai/rulebooks/benchmark-v2.yaml`, where recreate and rollback could run automatically. The current rulebook
-  (`eternalai/rulebooks/default.yaml`) is stricter, so these results do not show what the current approval rules do.
+  `engine/rulebooks/benchmark-v2.yaml`, where recreate and rollback could run automatically. The current rulebook
+  (`engine/rulebooks/default.yaml`) is stricter, so these results do not show what the current approval rules do.
 - **inferred from code:** what the source says should happen. This is **not** a test result. Every expected result in the
   checklist is of this kind until someone performs the check.
 

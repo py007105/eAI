@@ -49,7 +49,7 @@ Then by hand:
 5. Start Docker Desktop and build once: `docker compose --profile releases build`.
 
 Paths written into scripts (keep the same layout or adjust them):
-- `D:\eAI\STACK_LOCK.md` in `scripts/stack_lock.py`;
+- `D:\eAI\STACK_LOCK.md` in `tools/stack_lock.py`;
 - `C:\Program Files\Docker\Docker\resources\bin` in the live-check scripts;
 - the Codex worktree `D:\eAI\eAI-codex`.
 
@@ -58,7 +58,7 @@ add `CHAOS_TOKEN` to `.env`; the old launcher predates that rule.
 
 ## 3. Next steps, in order
 
-1. **Forecast check v3:** `python scripts/live_check_phase3.py` (about 1 h 50 min).
+1. **Forecast check v3:** `python tools/live_check_phase3.py` (about 1 h 50 min).
    - Run it exactly as designed; no tuning on these seeds.
    - Report the lead times.
    - Report that the time-to-limit estimate runs late: the 120 s look-back includes flat data from before the fault.
@@ -72,7 +72,7 @@ add `CHAOS_TOKEN` to `.env`; the old launcher predates that rule.
 
    Label each item "verified live" or "tests only". If it passes, tag `demo-stable-2` and push the tag.
 3. **Phase 4 core:**
-   - knowledge-base files into `data/kb/`, with source columns kept;
+   - knowledge-base files into `ml/data/kb/`, with source columns kept;
    - loader;
    - outcome-ranked fix choice wired into the engine;
    - dataset-A classifier, reported next to the current one on the same held-out data.
@@ -97,11 +97,11 @@ Rules:
 - Never read or print .env or any token; live checks pass throwaway tokens through the environment, as the existing
   live-check scripts do.
 - You may push plan-complete and every demo-stable-N tag (never force-push). Ask before anything else that leaves the machine.
-- Never docker compose down -v or delete volumes. Use the Docker lock D:\eAI\STACK_LOCK.md (scripts/stack_lock.py).
+- Never docker compose down -v or delete volumes. Use the Docker lock D:\eAI\STACK_LOCK.md (tools/stack_lock.py).
 - Small commits; full test suite after every commit; numbers only from scripts and results files; nothing tuned after seeing
   results; every item reported as "verified live" or "tests only". Times in IST.
 - Python: D:\eAI\eAI-release\.venv. Training runs: <PATH OF runs_all>. Plan dataset: D:\eAI\plan_dataset\ (read-only; never
-  commit the raw xlsx; copy only what Phase 4 needs into data/kb/ with source columns kept).
+  commit the raw xlsx; copy only what Phase 4 needs into ml/data/kb/ with source columns kept).
 
 First: git status, git log --oneline -5, the test suite, docker info and D:\eAI\STACK_LOCK.md; report. Then write a new
 Docker schedule (the old one ended at the 2026-10-23 freeze), and continue with docs/CONTINUE_ON_NEW_PC.md section 3 in
@@ -128,7 +128,7 @@ The main session's folder D:\eAI\eAI-release (branch plan-complete): never read,
 one Docker daemon (Compose project "eai"), ports, RAM and image names. Docker schedule + lock: D:\eAI\STACK_LOCK.md
 (schedule at the top, LAST line = lock; Docker/kind only in "codex" windows). Contract: docs\HANDOFF_FRIEND.md (sections 1,
 2, 3, 5, 6, 9-12) and AGENTS.md. Requirements: docs\PLAN_GAP_CLOSURE.md sections A, F, G (do not edit). Patterns:
-scripts\live_check_phase1.py, scripts\stack_lock.py, tests\test_autopilot_path.py. Python: only D:\eAI\eAI-codex\.venv.
+tools\live_check_phase1.py, tools\stack_lock.py, tests\test_autopilot_path.py. Python: only D:\eAI\eAI-codex\.venv.
 
 WORK: package A, Kubernetes minimal (handoff section 6): Driver interface (DockerDriver = current executor, unchanged),
 KubernetesDriver (restart, scale, rollback, delete pod), Kubernetes metrics source, annotation service map with static

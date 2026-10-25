@@ -1,6 +1,6 @@
 ## Benchmark v2 (final): numbers and answers
 
-Numbers in this block come from `docs/results/benchmark_v2.md` and `docs/results/benchmark_v1_v2.md`, filled in by `scripts/build_docs.py`. The caveats are in `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2"; read it before quoting any figure. v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better"; v1 and v2 are unpaired.
+Numbers in this block come from `docs/results/benchmark_v2.md` and `docs/results/benchmark_v1_v2.md`, filled in by `tools/build_docs.py`. The caveats are in `docs/EVALUATION.md`, section "Canonical methodology, results and limitations: benchmark v2"; read it before quoting any figure. v2 is "fixes for the failures v1 exposed, tested on fresh seeds", not "the model is better"; v1 and v2 are unpaired.
 
 | v2 figure | value |
 |---|---|

@@ -12,15 +12,15 @@ On `demo-stable-1`, fixes come from the fixed table, and the forecast runs only 
 
 Every number below comes from a committed results file or raw rows. The pooled values not printed in a report were computed from the raw rows by a script, not by hand.
 
-- **Current policy:** `eternalai/rulebooks/default.yaml`, the plan rulebook. Autopilot runs only low-risk fixes; rollback and stateful recreate always need approval; payments is protected.
-- **OLD POLICY** marks numbers measured under `eternalai/rulebooks/benchmark-v2.yaml`, where autopilot also ran rollbacks and recreates without asking. Those numbers are never pooled with current-policy numbers.
+- **Current policy:** `engine/rulebooks/default.yaml`, the plan rulebook. Autopilot runs only low-risk fixes; rollback and stateful recreate always need approval; payments is protected.
+- **OLD POLICY** marks numbers measured under `engine/rulebooks/benchmark-v2.yaml`, where autopilot also ran rollbacks and recreates without asking. Those numbers are never pooled with current-policy numbers.
 - No person approved any action in any benchmark (v1, v2 or v3).
 - One application (our 4-service shop), scripted faults. Recovery is EternalAI's own checkout verification; the failed-request % comes from the load generator (independent).
 
 ## 1. Recovery with approval (main recovery number)
 
 **v2 ask-first: 18 of 18 supported faults recovered** (OLD POLICY: benchmark-v2 system).
-- **Approvals:** every action waited for approval and was then approved by a simulated operator after 5 s (`scripts/run_benchmark.py`, approver name `benchmark-operator`). No person reviewed or rejected anything, so this shows the approval path works end to end, not human judgement.
+- **Approvals:** every action waited for approval and was then approved by a simulated operator after 5 s (`tools/run_benchmark.py`, approver name `benchmark-operator`). No person reviewed or rejected anything, so this shows the approval path works end to end, not human judgement.
 - **Current policy:** ask-first mode also requires approval for every action, so the same approval flow applies. This is my reading of the two rulebooks, not a rerun.
 - **Conditions:** 6 fault types × 3 seeds (seeds 202-424), detected 18/18. Wilson 95% interval for 18/18 is 82-100%.
 - **Measurements:**
@@ -102,7 +102,7 @@ Every number below comes from a committed results file or raw rows. The pooled v
 - **Live classifier (the model the demo uses), offline grouped CV:** forced-answer macro-F1 0.991 on 9,103 windows from 98 runs (data: 105 runs, 33,576 windows); in-distribution, optimistic; ECE 0.003. Source: `docs/results/models_cv_v2.md` (line 30).
 - **Root-cause abstain margin:** 0.1215, from 316 out-of-fold training incidents. It would make 1 of 7 wrong-root incidents abstain, and 4 of 309 correctly ranked ones. Source: `docs/results/root_margin.md`.
 - **Public-dataset classifier (dataset A, offline, one run): NOT the model the demo uses.**
-  - **Model:** a gradient-boosting classifier trained by `models/train_dataset_a.py` on the owner's workbook, real rows only.
+  - **Model:** a gradient-boosting classifier trained by `ml/models/train_dataset_a.py` on the owner's workbook, real rows only.
   - **Test set:** Train Ticket, a system never seen in training; 53 test incidents under the plan's truth definition.
   - **Result:** macro-F1 0.385 (plan feature list, variant P) and 0.449 (live-computable features, variant L), averaged over the test's truth classes only (real rows only). The majority-class baseline scores 0.132 with the same averaging. A strict value (predictions outside the truth classes counted) was not computed for this model.
   - **Not comparable** with Mihir's separate synthetic-rows experiment (`docs/results/dataset_a_model.md`). No claim that synthetic rows improved accuracy. The unknown-fault threshold does **not** separate unknown faults.
