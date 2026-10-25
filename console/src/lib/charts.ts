@@ -34,7 +34,7 @@ export function incidentDurations(incidents: unknown, limit = 10) {
     .map((i) => {
       const opened = numberValue(i.opened_t)!;
       const diag = timelineAt(i, /^diagnosed /i);
-      const ver = isRecord(i.verification) ? numberValue(i.verification.t) : undefined;
+      const ver = isRecord(i.verification) && i.verification.outcome === "recovered" ? numberValue(i.verification.t) : undefined;
       return {
         id: textValue(i.id) ?? "?",
         diagnose_s: diag !== undefined ? +(diag - opened).toFixed(1) : null,
@@ -86,21 +86,34 @@ export function useScorecard(intervalMs = 10000): ScorecardState {
   const [s, setS] = useState<ScorecardState>({ state: "loading" });
   useEffect(() => {
     let alive = true;
+    let pending: AbortController | undefined;
     const run = async () => {
+      if (pending || document.hidden) return;
+      const controller = new AbortController();
+      pending = controller;
+      const timeout = window.setTimeout(() => controller.abort(), 5000);
       try {
-        const r = await fetch("/api/scorecard", { method: "GET", headers: { Accept: "application/json" } });
+        const r = await fetch("/api/scorecard", { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const v = await r.json();
-        if (alive) setS(isRecord(v) ? { state: "ok", value: v } : { state: "unavailable", reason: "unexpected response" });
+        if (!isRecord(v) || numberValue(v.runs) === undefined || !isRecord(v.by_scenario)) throw new Error("Unexpected scorecard response");
+        if (alive) setS({ state: "ok", value: v });
       } catch (e) {
-        if (alive) setS({ state: "unavailable", reason: e instanceof Error ? e.message : "error" });
+        if (alive) setS({ state: "unavailable", reason: e instanceof Error ? e.message : "Request failed" });
+      } finally {
+        window.clearTimeout(timeout);
+        pending = undefined;
       }
     };
     void run();
     const t = window.setInterval(run, intervalMs);
+    const visible = () => { if (!document.hidden) void run(); };
+    document.addEventListener("visibilitychange", visible);
     return () => {
       alive = false;
+      pending?.abort();
       window.clearInterval(t);
+      document.removeEventListener("visibilitychange", visible);
     };
   }, [intervalMs]);
   return s;

@@ -42,7 +42,7 @@ export function ScoreHistoryChart({ samples, incidents }: { samples: Record<stri
     .map((i) => ({ at: (numberValue(i.opened_t) ?? 0) * 1000, bad: i.status !== "recovered" }))
     .filter((m) => m.at >= first);
   return (
-    <Panel title="Anomaly score over time" note="Per service, from the 2 s /services polling buffer in this browser; gaps are failed polls">
+    <Panel title="Anomaly score over time" note="Recent observed samples · gaps indicate unavailable data">
       {rows.length < 2 ? (
         <div className="empty">Collecting samples…</div>
       ) : (
@@ -131,7 +131,8 @@ export function ActionsByRunbookChart({ audit }: { audit: unknown }) {
 const stat = (v: unknown) => {
   const r = isRecord(v) ? v : undefined;
   const m = numberValue(r?.mean);
-  return m === undefined ? "–" : `${m} ± ${numberValue(r?.sd) ?? 0}`;
+  const sd = numberValue(r?.sd);
+  return m === undefined ? "–" : sd === undefined ? String(m) : `${m} ± ${sd}`;
 };
 
 export function ScorecardPanel() {
@@ -146,17 +147,17 @@ export function ScorecardPanel() {
         <div className="empty">Loading…</div>
       ) : sc.state === "unavailable" ? (
         <div className="empty">
-          <strong>Evaluator not running</strong>/scorecard did not answer ({sc.reason}).
+          <strong>Scorecard unavailable</strong>Could not read evaluator results ({sc.reason}).
         </div>
       ) : rows.length === 0 ? (
         <div className="empty">
-          <strong>No scored runs yet</strong>The evaluator reports {numberValue(sc.value.runs) ?? 0} runs.
+          <strong>No scored runs yet</strong>The evaluator reports {numberValue(sc.value.runs) ?? "Not reported"} runs.
         </div>
       ) : (
         <>
           <div style={{ height: 200 }} className="tabular">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rows.map(([s, r]) => ({ s, runs: numberValue(r.runs) ?? 0, detected: numberValue(r.detected) ?? 0, recovered: numberValue(r.recovered) ?? 0 }))}
+              <BarChart data={rows.map(([s, r]) => ({ s, runs: numberValue(r.runs) ?? null, detected: numberValue(r.detected) ?? null, recovered: numberValue(r.recovered) ?? null }))}
                 margin={{ top: 8, right: 16, bottom: 4, left: 0 }}>
                 <CartesianGrid stroke={GRID} strokeDasharray="3 3" />
                 <XAxis dataKey="s" stroke={AXIS} fontSize={11} />
@@ -174,7 +175,7 @@ export function ScorecardPanel() {
               <thead>
                 <tr>
                   <th>Scenario</th><th>Runs</th><th>Detected</th><th>Recovered</th><th>False alerts</th>
-                  <th>Harmful</th><th>Detect s</th><th>Verified s</th><th>Failed req %</th>
+                  <th>Scorer-flagged interventions</th><th>Detect s</th><th>Verified s</th><th>Failed req %</th>
                 </tr>
               </thead>
               <tbody>

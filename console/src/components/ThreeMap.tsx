@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Line, Text } from "@react-three/drei";
+import { OrbitControls, Line, Html } from "@react-three/drei";
 import type { UnknownRecord, ServiceState } from "../lib/api";
 
 const COLOR: Record<ServiceState, { color: string; emissive: string }> = {
@@ -43,8 +43,8 @@ function Pulse({ color, still }: { color: string; still: boolean }) {
   );
 }
 
-function Graph({ names, links, states, root, animate }: {
-  names: string[]; links: [string, string][]; states: Record<string, ServiceState>; root?: string; animate: boolean;
+function Graph({ names, links, states, root, animate, selected, onSelect }: {
+  names: string[]; links: [string, string][]; states: Record<string, ServiceState>; root?: string; animate: boolean; selected?: string; onSelect?: (name: string) => void;
 }) {
   const points = names.map((name, i) => {
     const angle = (i / Math.max(1, names.length)) * Math.PI * 2;
@@ -61,8 +61,8 @@ function Graph({ names, links, states, root, animate }: {
         const isRoot = root === name;
         const c = isRoot ? COLOR.down : COLOR[states[name] ?? "unknown"];
         return (
-          <group key={name} position={position}>
-            <mesh>
+          <group key={name} position={position} onClick={(event) => { event.stopPropagation(); onSelect?.(name); }}>
+            <mesh scale={selected === name ? 1.25 : 1}>
               <sphereGeometry args={[isRoot ? 0.24 : 0.19, 24, 18]} />
               <meshStandardMaterial color={c.color} emissive={c.emissive} emissiveIntensity={isRoot ? 1.4 : 0.9} />
             </mesh>
@@ -74,26 +74,22 @@ function Graph({ names, links, states, root, animate }: {
                 <meshBasicMaterial color={c.color} transparent opacity={0.16} />
               </mesh>
             )}
-            <Text position={[0, -0.42, 0]} fontSize={0.14} color="#ffffff" anchorX="center">
-              {name}
-            </Text>
+            <Html position={[0, -0.42, 0]} center style={{ pointerEvents: "none" }}><span className="three-label">{name}</span></Html>
             {isRoot && (
-              <Text position={[0, 0.46, 0]} fontSize={0.12} color="#ff8a80" anchorX="center">
-                root cause
-              </Text>
+              <Html position={[0, 0.46, 0]} center style={{ pointerEvents: "none" }}><span className="three-label root">leading candidate</span></Html>
             )}
           </group>
         );
       })}
       <ambientLight intensity={1.0} />
       <pointLight position={[0, 0, 4]} intensity={18} />
-      <OrbitControls enablePan={false} enableZoom={false} enableRotate={false} />
+      <OrbitControls enablePan={false} enableZoom={true} enableRotate={true} minDistance={4} maxDistance={9} />
     </>
   );
 }
 
-export default function ThreeMap({ names, topology, states = {}, root, incidentOpen = false }: {
-  names: string[]; topology: UnknownRecord; states?: Record<string, ServiceState>; root?: string; incidentOpen?: boolean;
+export default function ThreeMap({ names, topology, states = {}, root, incidentOpen = false, selected, onSelect }: {
+  names: string[]; topology: UnknownRecord; states?: Record<string, ServiceState>; root?: string; incidentOpen?: boolean; selected?: string; onSelect?: (name: string) => void;
 }) {
   const links: [string, string][] = [];
   Object.entries(topology).forEach(([a, raw]) => {
@@ -102,7 +98,7 @@ export default function ThreeMap({ names, topology, states = {}, root, incidentO
   return (
     <div className="three-wrap" aria-label="Three dimensional view of returned services, coloured by live health">
       <Canvas dpr={[1, 1.4]} camera={{ position: [0, 0, 6], fov: 42 }}>
-        <Graph names={names} links={links} states={states} root={root} animate={incidentOpen && !reduced()} />
+        <Graph selected={selected} onSelect={onSelect} names={names} links={links} states={states} root={root} animate={incidentOpen && !reduced()} />
       </Canvas>
     </div>
   );

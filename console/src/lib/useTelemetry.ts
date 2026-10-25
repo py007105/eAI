@@ -177,3 +177,16 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   return createElement(TelemetryContext.Provider, { value }, children);
 }
 export const useTelemetry = () => useContext(TelemetryContext);
+
+/** Current values are gated per endpoint, never by the aggregate connection badge. */
+export function currentTelemetry(data: Telemetry, now: number): Telemetry {
+  return Object.fromEntries(keys.map((key) => {
+    const item = data[key];
+    return [key, { ...item, value: !item.error && isFresh(item.updatedAt, now) ? item.value : undefined }];
+  })) as Telemetry;
+}
+
+export function useCurrentTelemetry() {
+  const telemetry = useTelemetry();
+  return { ...telemetry, data: currentTelemetry(telemetry.data, Date.now()) };
+}

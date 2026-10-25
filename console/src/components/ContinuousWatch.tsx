@@ -1,9 +1,9 @@
 import { outcomeCounts } from "../lib/trace";
-import { useTelemetry } from "../lib/useTelemetry";
+import { useCurrentTelemetry } from "../lib/useTelemetry";
 
 export default function ContinuousWatch() {
-  const { data, connection } = useTelemetry();
-  const live = connection === "live" || connection === "partial";
+  const { data } = useCurrentTelemetry();
+  const live = data.incidents.value !== undefined;
   const last = data.incidents.updatedAt;
   const c = live ? outcomeCounts(data.incidents.value) : undefined;
   const cell = (label: string, v?: number) => (

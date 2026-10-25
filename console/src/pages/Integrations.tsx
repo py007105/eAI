@@ -1,7 +1,7 @@
 import { isRecord, textValue, type UnknownRecord } from "../lib/api";
 import { actionsByChannel } from "../lib/charts";
 import { approverChannel, type Channel } from "../lib/pipeline";
-import { useTelemetry } from "../lib/useTelemetry";
+import { useCurrentTelemetry } from "../lib/useTelemetry";
 
 const NR = "Not reported";
 
@@ -10,12 +10,11 @@ function Source({ path }: { path: string }) {
 }
 
 export default function Integrations() {
-  const { data, connection } = useTelemetry();
-  const live = connection === "live" || connection === "partial";
+  const { data } = useCurrentTelemetry();
   const status = isRecord(data.status.value) ? (data.status.value as UnknownRecord) : undefined;
   const policy = status && isRecord(status.policy) ? (status.policy as UnknownRecord) : undefined;
   const runbookRisk = policy && isRecord(policy.runbook_risk) ? (policy.runbook_risk as UnknownRecord) : undefined;
-  const byChannel = live ? actionsByChannel(data.audit.value) : undefined;
+  const byChannel = data.audit.value !== undefined ? actionsByChannel(data.audit.value) : undefined;
   const incidents = Array.isArray(data.incidents.value) ? data.incidents.value.filter(isRecord) : [];
   const approvedBy: Record<string, number> = {};
   for (const inc of incidents)
@@ -31,14 +30,14 @@ export default function Integrations() {
       <section className="panel">
         <div className="panel-title">
           <h2>Runtime · Docker Compose</h2>
-          <span className="badge cyan">live runtime</span>
+          <span className="badge cyan">documented runtime</span>
         </div>
         <p>
           The services, the evaluator and the EternalAI engine run as containers defined in the repository's Compose file.
           Actions go through an allow-listed set of runbooks; their risk comes from the loaded rulebook.
         </p>
-        <h3 className="sub-head">Allow-listed runbooks (live, from /status → policy.runbook_risk)</h3>
-        {live && runbookRisk ? (
+        <h3 className="sub-head">Allowed runbooks</h3>
+        {runbookRisk ? (
           <div className="chip-row">
             {Object.entries(runbookRisk).map(([rb, risk]) => (
               <span key={rb} className={`chip risk-${String(risk)}`}>
@@ -62,7 +61,7 @@ export default function Integrations() {
 
       <section className="panel">
         <div className="panel-title">
-          <h2>Telegram · separate bot via REST API</h2>
+          <h2>Telegram approvals</h2>
         </div>
         <p>
           A separate process polls the REST API and posts approve / reject requests to an allowed Telegram account. It
@@ -83,7 +82,7 @@ export default function Integrations() {
           <div className="muted">{NR}</div>
         )}
         <h3 className="sub-head">Approvals in returned incidents (derived from incident approver fields)</h3>
-        {live ? (
+        {data.incidents.value !== undefined ? (
           Object.keys(approvedBy).length ? (
             <div className="chip-row tabular">
               {Object.entries(approvedBy).map(([c, n]) => (

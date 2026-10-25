@@ -26,6 +26,8 @@ const report = {
 const routes = [
   "/",
   "/console",
+  "/console/live",
+  "/console/integrations",
   "/console/incidents",
   "/console/topology",
   "/console/approvals",
@@ -46,9 +48,7 @@ report.backend = await fetch("http://127.0.0.1:8000/health", {
   .catch(() => ({ unreachable: true }));
 const browser = await chromium.launch({
   headless: true,
-  executablePath:
-    process.env.CONSOLE_BROWSER_PATH ||
-    "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+  ...(process.env.CONSOLE_BROWSER_PATH ? { executablePath: process.env.CONSOLE_BROWSER_PATH } : {}),
 });
 try {
   for (const mode of ["dev", "preview"]) {
@@ -102,6 +102,7 @@ try {
         });
         const page = await context.newPage();
         const statusRequests = [];
+        page.on("pageerror", (error) => report.failures.push(error.message));
         page.on("request", (r) => {
           if (
             new URL(r.url()).pathname.startsWith("/api/") &&
@@ -114,10 +115,10 @@ try {
         for (const route of routes) {
           await page.goto(base + route);
           await page.getByRole("heading", { level: 1 }).waitFor();
-          if (route !== "/") await page.getByRole("status").waitFor();
+          if (route !== "/") await page.locator(".connection").waitFor();
           if (route !== "/" && report.backend.unreachable)
             await page
-              .getByRole("status")
+              .locator(".connection")
               .filter({ hasText: "Disconnected" })
               .waitFor();
           await page.waitForTimeout(250);
@@ -138,7 +139,7 @@ try {
             scroll: document.documentElement.scrollWidth,
           }));
           const connection =
-            route === "/" ? null : await page.getByRole("status").textContent();
+            route === "/" ? null : await page.locator(".connection").textContent();
           const heading = await page
             .getByRole("heading", { level: 1 })
             .textContent();

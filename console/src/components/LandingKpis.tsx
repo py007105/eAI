@@ -1,7 +1,7 @@
 import { CheckCircle2, Eye, Radar, Scale, Stethoscope } from "lucide-react";
 import { isRecord, numberValue, serviceState, textValue } from "../lib/api";
 import NumberTicker from "./NumberTicker";
-import { useTelemetry } from "../lib/useTelemetry";
+import { useCurrentTelemetry } from "../lib/useTelemetry";
 
 const NR = "Not reported";
 
@@ -22,24 +22,25 @@ export function lastVerifiedRecovery(audit: unknown, incidents: unknown): number
 }
 
 export function LandingKpis() {
-  const { data, connection } = useTelemetry();
+  const { data, connection } = useCurrentTelemetry();
   const live = connection === "live" || connection === "partial";
   const status = isRecord(data.status.value) ? data.status.value : undefined;
   const svc = isRecord(data.services.value) && isRecord(data.services.value.services) ? data.services.value.services : undefined;
   const names = svc ? Object.keys(svc) : [];
   const healthy = svc ? names.filter((n) => serviceState(svc[n]) === "ok").length : undefined;
   const open = numberValue(status?.open_incidents);
-  const last = lastVerifiedRecovery(data.audit.value, data.incidents.value);
+  const recoveryAvailable = data.audit.value !== undefined && data.incidents.value !== undefined;
+  const last = recoveryAvailable ? lastVerifiedRecovery(data.audit.value, data.incidents.value) : undefined;
   const kpis: [string, string][] = [
     ["Mode", live ? textValue(status?.mode) ?? NR : NR],
     ["Services healthy", live && healthy !== undefined ? `${healthy} / ${names.length}` : NR],
     ["Open incidents", live && open !== undefined ? String(open) : NR],
     [
       "Last verified recovery",
-      live
+      live && recoveryAvailable
         ? last !== undefined
           ? new Date(last * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-          : "none since the API started"
+          : "None in returned records"
         : NR,
     ],
   ];

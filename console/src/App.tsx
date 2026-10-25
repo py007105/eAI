@@ -9,6 +9,8 @@ import {
   Gauge,
   LayoutDashboard,
   Menu,
+  Maximize2,
+  Minimize2,
   Network,
   Plug,
   ShieldCheck,
@@ -33,7 +35,7 @@ import {
   adaptStatus,
   adaptIncidents,
 } from "./lib/api";
-import { isFresh, TelemetryProvider, useTelemetry } from "./lib/useTelemetry";
+import { isFresh, TelemetryProvider, useTelemetry, useCurrentTelemetry } from "./lib/useTelemetry";
 import { recordedResultsExcerpt } from "./lib/results";
 import type { Sample } from "./lib/history";
 const ThreeMap = lazy(() => import("./components/ThreeMap"));
@@ -141,6 +143,12 @@ function AppShell() {
   const path = useLocationPath();
   const route = routeFromPath(path);
   const [mobile, setMobile] = useState(false);
+  const [focus, setFocus] = useState(false);
+  useEffect(() => {
+    const exit = (event: KeyboardEvent) => { if (event.key === "Escape") setFocus(false); };
+    window.addEventListener("keydown", exit);
+    return () => window.removeEventListener("keydown", exit);
+  }, []);
   useEffect(() => {
     if (!mobile) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -161,7 +169,7 @@ function AppShell() {
     }
   };
   return (
-    <div className="layout">
+    <div className={`layout ${focus ? "focus-layout" : ""}`}>
       <aside className={`sidebar ${mobile ? "open" : ""}`}>
         <div className="sidebar-head">
           <a href="/" className="brand side-brand" onClick={onNavigate}>
@@ -194,11 +202,10 @@ function AppShell() {
           </nav>
         </div>
         <div className="sidebar-foot">
-          Read-only view
-          <br />
-          Data is observed from the connected API.
+          Read-only · updates every 2 s
         </div>
       </aside>
+      {mobile && <button className="nav-scrim" aria-label="Dismiss navigation" onClick={() => setMobile(false)} />}
       <main className="main">
         <header className="console-top">
           <button
@@ -214,6 +221,9 @@ function AppShell() {
             <span>EternalAI</span>
           </a>
           <span className="console-label">OPERATIONS CONSOLE</span>
+          <button className="btn focus-toggle" aria-pressed={focus} onClick={() => { setFocus(!focus); setMobile(false); }}>
+            {focus ? <Minimize2 size={15} /> : <Maximize2 size={15} />} {focus ? "Exit focus" : "Focus view"}
+          </button>
         </header>
         <PageContent route={route} onNavigate={onNavigate} />
       </main>
@@ -260,20 +270,17 @@ function Landing() {
       <main>
         <section className="container hero">
           <div>
-            <div className="eyebrow">READ-ONLY OPERATIONS VIEW</div>
+            <div className="eyebrow">EVIDENCE-LED OPERATIONS</div>
             <h1>
               Understand the <span className="mark">failure.</span> Inspect the response.
             </h1>
             <p>
-              Explore service health, incident evidence, policy decisions, and
-              recovery verification in one read-only console.
+              From the first anomaly to verified recovery. Follow the evidence,
+              understand each decision, and see what changed.
             </p>
             <div className="hero-actions">
               <a href="/console/live" className="btn btn-primary" onClick={handle}>
                 Open live console <ArrowRight size={15} />
-              </a>
-              <a href="/console" className="btn" onClick={handle}>
-                Open Console
               </a>
               <a href="/console/results" className="btn" onClick={handle}>
                 View Verified Results
@@ -302,17 +309,17 @@ function Landing() {
               <Feature
                 icon={<Activity size={17} />}
                 title="Observe the state"
-                body="See returned service snapshots and incident status with freshness clearly shown."
+                body="Track service health and spot anomalies as they happen."
               />
               <Feature
                 icon={<ClipboardList size={17} />}
                 title="Inspect the decision"
-                body="Read the reported evidence, proposed action, policy verdict, and approval state."
+                body="Inspect the evidence, proposed fix, and policy decision."
               />
               <Feature
                 icon={<ArrowDownRight size={17} />}
                 title="Review verification"
-                body="When the API reports an outcome, inspect it alongside the incident timeline."
+                body="Compare measurements before and after a fix."
               />
             </div>
           </div>
@@ -322,14 +329,13 @@ function Landing() {
             <div className="eyebrow">EVIDENCE & SAFETY</div>
             <h2>Visibility with boundaries.</h2>
             <p className="section-intro">
-              EternalAI’s underlying engine can evaluate incidents and actions.
-              This console only reads API data; it does not approve, reject,
-              change operating modes, or execute remediation.
+              The engine diagnoses and proposes fixes. Policy sets the boundaries.
+              People approve protected actions. This console keeps the evidence visible.
             </p>
             <div className="safety-strip">
               <SafetyItem
                 title="Read-only requests"
-                text="The browser uses GET requests through a same-origin API proxy."
+                text="Inspect incidents here. Approval and operating controls stay in your operator workflow."
               />
               <SafetyItem
                 title="Unknown stays unknown"
@@ -348,8 +354,7 @@ function Landing() {
               <div className="eyebrow">INSPECT THE CURRENT STATE</div>
               <h2>Open the operations console.</h2>
               <p className="section-intro">
-                Live telemetry requires an already-running EternalAI API. No
-                service is started by this site.
+                Explore the live incident, inspect service dependencies, and review recovery evidence.
               </p>
             </div>
             <a href="/console" className="btn btn-primary" onClick={handle}>
@@ -375,10 +380,17 @@ function Landing() {
   );
 }
 function Architecture() {
+  const [selected, setSelected] = useState("web");
+  const notes: Record<string, string> = {
+    web: "The storefront calls orders and inventory.",
+    orders: "Orders coordinates payments and inventory.",
+    inventory: "Inventory supplies stock availability.",
+    payments: "Payments handles checkout authorization. Policy protects this service.",
+  };
   return (
     <div className="architecture">
       <div className="arch-caption">
-        Architecture illustration · documented service dependencies
+        Documented architecture
       </div>
       <svg
         className="arch-svg"
@@ -395,6 +407,11 @@ function Architecture() {
         <ArchNode x={312} y={132} w={106} title="inventory" sub="service" />
         <ArchNode x={205} y={228} w={106} title="payments" sub="service" />
       </svg>
+      <div className="architecture-controls" aria-label="Explore architecture">
+        {Object.keys(notes).map((name) => <button className="tab" key={name} aria-pressed={selected === name} onClick={() => setSelected(name)}>{name}</button>)}
+      </div>
+      <p className="architecture-note" aria-live="polite">{notes[selected]}</p>
+      <a className="text-link" href="/console/topology">Explore live topology <ArrowRight size={14} /></a>
     </div>
   );
 }
@@ -494,7 +511,7 @@ function PageContent({
           <h1>{route.incidentId ? "Incident detail" : names[route.page]}</h1>
           <p>
             {route.incidentId
-              ? "Read the reported sequence and evidence for this incident."
+              ? "The evidence, decision, and measured outcome."
               : descriptions[route.page]}
           </p>
         </div>
@@ -534,14 +551,14 @@ function PageContent({
 const descriptions: Record<Page, string> = {
   overview:
     "Current operating mode, reported service state, and latest incident evidence.",
-  live: "The newest open incident, stage by stage, from the API's incident fields and timeline.",
+  live: "Follow detection, diagnosis, response, and verified recovery.",
   integrations: "Runtime, telemetry and integration facts, each with its source.",
-  incidents: "Reported incidents with a read-only evidence narrative.",
+  incidents: "Find an incident and follow the investigation.",
   topology:
     "Service dependencies returned by the API; links do not represent traffic.",
   approvals: "Items awaiting a human decision, as reported by the API.",
   safety: "Reported policy boundaries and kill-switch state.",
-  audit: "Recent audit records returned by the API.",
+  audit: "A record of actions and verification outcomes.",
   results: "Recorded evaluation results from the repository source.",
 };
 function useEndpoint(
@@ -1255,7 +1272,7 @@ function Topology() {
     });
   const [selected, setSelected] = useState<string>();
   const [view, setView] = useState<"2d" | "3d">("2d");
-  const { data: liveData } = useTelemetry();
+  const { data: liveData } = useCurrentTelemetry();
   const selectedData = selected && services ? services[selected] : undefined;
   const positions = names.map((name, i) => {
     const angle = (i / Math.max(names.length, 1)) * Math.PI * 2;
@@ -1340,8 +1357,10 @@ function Topology() {
                       data-state={state}
                       onClick={() => setSelected(name)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
                           setSelected(name);
+                        }
                       }}
                       tabIndex={0}
                       role="button"
@@ -1383,11 +1402,13 @@ function Topology() {
                   <WebGLErrorBoundary onFailure={() => setView("2d")}>
                     <ThreeMap
                       names={names}
+                      selected={selected}
+                      onSelect={setSelected}
                       topology={topology}
                       states={Object.fromEntries(names.map((n) => [n, serviceState(services?.[n])]))}
                       root={(() => {
                         const inc = newestActive(liveData.incidents.value);
-                        const r = inc && Array.isArray(inc.ranking) ? inc.ranking[0] : undefined;
+                        const r = inc && inc.abstained !== true && Array.isArray(inc.ranking) ? inc.ranking[0] : undefined;
                         return isRecord(r) ? textValue(r.service) : undefined;
                       })()}
                       incidentOpen={!!newestActive(liveData.incidents.value)}
@@ -1399,7 +1420,7 @@ function Topology() {
             <div className="topology-legend">
               <span>Service nodes are API-reported</span>
               <span>Lines are returned dependencies</span>
-              <span>No traffic is inferred</span>
+              <span>{view === "3d" ? "Drag to rotate · select a node" : "Select a node to inspect"}</span>
             </div>
             <div className="topology-detail">
               <div className="panel-title">
@@ -1477,9 +1498,7 @@ function Approvals() {
     <>
       <Historical stamp={source.item.updatedAt} />
       <div className="notice" style={{ marginBottom: 14 }}>
-        This view is observational. Approval decisions are handled through the
-        connected dashboard or Telegram workflow; this console has no approve or
-        reject controls.
+        Approve or reject through your operator dashboard or configured Telegram bot.
       </div>
       <section className="panel">
         <div className="panel-title">

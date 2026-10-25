@@ -1,6 +1,7 @@
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 export const server = setupServer(
+  http.get("http://localhost/api/scorecard", () => HttpResponse.json({ runs: 0, by_scenario: {} })),
   http.get("http://localhost/api/status", () =>
     HttpResponse.json({
       mode: "watch-only",

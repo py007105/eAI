@@ -1,5 +1,28 @@
 # EternalAI Console handoff
 
+## Console review and presentation polish — 25 October 2026
+
+Based on `team/console` at `d74abd9`. Changes are confined to `console/`; backend, Compose, protected branches and tags are unchanged. The new [presentation guide](docs/PRESENTATION_GUIDE.md) contains a plan-coverage table, manual screen sequence and exact PowerShell commands for crash, kill-switch/disk-fill, and payments rollback.
+
+### Changed
+- Preserve the white/neon design; improve architecture contrast, mobile spacing, pipeline alignment, decision rows and compact before/after tables. Remove repeated CTAs and shorten UI copy.
+- Focus view with Escape exit; incident picker with Follow latest and a live-updating pinned selection; inspectable pipeline stages; expandable full evidence; full-investigation link.
+- Display actual `before`/`after` checkout success, request errors and p95 latency plus verification probes. Missing values stay unknown. Partial/unresolved verification is not plotted as verified recovery time.
+- Rotatable/zoomable/selectable 3D map with keyboard-accessible service buttons and 2D fallback. HTML labels remove the previous external font dependency and reduce the lazy 3D chunk from roughly 997 to 886 kB (still an optional large chunk).
+- Read-only evaluator run status and post-scoring reveal. Matching run IDs and response shapes are validated; input changes cancel pending requests. Starting a run remains an operator action.
+- Fix stale current values in the new landing/live/watch/integration/chart panels during individual endpoint failures. Preserve historical chart gaps. Counts render exact API values rather than invented animation intermediates.
+- Scorecard requests now time out, avoid overlapping calls, abort on unmount and reject invalid schemas. Missing counts/spreads are not converted to zero. A failed fetch is labelled unavailable rather than claiming the evaluator stopped.
+
+### Verification and limits
+- Frontend unit/component suite: **46 passed**. Type checking and production build pass.
+- Populated interaction regression: **15 route/viewport observations**, zero failures at 1440×900, 1280×720 and 390×844. Includes focus/selection/stage/evidence interactions, 3D rendering and keyboard service selection, evaluator running→finished→reveal, and incident endpoint outage→recovery. These are **synthetic test-only fixtures**, under `tests/verify-presentation.mjs`; screenshots/report in `tests/evidence/presentation/` are not live integration evidence.
+- Real-response route checks: **66 passed**, zero failures across development/preview and the same three sizes; report `evidence/2026-10-25T00-43-32-135Z/report.json`. The backend is unreachable in this cloud environment; these captures show real disconnected behavior, not live service recovery. No Docker stack was started and no fault was injected in this session.
+- The first full Python regression had 596 passes and 14 failures: 13 were missing environment dependencies (`socksio` / Python `playwright`), resolved by installing them only in the local venv. A targeted rerun then had 37 passes and one failure: `test_a_second_runner_is_refused`, because the unchanged Windows runner requires `tasklist`, absent on Linux. No backend file or dependency manifest was changed to address that platform difference.
+- The prior live records below are historical evidence from the owner's Windows stack. This changed build still needs an operator rehearsal against that backend; test fixtures must not be presented as a fresh live run.
+
+The current default random challenge includes `cpu_burn`; the guide explicitly avoids an empty-body random injection for a supported-fault-only presentation. Kubernetes remains labelled offline-validated; the full backend release gates are not claimed complete.
+
+
 ## Upgrade: live incident view, graphs, sources, investigation trace — 25 October 2026, 2:07-2:30 AM IST
 
 **Backend:** `demo-stable-1` (`49155ea`), started per `docs/DEMO_CHECKLIST.md` 0.3-0.5: autopilot, kill switch OFF, 300 s approval override, per-run tokens outside git. No Telegram bot.
