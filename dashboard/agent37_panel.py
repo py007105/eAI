@@ -17,6 +17,17 @@ NODE_COLOR = {"service": "#72d7e5", "incident": "#f2b84b", "fault": "#ef6b6b", "
               "recommendation": "#b48cff", "outcome": "#12b76a"}
 
 
+def build_options(incidents: list, stored: list) -> list:
+    """Dropdown options: live incidents first (newest first), then stored investigations whose incident the brain no
+    longer holds (after a restart), so a saved finding can still be opened."""
+    live = {i["id"] for i in incidents}
+    opts = [{"label": f"{i['id']} · {', '.join(i.get('services') or [])} · {i.get('likely_cause')} · {i['status']}",
+             "value": i["id"]} for i in reversed(incidents)]
+    opts += [{"label": f"{r['incident_id']} · stored investigation · {r.get('fault') or '-'} · {r.get('status')}",
+              "value": r["incident_id"]} for r in stored if r["incident_id"] not in live]
+    return opts
+
+
 def layout_row(card):
     import dash_bootstrap_components as dbc
     return dbc.Row([
@@ -150,10 +161,10 @@ def register(app, fetch, post):
     def a37_options(_n):
         try:
             incs = fetch("/incidents")
+            stored = fetch("/agent37/investigations")
         except Exception:  # noqa: BLE001 - backend down: keep the last options
             return no_update, no_update
-        opts = [{"label": f"{i['id']} · {', '.join(i.get('services') or [])} · {i.get('likely_cause')} · {i['status']}",
-                 "value": i["id"]} for i in reversed(incs)]
+        opts = build_options(incs, stored)
         svc = [{"label": s, "value": s} for s in ("web", "orders", "inventory", "payments")]
         return opts, svc
 

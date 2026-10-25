@@ -241,3 +241,17 @@ def test_connect_errors_are_retried_but_read_timeouts_are_not(monkeypatch):
     with pytest.raises(Agent37Error) as e:
         Agent37Client(api_key="k", instance_id="x", transport=httpx.MockTransport(slow)).respond("hi")
     assert e.value.code == "timeout" and reads["n"] == 1             # never re-sent: the turn may already be running
+
+
+def test_dashboard_lists_stored_investigations_after_restart():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "dashboard"))
+    import agent37_panel as P
+    live = [{"id": "a1", "services": ["web"], "likely_cause": "down", "status": "recovered"}]
+    stored = [{"incident_id": "a1", "status": "completed", "fault": "x"},
+              {"incident_id": "old9", "status": "completed", "fault": "disk_fill"}]
+    opts = P.build_options(live, stored)
+    assert [o["value"] for o in opts] == ["a1", "old9"]                    # no duplicate; the old one stays selectable
+    assert "stored investigation" in opts[1]["label"] and "disk_fill" in opts[1]["label"]
+    assert P.build_options([], []) == []
