@@ -20,6 +20,7 @@ from dash import ALL, Input, Output, State, callback_context, dcc, html
 sys.path.insert(0, str(Path(__file__).parent))
 import charts  # noqa: E402
 import demo  # noqa: E402
+import agent37_panel  # noqa: E402
 import views  # noqa: E402
 from charts_labels import ct  # noqa: E402
 from explain_words import explain_service  # noqa: E402
@@ -161,11 +162,13 @@ def layout():
                           dcc.Graph(id="svc_chart", config={"displayModeBar": False}),
                           html.Div(id="svc_explain"), html.Div(id="charts_scope", className="muted")]), lg=7),
             dbc.Col(card([html.Div(id="t_stats"), html.Div(id="svc_stats"), html.Div(id="stats_scope", className="muted")]), lg=5)]),
+        agent37_panel.layout_row(card),
         dcc.Store(id="page_title"), html.Div(id="title_sink", hidden=True), dcc.Store(id="pending_ids"), html.Div(id="alert_sink", hidden=True),
         dcc.Interval(id="tick", interval=1500, n_intervals=0)])
 
 
 app.layout = layout
+agent37_panel.register(app, fetch, post)
 
 
 @app.callback(

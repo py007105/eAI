@@ -273,3 +273,60 @@ def challenge_reveal(run_id: str):
 @app.get("/scorecard")
 def scorecard():
     return httpx.get(f"{EVALUATOR_URL}/scorecard", timeout=10).json()
+
+
+# ---- Agent37 investigator (advisory; the engine and its policy stay authoritative). See engine/agent37/.
+_inv = None
+
+
+def _investigator():
+    global _inv
+    if _inv is None:
+        from .agent37 import Investigator
+        _inv = Investigator(engine)
+    return _inv
+
+
+@app.get("/agent37/status")
+def agent37_status():
+    """Configuration, reported spend and the provider-enforced instance budget (free reads; no agent turn)."""
+    return _investigator().status()
+
+
+@app.post("/agent37/investigate/{iid}")
+def agent37_investigate(iid: str, force: bool = False, x_approval_token: str | None = Header(None)):
+    """Start a paid Agent37 investigation of a real incident (token required: spending credit is an operator decision).
+    Returns at once; poll GET /agent37/investigations/{iid}. An unchanged, already investigated incident is not re-run."""
+    _auth(x_approval_token)
+    try:
+        return _investigator().start(iid, force=force)
+    except KeyError:
+        raise HTTPException(404, "no such incident")
+
+
+@app.get("/agent37/investigations")
+def agent37_investigations():
+    inv = _investigator()
+    with inv.lock:
+        return [{"incident_id": k, "status": v.get("status"), "finished_t": v.get("finished_t"),
+                 "fault": (v.get("finding") or {}).get("fault"), "error": v.get("error")} for k, v in inv.records.items()]
+
+
+@app.get("/agent37/investigations/{iid}")
+def agent37_investigation(iid: str):
+    rec = _investigator().view(iid)
+    if rec is None:
+        raise HTTPException(404, "not investigated")
+    return rec
+
+
+@app.get("/agent37/twin")
+def agent37_twin():
+    from .agent37.views import twin
+    return twin(engine, _investigator())
+
+
+@app.get("/agent37/graph")
+def agent37_graph():
+    from .agent37.views import graph
+    return graph(engine, _investigator())
