@@ -52,18 +52,21 @@ Start the stack as usual (Compose passes `AGENT37_API_KEY`, `AGENT37_INSTANCE_ID
 6. The knowledge graph shows the incident, suspected causes (classifier and Agent37), executed action and verified outcome.
 
 ## Verification status (25 Oct 2026)
-Live runs on one existing instance (`ao7buwhar5`, Hermes agent, monthly cap $2), brain started from this branch:
+Live runs on one existing instance (`ao7buwhar5`, Hermes agent, monthly cap $2), brain built from this branch (`6d2eb86`).
 
 | item | status |
 |---|---|
-| Agent37 chat API call and JSON tool protocol (4 agent turns, 3 read-only tools run on the EternalAI host) | VERIFIED LIVE |
-| Agent's final answer: grounded in the incident's evidence, cited real evidence ids, listed missing evidence, suggested no runbook for an already recovered incident | VERIFIED LIVE (read from the saved turn; not yet stored as a finding) |
-| Run 1 ended with `network: ConnectError` on turn 3; run 2's final answer was rejected by the first schema (`fault` over 60 characters) | observed live; both fixed (connect-only retry, trimmed free text) |
-| Fixes, storing a validated finding, policy verdict on a suggestion, budget and fallback paths | VERIFIED IN TESTS ONLY (mocked transport, replay of the real final answer) |
-| A completed finding stored and shown in the dashboard from a live run | NOT VERIFIED LIVE |
-| Agent37 spend | the instance and workspace usage endpoints reported 0 LLM calls and $0.00 after the runs (wallet unchanged at $10); whether the instance's model calls bypass the managed meter or the meter lags is UNCONFIRMED |
-| Dashboard panel, twin and graph with real incident data | VERIFIED LIVE (browser check, no Agent37 call made by it) |
-| EternalAI recovery of the crash (autopilot `restart_service`, 19 checkout probes) | VERIFIED LIVE, independent of the agent |
+| One real web crash; EternalAI detected it in 5.7 s, restarted web on its own (autopilot, low risk) and verified recovery with 19 checkout probes at 100 % (evaluator: recovered in 36.5 s, 0 false alerts) | VERIFIED LIVE (11:20 AM IST, incident `16442779`) |
+| One investigation: 5 agent turns, 4 read-only tools run on the EternalAI host, a final JSON answer that passed schema validation (cited ev1-ev7, none dropped) | VERIFIED LIVE (11:20:58-11:21:31 AM IST, 33 s) |
+| The completed finding is stored (`runtime/agent37_investigations.json` in the brain's volume) and returned identical after restarting only the brain container | VERIFIED LIVE |
+| The dashboard shows the saved finding after that restart (picker lists the stored investigation; panel shows explanation, evidence, missing evidence, policy verdict) | VERIFIED LIVE (browser check; it triggered no Agent37 call) |
+| Policy stays authoritative: the agent suggested no runbook, EternalAI's policy engine returned `no_action_suggested`; the executor audit shows only EternalAI's own autopilot restart, 0 Agent37-initiated actions | VERIFIED LIVE for the no-action case |
+| Policy verdict when the agent DOES suggest a runbook (advisory evaluation on a copy of the policy engine, needs-approval path) | VERIFIED IN TESTS ONLY |
+| Earlier live runs: run 1 failed on turn 3 with `ConnectError`; run 2's answer was rejected by the first schema (`fault` over 60 characters). Fixed: connect-only retry, trimmed free text | observed live; fixes VERIFIED IN TESTS ONLY (replay of the real answer) |
+| Agent37 spend | UNCONFIRMED. After 9 live turns the instance and workspace usage endpoints read 0 LLM calls and $0.00 (compute $0.00 too, which may settle hourly); wallet unchanged at $10. Either the instance's model calls bypass the managed meter or the meter lags; per-turn `cost_usd` was reported as 0 |
+| Cap | VERIFIED LIVE: `monthly_cap_micros` 2000000, 0 consumed before and after |
+
+Not tested live: an Agent37 recommendation that needs approval and goes through the Approvals panel or Telegram; budget exhaustion (402) against the real service.
 
 Also found by the live check: `main` could not load its frozen model files after the `eternalai` -> `engine` rename.
 Fixed in `engine/artifacts.py` (legacy module names aliased); `tests/test_artifacts_load.py` loads every real artifact.
